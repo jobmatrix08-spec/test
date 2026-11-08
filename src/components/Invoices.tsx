@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { db, auth } from '../firebase';
 import { apiFetch } from '../lib/api';
 import { computeTotals, normalizeFinancialSettings } from '../lib/financial';
+import { auditDate, auditName, getAuditActor, logAudit } from '../lib/audit';
 import { Invoice, Product, Client, SaleItem, StoreSettings, UserProfile } from '../types';
 import { formatProductDetails } from '../config/productAttributes';
 import { handleFirestoreError, OperationType } from '../App';
@@ -438,6 +439,7 @@ export default function Invoices({ userProfile }: InvoicesProps) {
     try {
       const saleRef = doc(collection(db, 'sales'));
       const invoiceRef = doc(collection(db, 'invoices'));
+      const actor = getAuditActor(userProfile, userProfile?.uid || auth.currentUser?.uid || ownerId);
       await runTransaction(db, async (transaction) => {
         
         // 1. ALL READS FIRST
@@ -524,7 +526,10 @@ export default function Invoices({ userProfile }: InvoicesProps) {
           invoiceId: invoiceRef.id,
           sessionId: activeCashSession.id,
           ownerId,
-          userId: userProfile?.uid || ownerId
+          userId: userProfile?.uid || ownerId,
+          createdBy: actor,
+          updatedBy: actor,
+          updatedAt: serverTimestamp(),
         };
 
         const invoiceData = {
@@ -548,12 +553,34 @@ export default function Invoices({ userProfile }: InvoicesProps) {
           items: cart,
           sessionId: activeCashSession.id,
           ownerId,
-          userId: userProfile?.uid || ownerId
+          userId: userProfile?.uid || ownerId,
+          createdBy: actor,
+          updatedBy: actor,
+          updatedAt: serverTimestamp(),
         };
 
         transaction.set(saleRef, saleData);
         transaction.set(invoiceRef, invoiceData);
       });
+
+      await Promise.all([
+        logAudit({
+          ownerId,
+          entity: 'sale',
+          entityId: saleRef.id,
+          action: 'create',
+          actor,
+          summary: { after: { total: cartTotal, client: selectedClient?.name || 'Client de passage', status: 'created' } },
+        }),
+        logAudit({
+          ownerId,
+          entity: 'invoice',
+          entityId: invoiceRef.id,
+          action: 'create',
+          actor,
+          summary: { after: { total: cartTotal, client: selectedClient?.name || 'Client de passage', status: 'created' } },
+        }),
+      ]);
 
       try {
         await apiFetch(`/financial/sales/${encodeURIComponent(saleRef.id)}/costs`, { method: 'POST' });
@@ -1605,6 +1632,12 @@ export default function Invoices({ userProfile }: InvoicesProps) {
               <div>
                 <h2 className="text-base font-black text-ds-text sm:text-lg">Facture {selectedInvoice.number}</h2>
                 <p className="mt-1 text-xs font-mono uppercase tracking-widest text-ds-muted">Date: {selectedInvoice.date?.toDate ? format(selectedInvoice.date.toDate(), 'PPP p', { locale: fr }) : 'Inconnue'}</p>
+                {userProfile?.role === 'admin' && (selectedInvoice.createdBy || selectedInvoice.updatedBy) && (
+                  <p className="mt-1 text-[10px] text-ds-muted">
+                    {selectedInvoice.createdBy && <>Créé par {auditName(selectedInvoice.createdBy)}{auditDate(selectedInvoice.date) && ` le ${auditDate(selectedInvoice.date)}`}</>}
+                    {selectedInvoice.updatedBy && <> · Modifié par {auditName(selectedInvoice.updatedBy)}{auditDate(selectedInvoice.updatedAt) && ` le ${auditDate(selectedInvoice.updatedAt)}`}</>}
+                  </p>
+                )}
               </div>
               <Button variant="ghost" size="sm" onClick={() => setSelectedInvoice(null)} aria-label="Fermer">
                 <X className="w-5 h-5 sm:w-6 sm:h-6" />

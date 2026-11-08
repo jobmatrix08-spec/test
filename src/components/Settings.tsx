@@ -19,6 +19,7 @@ import { useTheme, type ThemePreference } from './ThemeProvider';
 import { useBrand } from './BrandProvider';
 import { slugifyAppName } from '../lib/brand';
 import { StartupPreferencesPanel } from './StartupPreferences';
+import ActivityLog from './ActivityLog';
 
 interface SettingsProps {
   userProfile: UserProfile | null;
@@ -1369,6 +1370,8 @@ function SettingsContent({
                   Téléchargez un fichier détaillé de l'historique d'activité (ventes, factures, créations/modifications/suppressions de produits) sur une période donnée. La période sélectionnée ne peut pas dépasser 1 mois.
                 </p>
               </div>
+
+              <ActivityLog userProfile={userProfile} />
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">

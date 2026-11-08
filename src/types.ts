@@ -20,12 +20,21 @@ export interface Product {
   attributeTypeId?: string;
   attributes?: Record<string, string>;
   serialNumber?: string;
+  createdBy?: AuditUser | string;
+  updatedBy?: AuditUser | string;
+  updatedAt?: unknown;
   ownerId?: string;
   createdAt?: string;
 }
 
 import type { MessageTemplateKey } from './lib/messages';
 import type { ProductAttributeType } from './config/productAttributes';
+
+export interface AuditUser {
+  uid: string;
+  name: string;
+  role: 'admin' | 'casier' | 'technicien' | 'unknown';
+}
 
 export interface Client {
   id: string;
@@ -45,6 +54,9 @@ export interface SaleItem {
   total: number;
   attributes?: Record<string, string>;
   serialNumber?: string;
+  createdBy?: AuditUser | string;
+  updatedBy?: AuditUser | string;
+  updatedAt?: unknown;
 }
 
 export interface Sale {
@@ -64,6 +76,9 @@ export interface Sale {
   items: SaleItem[];
   ownerId?: string;
   sessionId?: string;
+  createdBy?: AuditUser | string;
+  updatedBy?: AuditUser | string;
+  updatedAt?: unknown;
 }
 
 export interface Invoice {
@@ -87,6 +102,9 @@ export interface Invoice {
   items: SaleItem[];
   ownerId?: string;
   sessionId?: string;
+  createdBy?: AuditUser | string;
+  updatedBy?: AuditUser | string;
+  updatedAt?: unknown;
 }
 
 export interface CashSessionTotals {

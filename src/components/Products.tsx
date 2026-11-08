@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, setDoc, getDocs, where, getDocFromServer, deleteField, writeBatch, runTransaction } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, setDoc, getDocs, where, getDocFromServer, deleteField, writeBatch, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { Product, Category, StoreSettings, UserProfile } from '../types';
 import { DEFAULT_PRODUCT_ATTRIBUTE_TYPES, formatProductDetails, normalizeAttributeValue, type ProductAttributeType } from '../config/productAttributes';
@@ -7,6 +7,7 @@ import { handleFirestoreError, OperationType } from '../App';
 import { Plus, Minus, Search, Edit2, Trash2, X, AlertTriangle, Package, Tag, Barcode, Shield, Eye, EyeOff, AlertCircle, History, Loader2, ArrowDown, ArrowUp } from 'lucide-react';
 import { cn, decodeAzertyBarcode } from '../lib/utils';
 import { can } from '../lib/permissions';
+import { auditDate, auditName, getAuditActor, logAudit } from '../lib/audit';
 import { slugifyAppName } from '../lib/brand';
 import { useBrand } from './BrandProvider';
 import { Badge, Button, Card, EmptyState, Input, PageHeader, Select } from './ui';
@@ -396,6 +397,7 @@ export default function Products({ userProfile }: ProductsProps) {
       await ensureOnline();
       const { buyPrice: enteredBuyPrice, isService, ...formFields } = formData;
       const buyPrice = isService ? 0 : enteredBuyPrice;
+      const actor = getAuditActor(userProfile, userProfile?.uid || ownerId);
       const productData = {
         ...formFields,
         reference: formData.reference.trim(),
@@ -434,7 +436,21 @@ export default function Products({ userProfile }: ProductsProps) {
           ...productData,
           ...(isAdmin ? { buyPrice: deleteField() } : {}),
           ownerId,
-          userId: userProfile?.uid || ownerId
+          userId: userProfile?.uid || ownerId,
+          createdBy: editingProduct.createdBy || actor,
+          updatedBy: actor,
+          updatedAt: serverTimestamp(),
+        });
+        await logAudit({
+          ownerId,
+          entity: 'product',
+          entityId: editingProduct.id,
+          action: 'update',
+          actor,
+          summary: {
+            before: { name: editingProduct.name, sellPrice: editingProduct.sellPrice, stock: editingProduct.stock },
+            after: { name: formData.name, sellPrice: formData.sellPrice, stock: formData.stock },
+          },
         });
 
         // Log d'audit (optionnel — ne bloque pas l'opération)
@@ -465,7 +481,18 @@ export default function Products({ userProfile }: ProductsProps) {
             ...(stockInt > 0 ? { lastStockMovementId: movementRef.id } : {}),
             createdAt: new Date().toISOString(),
             ownerId,
-            userId: userProfile?.uid || ownerId
+            userId: userProfile?.uid || ownerId,
+            createdBy: actor,
+            updatedBy: actor,
+            updatedAt: serverTimestamp(),
+          });
+          await logAudit({
+            ownerId,
+            entity: 'product',
+            entityId: docRef.id,
+            action: 'create',
+            actor,
+            summary: { after: { name: formData.name, sellPrice: formData.sellPrice, stock: stockInt } },
           });
           if (isAdmin && !isService) transaction.set(doc(db, 'product_costs', docRef.id), { ownerId, buyPrice });
           if (stockInt > 0) transaction.set(movementRef, {
@@ -747,6 +774,15 @@ export default function Products({ userProfile }: ProductsProps) {
       }
 
       await deleteDoc(doc(db, 'products', productToDelete.id));
+      const actor = getAuditActor(userProfile, userProfile?.uid || ownerId);
+      await logAudit({
+        ownerId,
+        entity: 'product',
+        entityId: productToDelete.id,
+        action: 'delete',
+        actor,
+        summary: { before: { name: productToDelete.name, sellPrice: productToDelete.sellPrice, stock: productToDelete.stock } },
+      });
 
       // Log d'audit (optionnel — ne bloque pas l'opération)
       try {
@@ -1132,6 +1168,12 @@ export default function Products({ userProfile }: ProductsProps) {
                   <tr key={product.id} className="transition-colors hover:bg-ds-surface-2/70">
                     <td data-label="Article" className="px-6 py-4">
                       <div className="font-medium text-ds-text">{product.name}</div>
+                      {isAdmin && (product.createdBy || product.updatedBy) && (
+                        <p className="mt-0.5 text-[10px] text-ds-text-muted">
+                          {product.createdBy && <>Créé par {auditName(product.createdBy)}{auditDate(product.createdAt) && ` le ${auditDate(product.createdAt)}`}</>}
+                          {product.updatedBy && <> · Modifié par {auditName(product.updatedBy)}{auditDate(product.updatedAt) && ` le ${auditDate(product.updatedAt)}`}</>}
+                        </p>
+                      )}
                       <div className="flex flex-col gap-0.5">
                         {product.reference && (
                           <div className="text-xs font-mono text-ds-accent bg-ds-accent-soft px-1.5 py-0.5 rounded w-fit">

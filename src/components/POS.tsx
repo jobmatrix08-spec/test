@@ -4,6 +4,7 @@ import { collection, onSnapshot, addDoc, updateDoc, doc, query, orderBy, serverT
 import { db, auth } from '../firebase';
 import { apiFetch } from '../lib/api';
 import { computeTotals, normalizeFinancialSettings } from '../lib/financial';
+import { getAuditActor, logAudit } from '../lib/audit';
 import { Product, Client, SaleItem, Sale, Invoice, Category, StoreSettings, UserProfile } from '../types';
 import { formatProductDetails, normalizeAttributeValue } from '../config/productAttributes';
 import { handleFirestoreError, OperationType } from '../App';
@@ -611,6 +612,8 @@ export default function POS({ userProfile }: POSProps) {
     try {
       let generatedInvoice: Invoice | null = null;
       let committedSaleId: string | null = null;
+      let committedInvoiceId: string | null = null;
+      const actor = getAuditActor(userProfile, userProfile?.uid || auth.currentUser?.uid || ownerId);
 
       // Vérifie une VRAIE connexion serveur avant la vente. getDocFromServer force une
       // lecture réseau : hors-ligne (ou faux navigator.onLine), elle échoue → on bloque net,
@@ -700,6 +703,7 @@ export default function POS({ userProfile }: POSProps) {
           const saleRef = doc(collection(db, 'sales'));
           const invoiceRef = doc(collection(db, 'invoices'));
           committedSaleId = saleRef.id;
+          committedInvoiceId = invoiceRef.id;
           transaction.set(counterRef, { lastNum: nextNum }, { merge: true });
           addCashSessionTotals(transaction, activeCashSession, {
             sales: cartTotal,
@@ -753,7 +757,10 @@ export default function POS({ userProfile }: POSProps) {
             invoiceId: invoiceRef.id,
             sessionId: activeCashSession.id,
             ownerId,
-            userId: userProfile?.uid || ownerId
+            userId: userProfile?.uid || ownerId,
+            createdBy: actor,
+            updatedBy: actor,
+            updatedAt: serverTimestamp(),
           };
 
           const invoiceData = {
@@ -777,7 +784,10 @@ export default function POS({ userProfile }: POSProps) {
             items: cart,
             sessionId: activeCashSession.id,
             ownerId,
-            userId: userProfile?.uid || ownerId
+            userId: userProfile?.uid || ownerId,
+            createdBy: actor,
+            updatedBy: actor,
+            updatedAt: serverTimestamp(),
           };
 
           transaction.set(saleRef, saleData);
@@ -788,6 +798,26 @@ export default function POS({ userProfile }: POSProps) {
       }
 
       if (committedSaleId) {
+        if (committedInvoiceId) {
+          await Promise.all([
+            logAudit({
+              ownerId,
+              entity: 'sale',
+              entityId: committedSaleId,
+              action: 'create',
+              actor,
+              summary: { after: { total: cartTotal, client: selectedClient?.name || 'Client de passage', status: 'created' } },
+            }),
+            logAudit({
+              ownerId,
+              entity: 'invoice',
+              entityId: committedInvoiceId,
+              action: 'create',
+              actor,
+              summary: { after: { total: cartTotal, client: selectedClient?.name || 'Client de passage', status: 'created' } },
+            }),
+          ]);
+        }
         try {
           await apiFetch(`/financial/sales/${encodeURIComponent(committedSaleId)}/costs`, { method: 'POST' });
         } catch (costError) {

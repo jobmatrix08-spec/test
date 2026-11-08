@@ -11,6 +11,7 @@ import { fr } from 'date-fns/locale';
 import { cn } from '../lib/utils';
 import { addPendingOperation } from '../lib/offlineManager';
 import { computeSaleProfit } from '../lib/financial';
+import { getAuditActor, logAudit } from '../lib/audit';
 import { slugifyAppName } from '../lib/brand';
 import { useBrand } from './BrandProvider';
 import { Badge, Button, Card, EmptyState, Input, PageHeader } from './ui';
@@ -48,6 +49,7 @@ export default function Sales({ userProfile }: SalesProps) {
     const isOffline = !navigator.onLine;
     const userEmail = userProfile?.email || 'unknown';
     const userName = userProfile?.name || 'unknown';
+    const actor = getAuditActor(userProfile, userProfile?.uid || ownerId);
 
     try {
       if (isOffline) {
@@ -104,6 +106,24 @@ export default function Sales({ userProfile }: SalesProps) {
 
         // 5. Delete sale locally
         await deleteDoc(doc(db, 'sales', saleToDelete.id));
+        await Promise.all([
+          logAudit({
+            ownerId,
+            entity: 'sale',
+            entityId: saleToDelete.id,
+            action: 'delete',
+            actor,
+            summary: { before: { total: saleToDelete.total, client: saleToDelete.clientName, status: 'deleted' } },
+          }),
+          ...(saleToDelete.invoiceId ? [logAudit({
+            ownerId,
+            entity: 'invoice' as const,
+            entityId: saleToDelete.invoiceId,
+            action: 'delete' as const,
+            actor,
+            summary: { before: { total: saleToDelete.total, client: saleToDelete.clientName, status: 'deleted' } },
+          })] : []),
+        ]);
 
         // 6. Queue offline sync
         addPendingOperation('DELETE_SALE', {
@@ -180,6 +200,24 @@ export default function Sales({ userProfile }: SalesProps) {
 
         // Supprimer la vente (opération principale)
         await deleteDoc(saleRef);
+        await Promise.all([
+          logAudit({
+            ownerId,
+            entity: 'sale',
+            entityId: saleToDelete.id,
+            action: 'delete',
+            actor,
+            summary: { before: { total: saleToDelete.total, client: saleToDelete.clientName, status: 'deleted' } },
+          }),
+          ...(saleToDelete.invoiceId ? [logAudit({
+            ownerId,
+            entity: 'invoice' as const,
+            entityId: saleToDelete.invoiceId,
+            action: 'delete' as const,
+            actor,
+            summary: { before: { total: saleToDelete.total, client: saleToDelete.clientName, status: 'deleted' } },
+          })] : []),
+        ]);
 
         // Log d'audit (optionnel)
         try {
