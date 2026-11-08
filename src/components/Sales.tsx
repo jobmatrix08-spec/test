@@ -3,7 +3,6 @@ import { collection, onSnapshot, query, orderBy, limit, doc, getDoc, where, dele
 import { db, auth } from '../firebase';
 import { apiFetch } from '../lib/api';
 import { Sale, Invoice, UserProfile, Product } from '../types';
-import { formatProductDetails } from '../config/productAttributes';
 import { handleFirestoreError, OperationType } from '../App';
 import { Search, Calendar, User, ShoppingBag, Eye, X, Printer, Download, TrendingUp, Receipt, AlertCircle, CheckCircle2, Clock, Trash2, Shield, EyeOff, Package } from 'lucide-react';
 import { format } from 'date-fns';
@@ -678,10 +677,7 @@ export default function Sales({ userProfile }: SalesProps) {
                     <tbody className="divide-y divide-ds-border">
                       {selectedSale.items.map((item, idx) => (
                         <tr key={idx} className="transition-colors hover:bg-ds-surface-2">
-                          <td className="px-5 py-3 text-sm font-bold text-ds-text">
-                            {item.name}
-                            {formatProductDetails(item.attributes, item.serialNumber) && <div className="mt-1 text-[10px] font-normal text-ds-muted">{formatProductDetails(item.attributes, item.serialNumber)}</div>}
-                          </td>
+                          <td className="px-5 py-3 text-sm font-bold text-ds-text">{item.name}</td>
                           <td className="px-5 py-3 text-center">
                             <Badge variant="info" className="min-h-0 px-2 py-1">{item.quantity}</Badge>
                           </td>

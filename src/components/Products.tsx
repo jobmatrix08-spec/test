@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, query, setDoc, getDocs, where, getDocFromServer, deleteField, writeBatch, runTransaction } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { Product, Category, StoreSettings, UserProfile } from '../types';
-import { DEFAULT_PRODUCT_ATTRIBUTE_TYPES, formatProductDetails, normalizeAttributeValue, type ProductAttributeType } from '../config/productAttributes';
 import { handleFirestoreError, OperationType } from '../App';
 import { Plus, Minus, Search, Edit2, Trash2, X, AlertTriangle, Package, Tag, Barcode, Shield, Eye, EyeOff, AlertCircle, History, Loader2, ArrowDown, ArrowUp } from 'lucide-react';
 import { cn, decodeAzertyBarcode } from '../lib/utils';
@@ -10,7 +9,6 @@ import { can } from '../lib/permissions';
 import { slugifyAppName } from '../lib/brand';
 import { useBrand } from './BrandProvider';
 import { Badge, Button, Card, EmptyState, Input, PageHeader, Select } from './ui';
-import AttributeFields from './AttributeFields';
 
 interface ProductsProps {
   userProfile: UserProfile | null;
@@ -204,10 +202,7 @@ export default function Products({ userProfile }: ProductsProps) {
     isService: false,
     stock: 0,
     expirationDate: '',
-    lowStockAlert: 0,
-    attributeTypeId: 'accessory',
-    attributes: {} as Record<string, string>,
-    serialNumber: '',
+    lowStockAlert: 0
   });
 
   const [buyPriceInput, setBuyPriceInput] = useState('');
@@ -800,10 +795,7 @@ export default function Products({ userProfile }: ProductsProps) {
         isService: product.inventoryType === 'service',
         stock: product.stock,
         expirationDate: product.expirationDate || '',
-        lowStockAlert: product.lowStockAlert || 5,
-        attributeTypeId: product.attributeTypeId || 'accessory',
-        attributes: product.attributes || {},
-        serialNumber: product.serialNumber || '',
+        lowStockAlert: product.lowStockAlert || 5
       });
       setBuyPriceInput(isAdmin && product.inventoryType !== 'service' ? (productCosts[product.id] ?? product.buyPrice).toFixed(3) : '');
       setSellPriceInput(product.sellPrice.toFixed(3));
@@ -819,10 +811,7 @@ export default function Products({ userProfile }: ProductsProps) {
         isService: false,
         stock: 0,
         expirationDate: '',
-        lowStockAlert: 0,
-        attributeTypeId: 'accessory',
-        attributes: {},
-        serialNumber: '',
+        lowStockAlert: 0
       });
       setBuyPriceInput('');
       setSellPriceInput('');
@@ -989,17 +978,11 @@ export default function Products({ userProfile }: ProductsProps) {
   }, [categories, products]);
 
   const filteredProducts = products.filter(p => {
-    const queryText = normalizeAttributeValue(searchTerm);
-    const attributeSearch = Object.entries(p.attributes || {}).some(([key, value]) =>
-      normalizeAttributeValue(`${key} ${value}`).includes(queryText)
-    );
     const matchesSearch =
-      normalizeAttributeValue(p.name).includes(queryText) ||
-      normalizeAttributeValue(p.category).includes(queryText) ||
-      normalizeAttributeValue(p.reference || '').includes(queryText) ||
-      normalizeAttributeValue(p.barcode || '').includes(queryText) ||
-      normalizeAttributeValue(p.serialNumber || '').includes(queryText) ||
-      attributeSearch;
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.reference && p.reference.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (p.barcode && p.barcode.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCategory =
       selectedCategory === 'all' || normalizeCat(p.category) === normalizeCat(selectedCategory);
     return matchesSearch && matchesCategory;
@@ -1145,9 +1128,6 @@ export default function Products({ userProfile }: ProductsProps) {
                         )}
                         {product.expirationDate && (
                           <div className="text-xs text-ds-text-muted">Exp: {product.expirationDate}</div>
-                        )}
-                        {formatProductDetails(product.attributes, product.serialNumber) && (
-                          <div className="mt-1 line-clamp-2 text-xs text-ds-text-muted">{formatProductDetails(product.attributes, product.serialNumber)}</div>
                         )}
                       </div>
                     </td>
@@ -1379,30 +1359,6 @@ export default function Products({ userProfile }: ProductsProps) {
                       </button>
                     </div>
                   </div>
-
-                  <AttributeFields
-                    productTypes={storeSettings?.productAttributeTypes || DEFAULT_PRODUCT_ATTRIBUTE_TYPES}
-                    selectedTypeId={formData.attributeTypeId}
-                    attributes={formData.attributes}
-                    serialNumber={formData.serialNumber}
-                    products={products}
-                    canEdit={canAddEdit}
-                    onTypeChange={attributeTypeId => setFormData(current => ({ ...current, attributeTypeId }))}
-                    onAttributesChange={attributes => setFormData(current => ({ ...current, attributes }))}
-                    onSerialNumberChange={serialNumber => setFormData(current => ({ ...current, serialNumber }))}
-                    onProductTypesChange={(productTypes: ProductAttributeType[]) => {
-                      if (!ownerId) {
-                        setErrorMsg('Impossible d’enregistrer les modèles sans identifiant de boutique.');
-                        return;
-                      }
-                      setStoreSettings(current => current ? { ...current, productAttributeTypes: productTypes } : current);
-                      void setDoc(doc(db, 'settings', ownerId), { productAttributeTypes: productTypes }, { merge: true })
-                        .catch(error => {
-                          console.error('Unable to save product attribute types:', error);
-                          setErrorMsg('Impossible d’enregistrer les modèles de caractéristiques.');
-                        });
-                    }}
-                  />
 
                   {!formData.isService && <div>
                     <label htmlFor="product-stock" className="mb-1 block text-sm font-medium text-ds-text">Stock Initial</label>
