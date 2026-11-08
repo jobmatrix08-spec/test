@@ -17,11 +17,15 @@ export interface Product {
   stock: number;
   expirationDate?: string;
   lowStockAlert?: number;
+  attributeTypeId?: string;
+  attributes?: Record<string, string>;
+  serialNumber?: string;
   ownerId?: string;
   createdAt?: string;
 }
 
 import type { MessageTemplateKey } from './lib/messages';
+import type { ProductAttributeType } from './config/productAttributes';
 
 export interface Client {
   id: string;
@@ -39,6 +43,8 @@ export interface SaleItem {
   quantity: number;
   price: number;
   total: number;
+  attributes?: Record<string, string>;
+  serialNumber?: string;
 }
 
 export interface Sale {
@@ -189,6 +195,7 @@ export interface StoreSettings {
   deleteCode?: string;
   minStockAlert?: number;
   defaultWarrantyDays?: number; // utilisé par Repairs.tsx — à vérifier
+  productAttributeTypes?: ProductAttributeType[];
 }
 
 export interface Note {

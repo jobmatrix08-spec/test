@@ -6,6 +6,7 @@ import { db, auth } from '../firebase';
 import { apiFetch } from '../lib/api';
 import { computeTotals, normalizeFinancialSettings } from '../lib/financial';
 import { Invoice, Product, Client, SaleItem, StoreSettings, UserProfile } from '../types';
+import { formatProductDetails } from '../config/productAttributes';
 import { handleFirestoreError, OperationType } from '../App';
 import { Search, FileText, Eye, X, Printer, Download, User, Calendar, ShoppingBag, Plus, Trash2, Minus, AlertCircle, CheckCircle2, Paperclip, Wallet, Ban } from 'lucide-react';
 import { format } from 'date-fns';
@@ -338,7 +339,9 @@ export default function Invoices({ userProfile }: InvoicesProps) {
         name: product.name,
         quantity: 1,
         price: product.sellPrice,
-        total: product.sellPrice
+        total: product.sellPrice,
+        attributes: product.attributes,
+        serialNumber: product.serialNumber,
       }];
     });
   };
@@ -990,6 +993,10 @@ export default function Invoices({ userProfile }: InvoicesProps) {
         },
         body: JSON.stringify({
           ...invoice,
+          items: invoice.items.map(item => ({
+            ...item,
+            details: formatProductDetails(item.attributes, item.serialNumber),
+          })),
           storeName: storeSettings?.storeName || brand.storeName,
           address: storeSettings?.address,
           phone: storeSettings?.phone,
@@ -1635,7 +1642,10 @@ export default function Invoices({ userProfile }: InvoicesProps) {
                     <tbody className="divide-y divide-ds-border">
                       {selectedInvoice.items.map((item, idx) => (
                         <tr key={idx} className="text-xs sm:text-sm">
-                          <td className="px-4 py-2.5 font-bold text-ds-text sm:px-6 sm:py-3">{item.name}</td>
+                          <td className="px-4 py-2.5 font-bold text-ds-text sm:px-6 sm:py-3">
+                            {item.name}
+                            {formatProductDetails(item.attributes, item.serialNumber) && <div className="mt-1 text-[10px] font-normal text-ds-muted">{formatProductDetails(item.attributes, item.serialNumber)}</div>}
+                          </td>
                           <td className="px-4 py-2.5 sm:px-6 sm:py-3 text-center font-mono">{item.quantity}</td>
                           <td className="px-4 py-2.5 sm:px-6 sm:py-3 text-right font-mono">{item.price.toFixed(3)}</td>
                           <td className="px-4 py-2.5 text-right font-mono font-black text-ds-brand sm:px-6 sm:py-3">{item.total.toFixed(3)} {storeSettings?.currency || 'DT'}</td>

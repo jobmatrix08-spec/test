@@ -5,6 +5,7 @@ import { db, auth } from '../firebase';
 import { apiFetch } from '../lib/api';
 import { computeTotals, normalizeFinancialSettings } from '../lib/financial';
 import { Product, Client, SaleItem, Sale, Invoice, Category, StoreSettings, UserProfile } from '../types';
+import { formatProductDetails, normalizeAttributeValue } from '../config/productAttributes';
 import { handleFirestoreError, OperationType } from '../App';
 import { Search, ShoppingCart, Trash2, Plus, Minus, User, CreditCard, CheckCircle, AlertCircle, Printer, X, FileText, Barcode, Filter, Tag, Coins, Percent, TrendingUp, Flame, Package } from 'lucide-react';
 import { cn, decodeAzertyBarcode } from '../lib/utils';
@@ -289,16 +290,19 @@ export default function POS({ userProfile }: POSProps) {
 
   const filteredProducts = useMemo(() => 
     products.filter(p => {
-      const searchLower = searchTerm.toLowerCase();
-      const decodedSearch = decodeAzertyBarcode(searchTerm).toLowerCase();
+      const searchLower = normalizeAttributeValue(searchTerm);
+      const decodedSearch = normalizeAttributeValue(decodeAzertyBarcode(searchTerm));
       
-      const matchesName = p.name.toLowerCase().includes(searchLower);
+      const matchesName = normalizeAttributeValue(p.name).includes(searchLower);
       const matchesBarcode = p.barcode ? (
-        p.barcode.toLowerCase().includes(searchLower) || 
-        (decodedSearch && p.barcode.toLowerCase().includes(decodedSearch))
+        normalizeAttributeValue(p.barcode).includes(searchLower) ||
+        (decodedSearch && normalizeAttributeValue(p.barcode).includes(decodedSearch))
       ) : false;
+      const matchesProductDetails = normalizeAttributeValue(
+        `${p.serialNumber || ''} ${Object.entries(p.attributes || {}).map(([key, value]) => `${key} ${value}`).join(' ')}`
+      ).includes(searchLower);
       
-      return (matchesName || matchesBarcode) && 
+      return (matchesName || matchesBarcode || matchesProductDetails) &&
              (selectedCategory === 'all' || p.category === selectedCategory) &&
              (p.inventoryType === 'service' || p.stock > 0);
     }).sort((a, b) => {
@@ -361,7 +365,9 @@ export default function POS({ userProfile }: POSProps) {
         name: product.name,
         quantity: 1,
         price: product.sellPrice,
-        total: product.sellPrice
+        total: product.sellPrice,
+        attributes: product.attributes,
+        serialNumber: product.serialNumber,
       }, ...prev];
     });
     setSelectedCartItemId(product.id);
@@ -1030,9 +1036,14 @@ export default function POS({ userProfile }: POSProps) {
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-ds-brand-soft text-ds-brand sm:h-11 sm:w-11" aria-hidden="true">
                   <Package className="h-5 w-5" />
                 </span>
-                <h3 className="w-full overflow-hidden break-words text-ellipsis text-sm font-bold leading-snug text-ds-text line-clamp-2 sm:text-base">
-                  {product.name}
-                </h3>
+                <div className="min-w-0 flex-1">
+                  <h3 className="w-full overflow-hidden break-words text-ellipsis text-sm font-bold leading-snug text-ds-text line-clamp-2 sm:text-base">
+                    {product.name}
+                  </h3>
+                  {formatProductDetails(product.attributes, product.serialNumber) && (
+                    <p className="mt-1 line-clamp-1 text-[10px] text-ds-text-muted">{formatProductDetails(product.attributes, product.serialNumber)}</p>
+                  )}
+                </div>
               </div>
 
               <div className="mt-auto flex w-full items-center justify-between gap-2 px-2 pb-2">
@@ -1153,6 +1164,9 @@ export default function POS({ userProfile }: POSProps) {
                           <p className="break-words text-xs font-bold leading-snug text-ds-text line-clamp-2 sm:text-[13px]" title={item.name}>
                             {item.name}
                           </p>
+                          {formatProductDetails(item.attributes, item.serialNumber) && (
+                            <p className="mt-1 text-[10px] leading-snug text-ds-text-muted">{formatProductDetails(item.attributes, item.serialNumber)}</p>
+                          )}
                           {canViewMargin && (products.find(product => product.id === item.productId)?.buyPrice || 0) > item.price && (
                             <Badge className="mt-1" variant="danger">Vendu à perte</Badge>
                           )}

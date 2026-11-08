@@ -4,6 +4,7 @@ import { Invoice, StoreSettings } from '../types';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { getInvoiceTotals } from '../lib/financial';
+import { formatProductDetails } from '../config/productAttributes';
 import { useBrand } from './BrandProvider';
 
 interface Props {
@@ -70,6 +71,9 @@ export const PrintableTicket = forwardRef<HTMLDivElement, Props>(({ invoice, own
               <span className="max-w-[40mm] overflow-hidden text-ellipsis whitespace-nowrap">{item.name}</span>
               <span>{item.quantity} x {item.price.toFixed(3)}</span>
             </div>
+            {formatProductDetails(item.attributes, item.serialNumber) && (
+              <div className="text-[10px] leading-tight">{formatProductDetails(item.attributes, item.serialNumber)}</div>
+            )}
             <div className="text-right">{item.total.toFixed(3)} {currency}</div>
           </div>
         ))}
