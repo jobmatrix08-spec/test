@@ -43,6 +43,7 @@ function getSettingsTabFromHash(hash: string): SettingsTab | null {
 // ── Carte "Mon code de sécurité" : chaque utilisateur peut changer son propre code à 4 chiffres.
 // Vérification obligatoire avant le changement : mot de passe du compte OU code reçu par email.
 function SecurityCodeCard({ userProfile }: { userProfile: UserProfile | null }) {
+  const { t } = useTranslation('settings');
   const [newCode, setNewCode] = useState('');
   const [confirmCode, setConfirmCode] = useState('');
   const [password, setPassword] = useState('');
@@ -55,11 +56,11 @@ function SecurityCodeCard({ userProfile }: { userProfile: UserProfile | null }) 
   const validateCodes = (): boolean => {
     setError('');
     if (!/^\d{4}$/.test(newCode)) {
-      setError('Le nouveau code doit contenir exactement 4 chiffres.');
+      setError(t('securityCode.invalid'));
       return false;
     }
     if (newCode !== confirmCode) {
-      setError('La confirmation ne correspond pas au nouveau code.');
+      setError(t('securityCode.mismatch'));
       return false;
     }
     return true;
@@ -69,7 +70,7 @@ function SecurityCodeCard({ userProfile }: { userProfile: UserProfile | null }) 
     if (!validateCodes()) return;
     if (!userProfile?.uid) return;
     if (!password) {
-      setError('Veuillez saisir votre mot de passe.');
+      setError(t('securityCode.passwordRequired'));
       return;
     }
     setSaving(true);
@@ -77,31 +78,31 @@ function SecurityCodeCard({ userProfile }: { userProfile: UserProfile | null }) 
     try {
       const currentUser = auth.currentUser;
       if (!currentUser || !currentUser.email) {
-        throw new Error('Session invalide. Veuillez vous reconnecter.');
+        throw new Error(t('securityCode.invalidSession'));
       }
       try {
         const credential = EmailAuthProvider.credential(currentUser.email, password);
         await reauthenticateWithCredential(currentUser, credential);
       } catch (authErr: any) {
         if (authErr?.code === 'auth/wrong-password' || authErr?.code === 'auth/invalid-credential' || authErr?.code === 'auth/invalid-login-credentials') {
-          throw new Error('Mot de passe incorrect.');
+          throw new Error(t('securityCode.wrongPassword'));
         }
         if (authErr?.code === 'auth/too-many-requests') {
-          throw new Error('Trop de tentatives. Veuillez réessayer plus tard.');
+          throw new Error(t('securityCode.tooManyAttempts'));
         }
-        throw new Error('Vérification du mot de passe impossible. Veuillez vous reconnecter et réessayer.');
+        throw new Error(t('securityCode.verificationFailed'));
       }
 
       // Vérification réussie : mise à jour du code de sécurité (autorisé par les règles Firestore : auto-modification)
       await updateDoc(doc(db, 'users', userProfile.uid), { securityCode: newCode });
 
-      setSuccessMsg('Votre code de sécurité a été modifié avec succès !');
+      setSuccessMsg(t('securityCode.changed'));
       setNewCode('');
       setConfirmCode('');
       setPassword('');
       setTimeout(() => setSuccessMsg(''), 5000);
     } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue lors du changement de code.');
+      setError(err.message || t('securityCode.changeFailed'));
     } finally {
       setSaving(false);
     }
@@ -116,15 +117,15 @@ function SecurityCodeCard({ userProfile }: { userProfile: UserProfile | null }) 
           <KeyRound className="w-5 h-5" />
         </div>
         <div>
-          <h2 className="text-sm font-bold text-ds-text">Mon Code de Sécurité</h2>
-          <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">Code à 4 chiffres pour les actions protégées</p>
+          <h2 className="text-sm font-bold text-ds-text">{t('securityCode.title')}</h2>
+          <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">{t('securityCode.description')}</p>
         </div>
       </div>
 
       <div className="p-6 space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
-              label="Nouveau code (4 chiffres)"
+              label={t('securityCode.newCode')}
               type="password"
               inputMode="numeric"
               autoComplete="off"
@@ -135,7 +136,7 @@ function SecurityCodeCard({ userProfile }: { userProfile: UserProfile | null }) 
               placeholder="••••"
             />
           <Input
-              label="Confirmer le nouveau code"
+              label={t('securityCode.confirmCode')}
               type="password"
               inputMode="numeric"
               autoComplete="off"
@@ -149,14 +150,14 @@ function SecurityCodeCard({ userProfile }: { userProfile: UserProfile | null }) 
 
         <div className="space-y-1.5">
           <Input
-            label="Votre mot de passe"
+            label={t('securityCode.accountPassword')}
             type="password"
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Mot de passe de votre compte"
+            placeholder={t('securityCode.passwordPlaceholder')}
           />
-          <p className="text-sm font-medium text-ds-muted">Votre mot de passe est requis pour confirmer le changement de code.</p>
+          <p className="text-sm font-medium text-ds-muted">{t('securityCode.passwordHelp')}</p>
         </div>
 
         {error && (
@@ -177,7 +178,7 @@ function SecurityCodeCard({ userProfile }: { userProfile: UserProfile | null }) 
           className="w-full"
         >
           <ShieldCheck className="w-4 h-4" />
-          {saving ? 'Vérification...' : 'Changer mon code'}
+          {saving ? t('securityCode.verifying') : t('securityCode.change')}
         </Button>
       </div>
     </Card>
@@ -190,17 +191,18 @@ function InstallAppCard({
   isIOS,
   isStandalone,
 }: Pick<SettingsProps, 'deferredPrompt' | 'handleInstallApp' | 'isIOS' | 'isStandalone'>) {
+  const { t } = useTranslation('settings');
   if (isStandalone || (!deferredPrompt && !isIOS)) return null;
   return (
     <Card>
-      <h2 className="text-sm font-bold text-ds-text">Installer l'application</h2>
+      <h2 className="text-sm font-bold text-ds-text">{t('install.title')}</h2>
       {deferredPrompt ? (
         <Button type="button" onClick={handleInstallApp} className="mt-3">
-          Installer l'application
+          {t('install.action')}
         </Button>
       ) : (
         <p className="mt-2 text-sm leading-relaxed text-ds-muted">
-          Sur iPhone ou iPad : appuyez sur Partager, puis sur Sur l’écran d’accueil.
+          {t('install.iosHelp')}
         </p>
       )}
     </Card>
@@ -208,6 +210,7 @@ function InstallAppCard({
 }
 
 function AccountPasswordCard() {
+  const { t } = useTranslation('settings');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
@@ -219,40 +222,40 @@ function AccountPasswordCard() {
     /\d/.test(newPassword),
     /[^A-Za-z0-9]/.test(newPassword),
   ].filter(Boolean).length;
-  const strengthLabel = ['Très faible', 'Faible', 'Moyen', 'Bon', 'Fort'][strength];
+  const strengthLabel = t(`password.strength.${strength}`);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setMessage(null);
     if (newPassword.length < 8) {
-      setMessage({ text: 'Le nouveau mot de passe doit contenir au moins 8 caractères.', success: false });
+      setMessage({ text: t('password.errors.tooShort'), success: false });
       return;
     }
     if (newPassword !== confirmation) {
-      setMessage({ text: 'La confirmation ne correspond pas au nouveau mot de passe.', success: false });
+      setMessage({ text: t('password.errors.mismatch'), success: false });
       return;
     }
 
     setSaving(true);
     try {
       const currentUser = auth.currentUser;
-      if (!currentUser?.email) throw new Error('Session invalide. Veuillez vous reconnecter.');
+      if (!currentUser?.email) throw new Error(t('password.errors.invalidSession'));
       const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
       await reauthenticateWithCredential(currentUser, credential);
       await updatePassword(currentUser, newPassword);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmation('');
-      setMessage({ text: 'Votre mot de passe a été modifié.', success: true });
+      setMessage({ text: t('password.changed'), success: true });
     } catch (error) {
       const code = typeof error === 'object' && error !== null && 'code' in error ? error.code : '';
       const text = code === 'auth/wrong-password' || code === 'auth/invalid-credential'
-        ? 'Le mot de passe actuel est incorrect.'
+        ? t('password.errors.wrongPassword')
         : code === 'auth/weak-password'
-          ? 'Choisissez un mot de passe plus robuste.'
+          ? t('password.errors.weakPassword')
           : error instanceof Error
             ? error.message
-            : 'Impossible de modifier le mot de passe.';
+            : t('password.errors.changeFailed');
       setMessage({ text, success: false });
     } finally {
       setSaving(false);
@@ -264,23 +267,23 @@ function AccountPasswordCard() {
       <div className="flex items-center gap-3 border-b border-ds-border bg-ds-surface-2 p-6">
         <div className="rounded-ds-md bg-ds-brand-soft p-2 text-ds-brand"><Lock className="w-5 h-5" /></div>
         <div>
-          <h2 className="text-sm font-bold text-ds-text">Mon compte</h2>
-          <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">Changer mon mot de passe</p>
+          <h2 className="text-sm font-bold text-ds-text">{t('password.account')}</h2>
+          <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">{t('password.title')}</p>
         </div>
       </div>
       <form onSubmit={handleSubmit} className="p-6 space-y-4">
-        <Input label="Mot de passe actuel" type="password" autoComplete="current-password" required value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} />
-        <Input label="Nouveau mot de passe" type="password" autoComplete="new-password" required minLength={8} value={newPassword} onChange={event => setNewPassword(event.target.value)} />
+        <Input label={t('password.current')} type="password" autoComplete="current-password" required value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} />
+        <Input label={t('password.new')} type="password" autoComplete="new-password" required minLength={8} value={newPassword} onChange={event => setNewPassword(event.target.value)} />
         <div aria-live="polite" className="space-y-1">
           <div className="flex gap-1" aria-hidden="true">
             {[1, 2, 3, 4].map(level => <span key={level} className={`h-1.5 flex-1 rounded-full ${strength >= level ? (strength <= 1 ? 'bg-ds-danger' : strength === 2 ? 'bg-ds-warning' : 'bg-ds-success') : 'bg-ds-surface-2'}`} />)}
           </div>
-          <p className="text-sm text-ds-muted">Force : {newPassword ? strengthLabel : '—'} · 8 caractères minimum</p>
+          <p className="text-sm text-ds-muted">{t('password.strengthLabel', { strength: newPassword ? strengthLabel : '—' })}</p>
         </div>
-        <Input label="Confirmer le nouveau mot de passe" type="password" autoComplete="new-password" required minLength={8} value={confirmation} onChange={event => setConfirmation(event.target.value)} />
+        <Input label={t('password.confirm')} type="password" autoComplete="new-password" required minLength={8} value={confirmation} onChange={event => setConfirmation(event.target.value)} />
         {message && <Badge variant={message.success ? 'success' : 'danger'} role={message.success ? 'status' : 'alert'} className="min-h-0 rounded-ds-md">{message.text}</Badge>}
         <Button type="submit" disabled={saving || !currentPassword || newPassword.length < 8 || newPassword !== confirmation}>
-          {saving ? 'Modification…' : 'Changer mon mot de passe'}
+          {saving ? t('password.saving') : t('password.change')}
         </Button>
       </form>
     </Card>
@@ -990,11 +993,11 @@ function SettingsContent({
   };
 
   const settingsTabs: { id: SettingsTab; label: string }[] = [
-    ...(canAccessStoreSettings ? [{ id: 'boutique' as const, label: 'Boutique' }] : []),
-    { id: 'coran-adhkar', label: 'Coran & Adhkar' },
-    { id: 'compte-securite', label: 'Compte & sécurité' },
-    ...(isAdmin ? [{ id: 'donnees' as const, label: 'Données' }] : []),
-    { id: 'application', label: 'Application' },
+    ...(canAccessStoreSettings ? [{ id: 'boutique' as const, label: t('tabs.store') }] : []),
+    { id: 'coran-adhkar', label: t('tabs.startup') },
+    { id: 'compte-securite', label: t('tabs.account') },
+    ...(isAdmin ? [{ id: 'donnees' as const, label: t('tabs.data') }] : []),
+    { id: 'application', label: t('tabs.application') },
   ];
 
   const selectSettingsTab = (tab: SettingsTab) => {
@@ -1005,10 +1008,10 @@ function SettingsContent({
   return (
     <div className="mx-auto w-full min-w-0 max-w-4xl space-y-6">
       <PageHeader
-        title={canAccessStoreSettings ? 'Paramètres du Magasin' : 'Paramètres'}
+        title={canAccessStoreSettings ? t('page.storeTitle') : t('page.title')}
         description={canAccessStoreSettings
-          ? "Configurez les informations d'en-tête, la devise, les coordonnées de contact et la gestion de la TVA."
-          : 'Gérez votre compte et les paramètres de l’application.'}
+          ? t('page.storeDescription')
+          : t('page.description')}
       />
 
       {(firestoreError || brand.error) && (
@@ -1023,7 +1026,7 @@ function SettingsContent({
         </Card>
       ) : (
         <div className="min-w-0 space-y-6">
-          <div className="sticky top-16 z-20 -mx-3 min-w-0 max-w-full bg-ds-bg px-3 py-2 sm:-mx-4 sm:px-4" role="tablist" aria-label="Sections des paramètres">
+          <div className="sticky top-16 z-20 -mx-3 min-w-0 max-w-full bg-ds-bg px-3 py-2 sm:-mx-4 sm:px-4" role="tablist" aria-label={t('page.sections')}>
             <div className="flex min-w-0 max-w-full gap-2 overflow-x-auto rounded-ds-lg border border-ds-border bg-ds-surface p-1">
               {settingsTabs.map(({ id, label }) => (
                 <Button
@@ -1063,17 +1066,17 @@ function SettingsContent({
           >
             <Card className="mb-6 grid min-w-0 gap-4 p-5 sm:grid-cols-2 sm:items-end">
               <div className="min-w-0">
-                <h2 className="text-sm font-bold text-ds-text">Apparence</h2>
-                <p className="mt-1 text-sm text-ds-muted">Choisissez le thème clair, sombre ou celui de votre appareil.</p>
+                <h2 className="text-sm font-bold text-ds-text">{t('appearance.title')}</h2>
+                <p className="mt-1 text-sm text-ds-muted">{t('appearance.description')}</p>
               </div>
               <Select
-                label="Thème de l’application"
+                label={t('appearance.theme')}
                 value={theme}
                 onChange={(event) => setTheme(event.target.value as ThemePreference)}
               >
-                <option value="light">Clair</option>
-                <option value="dark">Sombre</option>
-                <option value="system">Système</option>
+                <option value="light">{t('appearance.light')}</option>
+                <option value="dark">{t('appearance.dark')}</option>
+                <option value="system">{t('appearance.system')}</option>
               </Select>
             </Card>
             <InstallAppCard deferredPrompt={deferredPrompt} handleInstallApp={handleInstallApp} isIOS={isIOS} isStandalone={isStandalone} />
@@ -1094,8 +1097,8 @@ function SettingsContent({
                 <Store className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-ds-text">Informations Générales</h2>
-                <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">Coordonnées de l'activité imprimées sur les reçus</p>
+                <h2 className="text-sm font-bold text-ds-text">{t('store.title')}</h2>
+                <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">{t('store.description')}</p>
               </div>
             </div>
 
@@ -1103,24 +1106,24 @@ function SettingsContent({
               <form onSubmit={handleStoreSubmit} className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
-                      label="Nom du Boutique / Magasin"
+                      label={t('store.name')}
                       type="text"
                       required
                       value={storeFormData.storeName}
                       onChange={(e) => setStoreFormData({ ...storeFormData, storeName: e.target.value })}
-                      placeholder="Nom de la boutique"
+                      placeholder={t('store.namePlaceholder')}
                     />
 
                   <Input
-                      label="Slogan de la boutique"
+                      label={t('store.tagline')}
                       type="text"
                       value={storeFormData.storeTagline}
                       onChange={(e) => setStoreFormData({ ...storeFormData, storeTagline: e.target.value })}
-                      placeholder="Slogan facultatif"
+                      placeholder={t('store.taglinePlaceholder')}
                     />
 
                   <Input
-                      label="URL du logo"
+                      label={t('store.logoUrl')}
                       type="url"
                       value={storeFormData.logo}
                       onChange={(e) => setStoreFormData({ ...storeFormData, logo: e.target.value })}
@@ -1128,7 +1131,7 @@ function SettingsContent({
                     />
 
                   <Input
-                      label="Devise du Magasin"
+                      label={t('store.currency')}
                       type="text"
                       required
                       value={storeFormData.currency}
@@ -1137,7 +1140,7 @@ function SettingsContent({
                     />
 
                   <Input
-                      label="Adresse"
+                      label={t('store.address')}
                       type="text"
                       value={storeFormData.address}
                       onChange={(e) => setStoreFormData({ ...storeFormData, address: e.target.value })}
@@ -1145,7 +1148,7 @@ function SettingsContent({
                     />
 
                   <Input
-                      label="Téléphone du Magasin"
+                      label={t('store.phone')}
                       type="text"
                       value={storeFormData.phone}
                       onChange={(e) => setStoreFormData({ ...storeFormData, phone: e.target.value })}
@@ -1156,7 +1159,7 @@ function SettingsContent({
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-ds-muted">+</span>
                         <Input
-                          label="Indicatif téléphonique par défaut"
+                          label={t('store.countryCode')}
                           type="text"
                           inputMode="numeric"
                           required
@@ -1165,7 +1168,7 @@ function SettingsContent({
                           placeholder="216"
                         />
                       </div>
-                      <p className="text-sm text-ds-muted">Par défaut : Tunisie (+216). Un numéro déjà international est conservé.</p>
+                      <p className="text-sm text-ds-muted">{t('store.countryCodeHelp')}</p>
                     </div>
                   )}
                 </div>
@@ -1240,7 +1243,7 @@ function SettingsContent({
                 </label>
 
                 <Input
-                    label="Taux de TVA (%)"
+                    label={t('store.vatRate')}
                     type="number" 
                     disabled={!storeFormData.tvaEnabled}
                     value={storeFormData.tva}
@@ -1253,16 +1256,16 @@ function SettingsContent({
                     <AlertTriangle className="w-4 h-4 shrink-0 text-ds-warning" />
                     <div>
                       <label className="block text-sm font-bold text-ds-text">
-                        Seuil d'Alerte de Stock Minimum Global
+                        {t('store.minimumStockAlert')}
                       </label>
                       <span className="mt-0.5 block text-sm font-medium leading-tight text-ds-muted">
-                        Déclenche une notification et une bannière visuelle dans le tableau de bord lorsqu'un produit atteint ou passe sous ce seuil.
+                        {t('store.minimumStockAlertHelp')}
                       </span>
                     </div>
                   </div>
                   <div className="flex min-w-0 items-center gap-3 pt-1">
                     <Input
-                      aria-label="Seuil d'alerte de stock minimum"
+                      aria-label={t('store.minimumStockAlert')}
                       type="number"
                       min="0"
                       max="1000"
@@ -1271,7 +1274,7 @@ function SettingsContent({
                       className="max-w-28 font-mono font-black"
                       placeholder="Ex: 5"
                     />
-                    <span className="text-sm font-bold text-ds-muted">unités en stock</span>
+                    <span className="text-sm font-bold text-ds-muted">{t('store.stockUnits')}</span>
                   </div>
                 </div>
 
@@ -1281,7 +1284,7 @@ function SettingsContent({
                     className="w-full"
                   >
                     <Save className="w-4 h-4" />
-                    Enregistrer les modifications
+                    {t('store.save')}
                   </Button>
                 </div>
               </form>

@@ -15,7 +15,7 @@
 3. Mention du vendeur + permissions manquantes — terminée
 4. Fondation i18n (Français / Arabe tunisien) + RTL — terminée
 5. i18n — POS, Products, Sales, Invoices, Clients — terminée
-6. i18n — Repairs, Expenses, Reports, Settings, Users — à faire
+6. i18n — Repairs, Expenses, Reports, Settings, Users — en cours
 7. i18n — Dashboard, notifications, audit final — à faire
 
 ## Vérification de la marche 1
@@ -61,3 +61,12 @@
 - `npm run lint`, `npm run build` et `npm test` réussis (39 tests). Le build signale toujours un bundle supérieur à 500 kB. Les namespaces touchés ont des clés fr/ar correspondantes.
 - Interface, RTL et impression non vérifiés visuellement aux largeurs 360/768/1280 px.
 - Limite : `server.ts` génère encore les PDF de factures avec des libellés français fixes et ne lit pas `documentLanguage`. La préférence est transmise par le client, mais le rendu PDF du serveur ne peut pas être traduit sans modifier le fichier interdit.
+
+## Travail en cours — marche 6
+
+- Expenses et Reports traduits, avec libellés de catégories/modes de paiement et statuts de réparation localisés sans modifier les valeurs stockées.
+- Traduction ajoutée pour les statuts, vues principales, formulaire, détail et ticket imprimable de réparation ; le ticket respecte la langue des documents.
+- Settings et Users partiellement traduits : ressources créées pour les paramètres boutique/apparence/compte et les contrôles utilisateurs, rôles et menus.
+- **Reste à faire avant de clôturer la marche :** traduire les textes encore codés en français dans les vues de maintenance/données et démarrage de Settings, les erreurs/toasts de Repairs et Users, les modales secondaires et les libellés restants ; vérifier les classes RTL/logiques dans ces écrans.
+- `npm run lint`, `npm run build` et `npm test` réussis (39 tests) ; les namespaces réparations, dépenses, rapports, paramètres et utilisateurs ont des clés fr/ar correspondantes.
+- Affichage et RTL non vérifiés visuellement aux largeurs 360/768/1280 px. La marche reste en cours et n'est pas commitée.

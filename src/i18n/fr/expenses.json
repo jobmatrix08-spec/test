@@ -1,1 +1,53 @@
-{}
+{
+  "title": "Dépenses",
+  "description": "Chaque montant retiré de la caisse : achats de pièces, charges, dépenses journalières",
+  "allExpensesTotal": "Total des dépenses (tout)",
+  "monthExpensesTotal": "Total des dépenses du mois",
+  "operation_one": "{{count}} opération",
+  "operation_other": "{{count}} opérations",
+  "newExpense": "Nouvelle dépense",
+  "close": "Fermer",
+  "cashChecking": "Vérification de la caisse…",
+  "cashRequired": "Une caisse ouverte est nécessaire pour enregistrer une dépense.",
+  "openCash": "Ouvrir la caisse",
+  "linkedToCash": "La dépense sera liée à la caisse actuellement ouverte.",
+  "label": "Libellé",
+  "date": "Date",
+  "category": "Catégorie",
+  "amount": "Montant (DT)",
+  "paymentMode": "Mode de paiement",
+  "saving": "Enregistrement…",
+  "saveExpense": "Enregistrer la dépense",
+  "search": "Rechercher une dépense…",
+  "all": "Tout",
+  "monthAria": "Mois des dépenses",
+  "loading": "Chargement des dépenses…",
+  "empty": "Aucune dépense",
+  "descriptionDate": "Date",
+  "descriptionLabel": "Libellé",
+  "descriptionCategory": "Catégorie",
+  "descriptionMode": "Mode",
+  "amountColumn": "Montant (DT)",
+  "accessDenied": "Accès réservé à l’administrateur.",
+  "categories": {
+    "rent": "Loyer",
+    "transport": "Transport",
+    "salaries": "Salaires",
+    "maintenance": "Entretien",
+    "phoneInternet": "Téléphone / Internet",
+    "other": "Autre"
+  },
+  "paymentModes": {
+    "cash": "Espèces",
+    "card": "Carte",
+    "transfer": "Virement",
+    "other": "Autre"
+  },
+  "errors": {
+    "adminOnly": "Seul un administrateur peut gérer les dépenses.",
+    "invalidExpense": "Indiquez un libellé et un montant supérieur à zéro.",
+    "saveFailed": "Impossible d'enregistrer la dépense : {{message}}",
+    "unknown": "Erreur inconnue."
+  },
+  "saved": "Dépense enregistrée."
+}

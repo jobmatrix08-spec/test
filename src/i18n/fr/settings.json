@@ -8,6 +8,98 @@
   "sellerInitial": "Initiale",
   "sellerShortName": "Nom court",
   "sellerServedBy": "Servi par : {{name}}",
+  "tabs": {
+    "store": "Boutique",
+    "startup": "Coran & Adhkar",
+    "account": "Compte & sécurité",
+    "data": "Données",
+    "application": "Application"
+  },
+  "page": {
+    "title": "Paramètres",
+    "storeTitle": "Paramètres du magasin",
+    "description": "Gérez votre compte et les paramètres de l’application.",
+    "storeDescription": "Configurez les informations d'en-tête, la devise, les coordonnées de contact et la gestion de la TVA.",
+    "sections": "Sections des paramètres"
+  },
+  "appearance": {
+    "title": "Apparence",
+    "description": "Choisissez le thème clair, sombre ou celui de votre appareil.",
+    "theme": "Thème de l’application",
+    "light": "Clair",
+    "dark": "Sombre",
+    "system": "Système"
+  },
+  "store": {
+    "title": "Informations générales",
+    "description": "Coordonnées de l'activité imprimées sur les reçus",
+    "name": "Nom de la boutique / magasin",
+    "namePlaceholder": "Nom de la boutique",
+    "tagline": "Slogan de la boutique",
+    "taglinePlaceholder": "Slogan facultatif",
+    "logoUrl": "URL du logo",
+    "currency": "Devise du magasin",
+    "address": "Adresse",
+    "phone": "Téléphone du magasin",
+    "countryCode": "Indicatif téléphonique par défaut",
+    "countryCodeHelp": "Par défaut : Tunisie (+216). Un numéro déjà international est conservé.",
+    "vatRate": "Taux de TVA (%)",
+    "minimumStockAlert": "Seuil d'alerte de stock minimum global",
+    "minimumStockAlertHelp": "Déclenche une notification et une bannière visuelle dans le tableau de bord lorsqu'un produit atteint ou passe sous ce seuil.",
+    "stockUnits": "unités en stock",
+    "save": "Enregistrer les modifications"
+  },
+  "securityCode": {
+    "title": "Mon code de sécurité",
+    "description": "Code à 4 chiffres pour les actions protégées",
+    "newCode": "Nouveau code (4 chiffres)",
+    "confirmCode": "Confirmer le nouveau code",
+    "accountPassword": "Votre mot de passe",
+    "passwordPlaceholder": "Mot de passe de votre compte",
+    "passwordHelp": "Votre mot de passe est requis pour confirmer le changement de code.",
+    "invalid": "Le nouveau code doit contenir exactement 4 chiffres.",
+    "mismatch": "La confirmation ne correspond pas au nouveau code.",
+    "passwordRequired": "Veuillez saisir votre mot de passe.",
+    "invalidSession": "Session invalide. Veuillez vous reconnecter.",
+    "wrongPassword": "Mot de passe incorrect.",
+    "tooManyAttempts": "Trop de tentatives. Veuillez réessayer plus tard.",
+    "verificationFailed": "Vérification du mot de passe impossible. Veuillez vous reconnecter et réessayer.",
+    "changed": "Votre code de sécurité a été modifié avec succès !",
+    "changeFailed": "Une erreur est survenue lors du changement de code.",
+    "verifying": "Vérification...",
+    "change": "Changer mon code"
+  },
+  "install": {
+    "title": "Installer l'application",
+    "action": "Installer l'application",
+    "iosHelp": "Sur iPhone ou iPad : appuyez sur Partager, puis sur Sur l’écran d’accueil."
+  },
+  "password": {
+    "account": "Mon compte",
+    "title": "Changer mon mot de passe",
+    "current": "Mot de passe actuel",
+    "new": "Nouveau mot de passe",
+    "confirm": "Confirmer le nouveau mot de passe",
+    "strengthLabel": "Force : {{strength}} · 8 caractères minimum",
+    "strength": {
+      "0": "Très faible",
+      "1": "Faible",
+      "2": "Moyen",
+      "3": "Bon",
+      "4": "Fort"
+    },
+    "saving": "Modification…",
+    "change": "Changer mon mot de passe",
+    "changed": "Votre mot de passe a été modifié.",
+    "errors": {
+      "tooShort": "Le nouveau mot de passe doit contenir au moins 8 caractères.",
+      "mismatch": "La confirmation ne correspond pas au nouveau mot de passe.",
+      "invalidSession": "Session invalide. Veuillez vous reconnecter.",
+      "wrongPassword": "Le mot de passe actuel est incorrect.",
+      "weakPassword": "Choisissez un mot de passe plus robuste.",
+      "changeFailed": "Impossible de modifier le mot de passe."
+    }
+  },
   "activity": {
     "title": "3. Journal d'activité",
     "description": "Téléchargez un fichier détaillé de l'historique d'activité (ventes, factures, créations/modifications/suppressions de produits) sur une période donnée. La période sélectionnée ne peut pas dépasser 1 mois.",

@@ -1,1 +1,31 @@
-{}
+{
+  "periods": {
+    "all": "Tout",
+    "7": "7 jours",
+    "30": "30 jours",
+    "90": "90 jours",
+    "year": "Cette année"
+  },
+  "accessDenied": "Accès réservé à l’administrateur.",
+  "title": "Rapports atelier",
+  "description": "Atelier • données de ce magasin",
+  "periodLabel": "Période du rapport",
+  "loading": "Chargement du rapport…",
+  "indicators": "Indicateurs atelier",
+  "cards": {
+    "repairs": "Réparations",
+    "collected": "Encaissé",
+    "grossProfit": "Bénéfice brut",
+    "unpaid": "Impayés"
+  },
+  "repairRevenueBreakdown": "Décomposition du CA réparations",
+  "labor": "Main d’œuvre",
+  "partsBilled": "Pièces (facturées)",
+  "partsCost": "Coût des pièces",
+  "salesTtc": "Ventes (TTC)",
+  "invoicedTotal": "Total facturé",
+  "incompleteRepairCosts": "Certains coûts historiques de pièces manquent ; le bénéfice brut n’est pas estimé.",
+  "statusDistribution": "Répartition par statut",
+  "incompleteSales_one": "Les coûts historiques manquent pour {{count}} vente ; bénéfice brut indisponible.",
+  "incompleteSales_other": "Les coûts historiques manquent pour {{count}} ventes ; bénéfice brut indisponible."
+}

@@ -1,1 +1,115 @@
-{}
+{
+  "page": {
+    "title": "Gestion des utilisateurs",
+    "description": "Gérez les accès détaillés et modifiez les profils de l’équipe en temps réel."
+  },
+  "checking": "Vérification…",
+  "testServer": "Tester le serveur",
+  "createUser": "Créer un utilisateur",
+  "cancel": "Annuler",
+  "confirm": "Confirmer",
+  "editing": "Modification…",
+  "deleting": "Suppression…",
+  "roles": {
+    "label": "Rôle",
+    "custom": "Compte à menus personnalisés",
+    "cashierRepair": "Caissier + Réparation",
+    "technician": "Technicien (Réparation et pièces)",
+    "admin": "Administrateur (Accès intégral)",
+    "adminShort": "Administrateur",
+    "technicianShort": "Technicien",
+    "cashierShort": "Caissier"
+  },
+  "createModal": {
+    "title": "Ajouter un utilisateur",
+    "fullName": "Nom complet",
+    "nameExample": "Ex. : Jean Dupont",
+    "loginEmail": "Adresse e-mail de connexion",
+    "password": "Mot de passe (minimum 6 caractères)",
+    "passwordPlaceholder": "Mot de passe à définir dans Firebase Auth",
+    "allowedMenus": "Menus latéraux autorisés",
+    "technicianHelp": "Le technicien gère réparations, pièces, articles/services et clients, sans prix d’achat ni encaissement.",
+    "menuHelp": "Configurez les sections auxquelles cet utilisateur aura accès :",
+    "creating": "Création en cours...",
+    "submit": "Créer le compte"
+  },
+  "editModal": {
+    "title": "Modifier l'utilisateur",
+    "passwordResetHelp": "Le changement de mot de passe se fait via le lien sécurisé envoyé à cette adresse.",
+    "statusActive": "Actif (accès autorisé)",
+    "statusBanned": "Bloqué / banni (accès refusé)",
+    "allowedMenus": "Modifier les menus autorisés",
+    "allowedMenusHelp": "Cochez les sections visibles dans la barre latérale pour cet utilisateur :"
+  },
+  "changePassword": {
+    "title": "Changer le mot de passe",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le nouveau mot de passe"
+  },
+  "delete": {
+    "title": "Supprimer définitivement",
+    "confirmation": "Êtes-vous sûr ? Cette action est définitive : le compte et l'accès de l'utilisateur seront supprimés.",
+    "typeEmail": "Saisissez l’e-mail",
+    "confirmLabel": "Confirmation de suppression",
+    "lastAdmin": "Impossible de supprimer le dernier administrateur du magasin."
+  },
+  "table": {
+    "empty": "Aucun utilisateur trouvé",
+    "userId": "Utilisateur & identifiant",
+    "login": "Coordonnées de connexion",
+    "securityCode": "Code sécurité",
+    "visibleMenus": "Menus visibles",
+    "status": "Statut",
+    "actions": "Actions",
+    "noName": "Sans nom",
+    "you": "Vous",
+    "ownerId": "Propriétaire ID",
+    "undefined": "Non défini",
+    "creator": "Créateur",
+    "email": "E-mail",
+    "copyEmail": "Copier l'adresse e-mail",
+    "hideCode": "Masquer le code de sécurité",
+    "showCode": "Afficher le code de sécurité",
+    "hide": "Masquer",
+    "show": "Afficher"
+  },
+  "status": {
+    "inactive": "Inactif",
+    "active": "Actif",
+    "primaryAccount": "Compte principal"
+  },
+  "actions": {
+    "editProfile": "Modifier ce profil",
+    "edit": "Modifier",
+    "changePassword": "Changer le mot de passe",
+    "sendResetLink": "Envoyer un lien de réinitialisation",
+    "unblockUser": "Débloquer cet utilisateur",
+    "blockUser": "Bloquer cet utilisateur",
+    "unblock": "Débloquer",
+    "block": "Bloquer",
+    "deleteUser": "Supprimer définitivement l'utilisateur",
+    "deletePermanently": "Supprimer définitivement"
+  },
+  "permissionMigration": {
+    "preview": "Prévisualiser la migration des permissions",
+    "accountsWithoutPermissions_one": "{{count}} compte sans permissions explicites.",
+    "accountsWithoutPermissions_other": "{{count}} comptes sans permissions explicites.",
+    "downloadBackup": "Télécharger la sauvegarde JSON",
+    "running": "Migration…",
+    "confirm": "Confirmer la migration"
+  },
+  "menus": {
+    "dashboard": { "name": "Tableau de bord", "shortName": "Tableau", "description": "Statistiques et graphiques généraux" },
+    "reparation": { "name": "Partie Réparation", "shortName": "Réparation", "description": "Suivi et gestion des réparations" },
+    "pieces": { "name": "Pièces détachées", "shortName": "Pièces", "description": "Stock visible par le caissier ; gestion complète pour le technicien" },
+    "pos": { "name": "Vente (POS / Caisse)", "shortName": "Vente", "description": "Caisse, vente directe et paniers" },
+    "products": { "name": "Articles / Services", "shortName": "Articles", "description": "Lecture pour le caissier ; création et gestion pour le technicien" },
+    "clients": { "name": "Gestion des clients", "shortName": "Clients", "description": "Liste des clients et suivi des dettes" },
+    "sales": { "name": "Historique des ventes", "shortName": "Ventes", "description": "Suivi et recherche des ventes" },
+    "invoices": { "name": "Facturation", "shortName": "Factures", "description": "Édition et gestion des factures" },
+    "notes": { "name": "Mémos & Notes", "shortName": "Mémos", "description": "Ajouter et planifier des mémos" },
+    "settings": { "name": "Paramètres du magasin", "shortName": "Paramètres", "description": "Configurations de base" },
+    "users": { "name": "Gestion des utilisateurs", "shortName": "Utilisateurs", "description": "Accès restreint pour gérer l'équipe" },
+    "startup": { "name": "Coran & Adhkar", "shortName": "Coran", "description": "Écran d’accueil et récitation audio" }
+  }
+}

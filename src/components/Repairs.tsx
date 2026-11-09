@@ -28,6 +28,7 @@ import { useBrand } from './BrandProvider';
 import type { MessageTemplateKey } from '../lib/messages';
 import { Badge, Button, Card, EmptyState, Input, PageHeader, Select } from './ui';
 import type { BadgeVariant } from './ui';
+import { useTranslation } from 'react-i18next';
 
 interface RepairsProps {
   userProfile: UserProfile | null;
@@ -58,9 +59,10 @@ const REPAIR_STATUS_CLASSES: Partial<Record<RepairStatus, string>> = {
 };
 
 function RepairStatusBadge({ status }: { status: RepairStatus }) {
+  const { t } = useTranslation('repairs');
   return (
     <Badge variant={REPAIR_STATUS_VARIANTS[status]} className={cn('min-h-0 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider', REPAIR_STATUS_CLASSES[status])}>
-      {REPAIR_STATUS_LABELS[status]}
+      {t(`status.${status}`)}
     </Badge>
   );
 }
@@ -227,6 +229,7 @@ export async function deleteRepairAndRestoreStock(r: Repair): Promise<void> {
 }
 
 export default function Repairs({ userProfile }: RepairsProps) {
+  const { t } = useTranslation('repairs');
   const brand = useBrand();
   const ownerId = userProfile?.ownerId || userProfile?.uid || 'no_user_auth';
   const currentUserLabel = userProfile?.name || userProfile?.email || 'Utilisateur';
@@ -609,24 +612,24 @@ export default function Repairs({ userProfile }: RepairsProps) {
   return (
     <div className="min-w-0 max-w-full space-y-6">
       <PageHeader
-        title="Atelier de réparation"
-        description="Gestion des ordres de réparation et suivi"
+        title={t('page.title')}
+        description={t('page.description')}
         actions={<Button
           onClick={() => { setEditingRepair(null); setIsFormOpen(true); }}
           className="w-full sm:w-auto"
         >
-          <Plus className="w-5 h-5" /> Nouvelle réparation
+          <Plus className="w-5 h-5" /> {t('page.newRepair')}
         </Button>}
       />
 
       {/* Stats */}
       <div className={cn("grid grid-cols-2 gap-4", canViewCosts ? "lg:grid-cols-4" : "lg:grid-cols-3")}>
         {[
-          { label: 'En cours', value: stats.active, icon: Clock },
-          { label: 'Prêts à récupérer', value: stats.ready, icon: CheckCircle },
-          { label: 'Réparations du jour', value: todayCount, icon: Package, onClick: () => setStatsModal('count') },
-          { label: 'Bénéfice net du jour', value: todayProfit === null ? '—' : `${todayProfit.toFixed(3)} ${currency}`, icon: DollarSign, onClick: () => setStatsModal('profit'), profit: true },
-        ].filter((s: any) => canViewCosts || s.label !== 'Bénéfice net du jour').map((s: any, i) => {
+          { label: t('stats.active'), value: stats.active, icon: Clock },
+          { label: t('stats.ready'), value: stats.ready, icon: CheckCircle },
+          { label: t('stats.todayCount'), value: todayCount, icon: Package, onClick: () => setStatsModal('count') },
+          { label: t('stats.todayProfit'), value: todayProfit === null ? '—' : `${todayProfit.toFixed(3)} ${currency}`, icon: DollarSign, onClick: () => setStatsModal('profit'), profit: true },
+        ].filter((s: any) => canViewCosts || s.label !== t('stats.todayProfit')).map((s: any, i) => {
           const Icon = s.icon;
           return (
             <Card key={i} onClick={s.onClick}
@@ -641,7 +644,7 @@ export default function Repairs({ userProfile }: RepairsProps) {
               <p className="mt-0.5 text-[11px] font-bold uppercase tracking-wider text-ds-text-muted">{s.label}</p>
               {s.onClick && (
                 <p className="mt-1 flex items-center gap-1 text-[9px] font-bold text-ds-text-muted">
-                  <History className="h-3 w-3 shrink-0" /> Historique journalier
+                  <History className="h-3 w-3 shrink-0" /> {t('stats.dailyHistory')}
                 </p>
               )}
             </Card>
@@ -670,7 +673,7 @@ export default function Repairs({ userProfile }: RepairsProps) {
           onClick={() => setFiltersOpen(open => !open)}
         >
           <Filter className="h-4 w-4" />
-          {filtersOpen ? 'Masquer les filtres' : 'Afficher les filtres'}
+          {filtersOpen ? t('filters.hide') : t('filters.show')}
         </Button>
       <div className={cn("flex min-w-0 flex-col gap-3 sm:flex-row", !filtersOpen && "hidden sm:flex")}>
         <div className="relative flex-1">
@@ -678,31 +681,31 @@ export default function Repairs({ userProfile }: RepairsProps) {
           <Input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Rechercher : n°, client, téléphone, modèle, IMEI... (ou scannez le bon)"
+            placeholder={t('filters.searchPlaceholder')}
             className="pl-11"
           />
         </div>
         <div className="relative min-w-0 sm:w-56">
           <Select
-            aria-label="Filtrer par statut"
+            aria-label={t('filters.status')}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
           >
-            <option value="active">En cours (actifs)</option>
-            <option value="all">Tous les statuts</option>
-            {Object.entries(REPAIR_STATUS_LABELS).map(([k, v]) => (
-              <option key={k} value={k}>{v}</option>
+            <option value="active">{t('filters.active')}</option>
+            <option value="all">{t('filters.allStatuses')}</option>
+            {Object.keys(REPAIR_STATUS_LABELS).map(k => (
+              <option key={k} value={k}>{t(`status.${k}`)}</option>
             ))}
           </Select>
         </div>
         {isTechnician && <Select
-          aria-label="Filtrer par technicien"
+          aria-label={t('filters.technician')}
           value={technicianFilter}
           onChange={event => setTechnicianFilter(event.target.value as 'all' | 'mine')}
           className="sm:w-48"
         >
-          <option value="all">Toutes</option>
-          <option value="mine">Mes réparations</option>
+          <option value="all">{t('filters.all')}</option>
+          <option value="mine">{t('filters.mine')}</option>
         </Select>}
       </div>
       </div>
@@ -710,13 +713,13 @@ export default function Repairs({ userProfile }: RepairsProps) {
       {isAdmin && legacyRepairsNeedingCostSeparation.length > 0 && (
         <div className="flex flex-col gap-3 rounded-ds-lg border border-ds-warning/20 bg-ds-warning-soft p-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="font-bold text-ds-warning">Séparer les coûts historiques</p>
+            <p className="font-bold text-ds-warning">{t('costMigration.title')}</p>
             <p className="mt-1 text-sm text-ds-warning">
-              {legacyRepairsNeedingCostSeparation.length} fiche(s) historique(s) n’ont pas encore été vérifiées et nettoyées des prix d’achat intégrés.
+              {t('costMigration.description', { count: legacyRepairsNeedingCostSeparation.length })}
             </p>
           </div>
           <button onClick={() => void separateLegacyRepairCosts()} disabled={migratingCosts} className="min-h-11 shrink-0 rounded-full bg-ds-brand px-5 text-sm font-bold text-ds-brand-contrast transition-colors hover:bg-ds-brand-hover disabled:opacity-50">
-            {migratingCosts ? 'Séparation en cours...' : 'Séparer les coûts historiques'}
+            {migratingCosts ? t('costMigration.running') : t('costMigration.action')}
           </button>
         </div>
       )}
@@ -725,7 +728,7 @@ export default function Repairs({ userProfile }: RepairsProps) {
       <div className="space-y-3">
         {filtered.length === 0 ? (
           <Card className="rounded-ds-lg p-0">
-            <EmptyState icon={<Wrench className="h-12 w-12" />} title="Aucune réparation trouvée" />
+            <EmptyState icon={<Wrench className="h-12 w-12" />} title={t('list.empty')} />
           </Card>
         ) : filtered.map(r => {
           // Réparation terminée/livrée et entièrement payée (après remise).
@@ -756,7 +759,7 @@ export default function Repairs({ userProfile }: RepairsProps) {
                   {r.deviceBrand} {r.deviceModel} — <span className="font-medium text-ds-text-muted">{r.problem}</span>
                 </p>
                 <div className="mt-1 flex items-center gap-3 text-xs font-medium text-ds-text-muted">
-                  <span className="flex items-center gap-1"><User className="w-3 h-3" /> {r.clientName || 'Sans client'}</span>
+                  <span className="flex items-center gap-1"><User className="w-3 h-3" /> {r.clientName || t('list.noClient')}</span>
                   {r.date?.toDate && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {format(r.date.toDate(), 'dd/MM/yyyy HH:mm')}</span>}
                 </div>
                 <div className="mt-2">
@@ -776,13 +779,13 @@ export default function Repairs({ userProfile }: RepairsProps) {
               </div>
               <div className="flex w-full min-w-0 items-center justify-between gap-2 sm:w-auto sm:shrink-0 sm:justify-start">
                 <p className="font-display font-bold tabular-nums text-ds-text">{(r.total || 0).toFixed(3)} {currency}</p>
-                {r.debt > 0 && <p className="text-[11px] font-bold text-ds-warning">Reste {r.debt.toFixed(3)}</p>}
+                {r.debt > 0 && <p className="text-[11px] font-bold text-ds-warning">{t('list.remaining', { amount: r.debt.toFixed(3) })}</p>}
                 <div className="flex items-center justify-end gap-1 mt-1">
                   {userProfile?.role === 'admin' && (
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDelete(r); }}
                       className="min-h-11 min-w-11 rounded-full text-ds-danger transition-colors hover:bg-ds-danger-soft"
-                      title="Supprimer la réparation"
+                      title={t('detail.delete')}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -805,20 +808,20 @@ export default function Repairs({ userProfile }: RepairsProps) {
             <div className="flex items-center justify-between border-b border-ds-border px-5 py-4">
               <h3 className="flex items-center gap-2 font-bold text-ds-text">
                 <History className="h-5 w-5 text-ds-text-muted" />
-                {statsModal === 'count' ? 'Réparations par jour' : 'Bénéfice net par jour'}
+                {statsModal === 'count' ? t('stats.byDay') : t('stats.profitByDay')}
               </h3>
               <button onClick={() => setStatsModal(null)} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ds-text-muted hover:bg-ds-surface-2"><X className="h-5 w-5" /></button>
             </div>
             <div className="overflow-x-auto overflow-y-auto p-4">
               {statsModal === 'count' ? (
                 dailyRepairCounts.length === 0 ? (
-                  <p className="py-6 text-center text-sm text-ds-text-muted">Aucune réparation enregistrée.</p>
+                  <p className="py-6 text-center text-sm text-ds-text-muted">{t('stats.noRepairs')}</p>
                 ) : (
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-ds-border text-[11px] font-black uppercase tracking-wider text-ds-text-muted">
-                        <th className="text-left py-2">Date</th>
-                        <th className="text-right py-2">Réparations</th>
+                        <th className="text-left py-2">{t('ticket.date')}</th>
+                        <th className="text-right py-2">{t('stats.repairs')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -831,7 +834,7 @@ export default function Repairs({ userProfile }: RepairsProps) {
                     </tbody>
                     <tfoot>
                       <tr className="border-t border-ds-border">
-                        <td className="py-2 text-xs font-black uppercase tracking-wider text-ds-text-muted">Total</td>
+                        <td className="py-2 text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('ticket.total')}</td>
                         <td className="py-2 text-right font-bold text-ds-text">{stats.total}</td>
                       </tr>
                     </tfoot>
@@ -839,16 +842,16 @@ export default function Repairs({ userProfile }: RepairsProps) {
                 )
               ) : (
                 dailyNetProfit.length === 0 ? (
-                  <p className="py-6 text-center text-sm text-ds-text-muted">Aucune réparation livrée.</p>
+                  <p className="py-6 text-center text-sm text-ds-text-muted">{t('stats.noDeliveredRepairs')}</p>
                 ) : (
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-ds-border text-[11px] font-black uppercase tracking-wider text-ds-text-muted">
-                        <th className="text-left py-2">Date</th>
-                        <th className="text-right py-2">Livrées</th>
-                        <th className="text-right py-2">Facturé</th>
-                        <th className="text-right py-2">Coût pièces</th>
-                        <th className="text-right py-2">Bénéfice</th>
+                        <th className="text-left py-2">{t('ticket.date')}</th>
+                        <th className="text-right py-2">{t('stats.delivered')}</th>
+                        <th className="text-right py-2">{t('stats.invoiced')}</th>
+                        <th className="text-right py-2">{t('stats.partsCost')}</th>
+                        <th className="text-right py-2">{t('stats.profit')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -858,17 +861,17 @@ export default function Repairs({ userProfile }: RepairsProps) {
                           <td className="py-2 text-right text-ds-text-muted">{d.count}</td>
                           <td className="py-2 text-right text-ds-text-muted">{d.revenue.toFixed(3)}</td>
                           <td className="py-2 text-right text-ds-text-muted">{d.complete ? d.partsCost.toFixed(3) : '—'}</td>
-                          <td className={cn("py-2 text-right font-bold", !d.complete ? 'text-ds-text-muted' : d.profit < 0 ? 'text-ds-danger' : 'text-ds-success')}>{d.complete ? d.profit.toFixed(3) : 'Coûts manquants'}</td>
+                          <td className={cn("py-2 text-right font-bold", !d.complete ? 'text-ds-text-muted' : d.profit < 0 ? 'text-ds-danger' : 'text-ds-success')}>{d.complete ? d.profit.toFixed(3) : t('stats.costsMissing')}</td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
                       <tr className="border-t border-ds-border">
-                        <td className="py-2 text-xs font-black uppercase tracking-wider text-ds-text-muted" colSpan={4}>Total</td>
+                        <td className="py-2 text-xs font-black uppercase tracking-wider text-ds-text-muted" colSpan={4}>{t('ticket.total')}</td>
                         <td className="py-2 text-right font-bold text-ds-text">
                           {dailyNetProfit.every(d => d.complete)
                             ? `${dailyNetProfit.reduce((s, d) => s + d.profit, 0).toFixed(3)} ${currency}`
-                            : 'Coûts historiques manquants'}
+                            : t('stats.historicalCostsMissing')}
                         </td>
                       </tr>
                     </tfoot>
@@ -948,6 +951,7 @@ export function RepairForm({
   onSaved: (msg: string) => void;
   onError: (msg: string) => void;
 }) {
+  const { t } = useTranslation('repairs');
   const { session: cashSession, loading: cashSessionLoading } = useCashSession(userProfile);
   const isEdit = !!repair;
   const [clientId, setClientId] = useState(repair?.clientId || '');
@@ -1296,7 +1300,7 @@ export function RepairForm({
         <div className="sticky top-0 z-10 flex items-center justify-between rounded-t-[24px] border-b border-ds-border bg-ds-surface p-5">
           <h2 className="flex items-center gap-2 font-display text-lg font-bold text-ds-text">
             <Wrench className="h-5 w-5 text-ds-text" />
-            {isEdit ? `Modifier ${repair?.number}` : 'Nouvelle réparation'}
+            {isEdit ? t('form.editTitle', { number: repair?.number }) : t('page.newRepair')}
           </h2>
           <button onClick={onClose} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ds-text-muted hover:bg-ds-surface-2"><X className="h-5 w-5" /></button>
         </div>
@@ -1310,7 +1314,7 @@ export function RepairForm({
         <div className="max-h-[70vh] space-y-5 overflow-y-auto p-5">
           {/* Client */}
           <section>
-            <label className="mb-2 block text-xs font-black uppercase tracking-wider text-ds-text-muted">Client</label>
+            <label className="mb-2 block text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('form.client')}</label>
             {selectedClient ? (
               <div className="flex items-center justify-between rounded-xl border border-ds-border bg-ds-surface-2 px-4 py-2.5">
                 <div className="flex items-center gap-2">
@@ -1318,14 +1322,14 @@ export function RepairForm({
                   <span className="text-sm font-bold text-ds-text">{selectedClient.name}</span>
                   {selectedClient.phone && <span className="text-xs text-ds-text-muted">· {selectedClient.phone}</span>}
                 </div>
-                <button onClick={() => { setClientId(''); setClientSearch(''); }} className="min-h-11 px-2 text-xs font-bold text-ds-danger">Retirer</button>
+                <button onClick={() => { setClientId(''); setClientSearch(''); }} className="min-h-11 px-2 text-xs font-bold text-ds-danger">{t('form.remove')}</button>
               </div>
             ) : (
               <div className="relative">
                 <input
                   value={clientSearch}
                   onChange={(e) => setClientSearch(e.target.value)}
-                  placeholder="Rechercher un client (nom, téléphone)"
+                  placeholder={t('form.searchClient')}
                   className="min-h-11 w-full rounded-xl border border-ds-border bg-ds-surface-2 px-4 py-2.5 text-base outline-none focus:border-ds-brand focus:ring-2 focus:ring-ds-brand/20"
                 />
                 {clientSearch && filteredClients.length > 0 && (
@@ -1346,7 +1350,7 @@ export function RepairForm({
           {/* Appareil */}
           <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-2 block text-xs font-black uppercase tracking-wider text-ds-text-muted">Marque</label>
+              <label className="mb-2 block text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('form.brand')}</label>
               <input list="repair-device-brands" value={deviceBrand} onChange={event => setDeviceBrand(event.target.value)}
                 placeholder="Samsung, Apple"
                 className="min-h-11 w-full rounded-xl border border-ds-border bg-ds-surface-2 px-4 py-2.5 text-base outline-none focus:border-ds-brand focus:ring-2 focus:ring-ds-brand/20" />
@@ -1355,7 +1359,7 @@ export function RepairForm({
               </datalist>
             </div>
             <div>
-              <label className="mb-2 block text-xs font-black uppercase tracking-wider text-ds-text-muted">Modèle</label>
+              <label className="mb-2 block text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('form.model')}</label>
               <input list="repair-device-models" value={deviceModel} onChange={event => setDeviceModel(event.target.value)}
                 placeholder="Galaxy S21, iPhone 12"
                 className="min-h-11 w-full rounded-xl border border-ds-border bg-ds-surface-2 px-4 py-2.5 text-base outline-none focus:border-ds-brand focus:ring-2 focus:ring-ds-brand/20" />
@@ -1363,32 +1367,32 @@ export function RepairForm({
                 {['Galaxy S21', 'iPhone 12'].map(model => <option key={model} value={model} />)}
               </datalist>
             </div>
-            <Field label="IMEI / N° série" value={imei} onChange={setImei} placeholder="Optionnel" />
-            <Field label="Code déverrouillage" value={devicePassword} onChange={setDevicePassword} placeholder="Confié par le client" />
-            <Field label="Accessoires déposés" value={accessories} onChange={setAccessories} placeholder="Chargeur, coque..." full />
-            <Field label="État à la réception" value={deviceCondition} onChange={setDeviceCondition} placeholder="Rayures, écran fissuré..." full />
+            <Field label={t('form.imei')} value={imei} onChange={setImei} placeholder={t('form.optional')} />
+            <Field label={t('form.unlockCode')} value={devicePassword} onChange={setDevicePassword} placeholder={t('form.providedByClient')} />
+            <Field label={t('form.accessories')} value={accessories} onChange={setAccessories} placeholder={t('form.accessoriesExample')} full />
+            <Field label={t('form.deviceCondition')} value={deviceCondition} onChange={setDeviceCondition} placeholder={t('form.conditionExample')} full />
           </section>
 
           {/* Panne */}
           <section className="space-y-3">
             <div>
-              <label className="mb-2 block text-xs font-black uppercase tracking-wider text-ds-text-muted">Panne signalée *</label>
+              <label className="mb-2 block text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('form.reportedProblem')} *</label>
               <textarea value={problem} onChange={(e) => setProblem(e.target.value)} rows={2}
-                placeholder="Décrivez le problème rapporté par le client"
+                placeholder={t('form.reportedProblemPlaceholder')}
                 className="min-h-11 w-full resize-none rounded-xl border border-ds-border bg-ds-surface-2 px-4 py-2.5 text-base outline-none focus:border-ds-brand focus:ring-2 focus:ring-ds-brand/20" />
             </div>
             <div>
-              <label className="mb-2 block text-xs font-black uppercase tracking-wider text-ds-text-muted">Diagnostic technicien</label>
+              <label className="mb-2 block text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('form.diagnosis')}</label>
               <textarea value={diagnostic} onChange={(e) => setDiagnostic(e.target.value)} rows={2}
-                placeholder="Diagnostic après examen"
+                placeholder={t('form.diagnosisPlaceholder')}
                 className="min-h-11 w-full resize-none rounded-xl border border-ds-border bg-ds-surface-2 px-4 py-2.5 text-base outline-none focus:border-ds-brand focus:ring-2 focus:ring-ds-brand/20" />
             </div>
           </section>
 
           <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            <Field label="Technicien assigné" value={technician} onChange={setTechnician} placeholder="Nom du technicien" />
+            <Field label={t('form.assignedTechnician')} value={technician} onChange={setTechnician} placeholder={t('form.technicianName')} />
             <div className="min-w-0">
-              <p className="mb-2 text-sm font-medium text-ds-text">Statut</p>
+              <p className="mb-2 text-sm font-medium text-ds-text">{t('form.status')}</p>
               <div className="flex flex-wrap gap-2">
                 {(Object.keys(REPAIR_STATUS_LABELS) as RepairStatus[])
                   .filter(k => canCash || k !== 'livre' || repair?.status === 'livre')
@@ -1411,11 +1415,11 @@ export function RepairForm({
           {/* Pièces utilisées */}
           <section>
             <label className="mb-2 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-ds-text-muted">
-              <Package className="w-3.5 h-3.5" /> Pièces utilisées (déduites du stock)
+              <Package className="w-3.5 h-3.5" /> {t('form.partsUsed')}
             </label>
             <div className="relative mb-2">
               <input value={partSearch} onChange={(e) => setPartSearch(e.target.value)}
-                placeholder="Ajouter une pièce (nom, référence, code-barres)..."
+                placeholder={t('form.addPart')}
                 className="min-h-11 w-full rounded-xl border border-ds-border bg-ds-surface-2 px-4 py-2.5 text-base outline-none focus:border-ds-brand focus:ring-2 focus:ring-ds-brand/20" />
               {partProducts.length > 0 && (
                 <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-ds-border bg-ds-surface shadow-lg">
@@ -1431,7 +1435,7 @@ export function RepairForm({
                         }`}>
                         <span className={`font-bold ${outOfStock ? 'text-ds-danger' : 'text-ds-text'}`}>{p.name}</span>
                         <span className={`text-xs ${outOfStock ? 'font-bold text-ds-danger' : 'text-ds-text-muted'}`}>
-                          {outOfStock ? 'Stock épuisé' : `Stock ${p.stock}`} · {p.sellPrice.toFixed(3)} {currency}
+                          {outOfStock ? t('form.outOfStock') : t('form.stock', { count: p.stock })} · {p.sellPrice.toFixed(3)} {currency}
                         </span>
                       </button>
                     );
@@ -1462,39 +1466,39 @@ export function RepairForm({
 
           {/* Coûts */}
           <section className="grid grid-cols-1 gap-3 rounded-[20px] bg-ds-surface-2 p-4 sm:grid-cols-2">
-            <Field label="Main d'œuvre" value={laborCost} onChange={setLaborCost} type="number" placeholder="0" full disabled={!canEditProductSellPrice} />
+            <Field label={t('form.labor')} value={laborCost} onChange={setLaborCost} type="number" placeholder="0" full disabled={!canEditProductSellPrice} />
             {parts.length > 0 && (
               <div className="col-span-full flex items-center justify-between border-t border-ds-border pt-3 text-sm">
-                <span className="font-semibold text-ds-text-muted">Coût des pièces</span>
+                <span className="font-semibold text-ds-text-muted">{t('stats.partsCost')}</span>
                 <span className="font-black tabular-nums text-ds-text">{partsTotal.toFixed(3)} {currency}</span>
               </div>
             )}
             <div className="col-span-full flex items-center justify-between border-t border-ds-border pt-3">
-              <span className="font-black text-ds-text">TOTAL</span>
+              <span className="font-black text-ds-text">{t('ticket.total').toLocaleUpperCase()}</span>
               <span className="font-display text-lg font-bold tabular-nums text-ds-text">{total.toFixed(3)} {currency}</span>
             </div>
             {financialSettings?.tvaEnabled === true && (
               <div className="col-span-full flex items-center justify-between text-xs text-ds-text-muted">
-                <span>TVA ({financialSettings.tva || 0}%)</span>
+                <span>{t('form.vat', { rate: financialSettings.tva || 0 })}</span>
                 <span>{repairTotals.tva.toFixed(3)} {currency}</span>
               </div>
             )}
-            <Field label="Payé / acompte" value={canCash ? paid : String(paidValue)} onChange={setPaid} type="number" placeholder="0" disabled={!canCash} />
+            <Field label={t('form.paidAdvance')} value={canCash ? paid : String(paidValue)} onChange={setPaid} type="number" placeholder="0" disabled={!canCash} />
             <div>
-              <label className="mb-2 block text-xs font-black uppercase tracking-wider text-ds-text-muted">Reste dû</label>
+              <label className="mb-2 block text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('ticket.remaining')}</label>
               <div className={cn("min-h-11 rounded-xl px-4 py-2.5 text-sm font-black tabular-nums", debt > 0 ? "bg-ds-warning-soft text-ds-warning" : "bg-ds-surface-2 text-ds-text-muted")}>
                 {debt.toFixed(3)} {currency}
               </div>
             </div>
-            <Field label="Garantie (jours)" value={warrantyDays} onChange={setWarrantyDays} type="number" placeholder="30" />
+            <Field label={t('form.warrantyDays')} value={warrantyDays} onChange={setWarrantyDays} type="number" placeholder="30" />
           </section>
         </div>
 
         <div className="sticky bottom-0 flex gap-3 rounded-b-[24px] border-t border-ds-border bg-ds-surface p-5">
-          <button onClick={onClose} className="min-h-11 flex-1 rounded-full border border-ds-border bg-ds-surface py-3 text-sm font-bold text-ds-text transition-colors hover:bg-ds-surface-2">Annuler</button>
+          <button onClick={onClose} className="min-h-11 flex-1 rounded-full border border-ds-border bg-ds-surface py-3 text-sm font-bold text-ds-text transition-colors hover:bg-ds-surface-2">{t('detail.cancel')}</button>
           <button onClick={handleSubmit} disabled={saving}
             className="min-h-11 flex-1 rounded-full bg-ds-brand py-3 text-sm font-bold text-ds-brand-contrast transition-colors hover:bg-ds-brand-hover disabled:opacity-50">
-            {saving ? 'Enregistrement...' : (isEdit ? 'Enregistrer' : 'Créer la réparation')}
+            {saving ? t('form.saving') : (isEdit ? t('form.save') : t('form.create'))}
           </button>
         </div>
       </div>
@@ -1504,11 +1508,11 @@ export function RepairForm({
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-ds-text/60 p-4 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-[24px] border border-ds-border bg-ds-surface p-6 text-center shadow-2xl">
             <CheckCircle className="mx-auto mb-3 h-12 w-12 text-ds-text-muted" />
-            <h3 className="text-lg font-bold text-ds-text">Réparation créée</h3>
+            <h3 className="text-lg font-bold text-ds-text">{t('form.created')}</h3>
             <p className="mt-1 text-sm text-ds-text-muted">
               N° <span className="font-mono font-bold text-ds-text">{printingRepair.number}</span>
             </p>
-            <p className="mt-2 text-xs text-ds-text-muted">Impression du bon de dépôt en cours...</p>
+            <p className="mt-2 text-xs text-ds-text-muted">{t('form.printing')}</p>
             <div className="flex gap-2 mt-5">
               <button
                 onClick={() => window.print()}
@@ -1520,7 +1524,7 @@ export function RepairForm({
                 onClick={() => onSaved(`Réparation ${printingRepair.number} créée.`)}
                 className="min-h-11 flex-1 rounded-full bg-ds-brand py-2.5 text-sm font-bold text-ds-brand-contrast transition-colors hover:bg-ds-brand-hover"
               >
-                Terminer
+                {t('form.finish')}
               </button>
             </div>
           </div>
@@ -1575,6 +1579,7 @@ export function RepairDetail({
   onError: (m: string) => void;
   onSuccess: (m: string) => void;
 }) {
+  const { t } = useTranslation('repairs');
   const { session: cashSession, loading: cashSessionLoading } = useCashSession(userProfile);
   const [quickNote, setQuickNote] = useState('');
   const [updating, setUpdating] = useState(false);
@@ -1768,7 +1773,7 @@ export function RepairDetail({
               <RepairStatusBadge status={repair.status} />
               {repair.date?.toDate && (
                 <span className="flex items-center gap-1 text-[10px] font-bold text-ds-text-muted">
-                  <Calendar className="h-3 w-3" /> Créé le {format(repair.date.toDate(), 'dd/MM/yyyy à HH:mm')}
+                  <Calendar className="h-3 w-3" /> {t('detail.createdAt', { date: format(repair.date.toDate(), 'dd/MM/yyyy HH:mm') })}
                 </span>
               )}
             </div>
@@ -1789,22 +1794,22 @@ export function RepairDetail({
         <div className="max-h-[70vh] space-y-5 overflow-y-auto p-5">
           {/* Client + appareil */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <InfoBlock icon={User} label="Client" value={repair.clientName || 'Sans client'} sub={repair.clientPhone} />
-            <InfoBlock icon={Smartphone} label="Appareil" value={`${repair.deviceBrand || ''} ${repair.deviceModel || ''}`.trim() || '—'} sub={repair.imei ? `IMEI ${repair.imei}` : undefined} />
+            <InfoBlock icon={User} label={t('form.client')} value={repair.clientName || t('list.noClient')} sub={repair.clientPhone} />
+            <InfoBlock icon={Smartphone} label={t('detail.device')} value={`${repair.deviceBrand || ''} ${repair.deviceModel || ''}`.trim() || '—'} sub={repair.imei ? `IMEI ${repair.imei}` : undefined} />
           </div>
 
           <div className="space-y-2 rounded-[20px] bg-ds-surface-2 p-4 text-sm">
-            <div><span className="text-xs font-black uppercase tracking-wider text-ds-text-muted">Panne : </span><span className="font-medium text-ds-text">{repair.problem}</span></div>
-            {repair.diagnostic && <div><span className="text-xs font-black uppercase tracking-wider text-ds-text-muted">Diagnostic : </span><span className="font-medium text-ds-text">{repair.diagnostic}</span></div>}
-            {repair.accessories && <div><span className="text-xs font-black uppercase tracking-wider text-ds-text-muted">Accessoires : </span><span className="font-medium text-ds-text">{repair.accessories}</span></div>}
-            {repair.deviceCondition && <div><span className="text-xs font-black uppercase tracking-wider text-ds-text-muted">État : </span><span className="font-medium text-ds-text">{repair.deviceCondition}</span></div>}
-            {repair.technician && <div><span className="text-xs font-black uppercase tracking-wider text-ds-text-muted">Technicien : </span><span className="font-medium text-ds-text">{repair.technician}</span></div>}
+            <div><span className="text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('form.reportedProblem')} : </span><span className="font-medium text-ds-text">{repair.problem}</span></div>
+            {repair.diagnostic && <div><span className="text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('form.diagnosis')} : </span><span className="font-medium text-ds-text">{repair.diagnostic}</span></div>}
+            {repair.accessories && <div><span className="text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('form.accessories')} : </span><span className="font-medium text-ds-text">{repair.accessories}</span></div>}
+            {repair.deviceCondition && <div><span className="text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('form.deviceCondition')} : </span><span className="font-medium text-ds-text">{repair.deviceCondition}</span></div>}
+            {repair.technician && <div><span className="text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('form.assignedTechnician')} : </span><span className="font-medium text-ds-text">{repair.technician}</span></div>}
           </div>
 
           {/* Pièces */}
           {repair.parts?.length > 0 && (
             <div>
-              <p className="mb-2 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-ds-text-muted"><Package className="h-3.5 w-3.5" /> Pièces utilisées</p>
+              <p className="mb-2 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-ds-text-muted"><Package className="h-3.5 w-3.5" /> {t('detail.partsUsed')}</p>
               <div className="space-y-1">
                 {repair.parts.map((p, i) => (
                   <div key={i} className="flex justify-between rounded-lg border border-ds-border bg-ds-surface px-3 py-2 text-sm">
@@ -1818,23 +1823,23 @@ export function RepairDetail({
 
           {/* Totaux */}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <MoneyBlock label="Total" value={repair.total} currency={currency} accent />
-            <MoneyBlock label="Payé" value={repair.paid} currency={currency} />
-            <MoneyBlock label="Reste dû" value={repair.debt} currency={currency} warning={repair.debt > 0} />
+            <MoneyBlock label={t('ticket.total')} value={repair.total} currency={currency} accent />
+            <MoneyBlock label={t('ticket.paid')} value={repair.paid} currency={currency} />
+            <MoneyBlock label={t('ticket.remaining')} value={repair.debt} currency={currency} warning={repair.debt > 0} />
           </div>
 
           {repair.warrantyUntil && (
             <div className={cn("flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold",
               new Date(repair.warrantyUntil) > new Date() ? "bg-ds-surface-2 text-ds-text" : "bg-ds-surface-2 text-ds-text-muted")}>
               <Shield className="w-4 h-4" />
-              Garantie jusqu'au {format(new Date(repair.warrantyUntil), 'dd/MM/yyyy')}
-              {new Date(repair.warrantyUntil) < new Date() && ' (expirée)'}
+              {t('detail.warrantyUntil', { date: format(new Date(repair.warrantyUntil), 'dd/MM/yyyy') })}
+              {new Date(repair.warrantyUntil) < new Date() && ` (${t('detail.expired')})`}
             </div>
           )}
 
           {/* Changement rapide de statut */}
           <div className="border-t border-ds-border pt-4">
-            <p className="mb-2 text-xs font-black uppercase tracking-wider text-ds-text-muted">Changer le statut</p>
+            <p className="mb-2 text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('detail.changeStatus')}</p>
             <div className="flex flex-wrap gap-2 mb-3">
               {(Object.keys(REPAIR_STATUS_LABELS) as RepairStatus[])
                 .filter(s => canCash || s !== 'livre' || repair.status === 'livre')
@@ -1854,17 +1859,17 @@ export function RepairDetail({
             </div>
             <div className="flex gap-2">
               <input value={quickNote} onChange={(e) => setQuickNote(e.target.value)}
-                placeholder="Ajouter une note de suivi (optionnel)..."
+                placeholder={t('detail.addNote')}
                 className="min-h-11 flex-1 rounded-xl border border-ds-border bg-ds-surface-2 px-4 py-2.5 text-base outline-none focus:border-ds-brand focus:ring-2 focus:ring-ds-brand/20" />
               <button onClick={addNote} disabled={updating || !quickNote.trim()}
-                className="min-h-11 rounded-full bg-ds-brand px-5 py-2.5 text-sm font-bold text-ds-brand-contrast hover:bg-ds-brand-hover disabled:opacity-40">Noter</button>
+                className="min-h-11 rounded-full bg-ds-brand px-5 py-2.5 text-sm font-bold text-ds-brand-contrast hover:bg-ds-brand-hover disabled:opacity-40">{t('detail.addNoteAction')}</button>
             </div>
           </div>
 
           {/* Historique */}
           {repair.logs?.length > 0 && (
             <div className="border-t border-ds-border pt-4">
-              <p className="mb-3 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-ds-text-muted"><History className="h-3.5 w-3.5" /> Historique de suivi</p>
+              <p className="mb-3 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-ds-text-muted"><History className="h-3.5 w-3.5" /> {t('detail.history')}</p>
               <div className="space-y-3">
                 {[...repair.logs].reverse().map((log, i) => (
                   <div key={i} className="flex gap-3">
@@ -1883,7 +1888,7 @@ export function RepairDetail({
           {stockMovements.length > 0 && (
             <div className="border-t border-ds-border pt-4">
               <p className="mb-3 flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-ds-text-muted">
-                <Package className="w-3.5 h-3.5" /> Mouvements de pièces
+                <Package className="w-3.5 h-3.5" /> {t('detail.partMovements')}
               </p>
               <div className="space-y-2">
                 {stockMovements.map(movement => {
@@ -1893,9 +1898,9 @@ export function RepairDetail({
                   return (
                     <div key={movement.id} className="flex items-start justify-between gap-3 text-sm">
                       <div>
-                        <p className="font-semibold text-ds-text">{movement.productName} · {movement.delta > 0 ? 'Restitution' : 'Sortie'}</p>
+                        <p className="font-semibold text-ds-text">{movement.productName} · {movement.delta > 0 ? t('detail.returned') : t('detail.removed')}</p>
                         <p className="text-[11px] text-ds-text-muted">
-                          {date && !Number.isNaN(date.getTime()) ? format(date, 'dd/MM/yyyy HH:mm') : 'Date indisponible'}
+                          {date && !Number.isNaN(date.getTime()) ? format(date, 'dd/MM/yyyy HH:mm') : t('detail.dateUnavailable')}
                           {movement.userLabel ? ` · ${movement.userLabel}` : ''}
                         </p>
                       </div>
@@ -1912,9 +1917,9 @@ export function RepairDetail({
 
         <div className="sticky bottom-0 flex gap-3 rounded-b-[24px] border-t border-ds-border bg-ds-surface p-5">
           <button onClick={handlePrint} className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-ds-border bg-ds-surface py-3 text-sm font-bold text-ds-text transition-colors hover:bg-ds-surface-2">
-            <FileText className="w-4 h-4" /> Imprimer le bon
+            <FileText className="w-4 h-4" /> {t('detail.printTicket')}
           </button>
-          <button onClick={onClose} className="min-h-11 flex-1 rounded-full bg-ds-brand py-3 text-sm font-bold text-ds-brand-contrast transition-colors hover:bg-ds-brand-hover">Fermer</button>
+          <button onClick={onClose} className="min-h-11 flex-1 rounded-full bg-ds-brand py-3 text-sm font-bold text-ds-brand-contrast transition-colors hover:bg-ds-brand-hover">{t('detail.close')}</button>
         </div>
       </Card>
 
@@ -1952,6 +1957,7 @@ function DeliveryCaisseModal({
   onClose: () => void;
   onConfirm: (paidNow: number, discount: number) => void;
 }) {
+  const { t } = useTranslation('repairs');
   const [discountInput, setDiscountInput] = useState('0');
   const [paidInput, setPaidInput] = useState(repair.debt.toFixed(3));
   const [formError, setFormError] = useState<string | null>(null);
@@ -1977,28 +1983,28 @@ function DeliveryCaisseModal({
       <div className="w-full max-w-md rounded-[24px] border border-ds-border bg-ds-surface shadow-2xl">
         <div className="flex items-center justify-between border-b border-ds-border p-5">
           <h2 className="flex items-center gap-2 text-lg font-bold text-ds-text">
-            <DollarSign className="h-5 w-5 text-ds-text" /> Caisse — Livraison
+            <DollarSign className="h-5 w-5 text-ds-text" /> {t('delivery.title')}
           </h2>
           <button onClick={onClose} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ds-text-muted hover:bg-ds-surface-2"><X className="h-5 w-5" /></button>
         </div>
 
         <div className="p-5 space-y-4">
           <div className="grid grid-cols-2 gap-3">
-            <MoneyBlock label="Total réparation" value={repair.total} currency={currency} accent />
-            <MoneyBlock label="Reste dû actuel" value={repair.debt} currency={currency} warning={repair.debt > 0} />
+            <MoneyBlock label={t('delivery.repairTotal')} value={repair.total} currency={currency} accent />
+            <MoneyBlock label={t('delivery.currentDue')} value={repair.debt} currency={currency} warning={repair.debt > 0} />
           </div>
 
           {client ? (
-            <p className="text-xs font-bold text-ds-text-muted">Client : <span className="text-ds-text">{client.name}</span></p>
+            <p className="text-xs font-bold text-ds-text-muted">{t('form.client')} : <span className="text-ds-text">{client.name}</span></p>
           ) : (
             <div className="flex items-start gap-2 rounded-xl border border-ds-danger/20 bg-ds-danger-soft px-3 py-2.5 text-xs font-bold text-ds-danger">
               <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              Aucun client enregistré sur cette fiche — la livraison ne sera possible que si le montant est encaissé en totalité.
+              {t('delivery.noClientWarning')}
             </div>
           )}
 
           <div>
-            <label className="mb-1.5 block text-xs font-black uppercase tracking-wider text-ds-text-muted">Remise ({currency})</label>
+            <label className="mb-1.5 block text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('ticket.discount')} ({currency})</label>
             <input
               type="text" inputMode="decimal" value={discountInput}
               onChange={(e) => { if (/^[\d.,]*$/.test(e.target.value)) setDiscountInput(e.target.value); }}
@@ -2007,7 +2013,7 @@ function DeliveryCaisseModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-black uppercase tracking-wider text-ds-text-muted">Montant encaissé maintenant ({currency})</label>
+            <label className="mb-1.5 block text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('delivery.collectNow')} ({currency})</label>
             <input
               type="text" inputMode="decimal" value={paidInput}
               onChange={(e) => { if (/^[\d.,]*$/.test(e.target.value)) setPaidInput(e.target.value); }}
@@ -2017,7 +2023,7 @@ function DeliveryCaisseModal({
 
           <div className="flex items-center justify-between rounded-xl bg-ds-surface-2 p-3">
             <span className="text-xs font-black uppercase tracking-wider text-ds-text-muted">
-              {restDue > 0 ? 'Reste à créditer au client' : 'Reste après cet encaissement'}
+              {restDue > 0 ? t('delivery.creditRemaining') : t('delivery.remainingAfterPayment')}
             </span>
             <span className={cn("text-sm font-bold tabular-nums", restDue > 0 ? "text-ds-warning" : "text-ds-text")}>{restDue.toFixed(3)} {currency}</span>
           </div>
@@ -2034,10 +2040,10 @@ function DeliveryCaisseModal({
             onClick={handleLivrer} disabled={updating}
             className="min-h-11 w-full rounded-full bg-ds-brand py-3 text-sm font-bold text-ds-brand-contrast transition-colors hover:bg-ds-brand-hover disabled:opacity-50"
           >
-            {restDue > 0 ? 'Livrer & Créditer le reste au client' : 'Livrer & Encaisser'}
+            {restDue > 0 ? t('delivery.deliverAndCredit') : t('delivery.deliverAndCollect')}
           </button>
           <button onClick={onClose} disabled={updating} className="min-h-11 w-full rounded-full border border-ds-border py-2.5 text-sm font-bold text-ds-text transition-colors hover:bg-ds-surface-2">
-            Annuler
+            {t('detail.cancel')}
           </button>
         </div>
       </div>

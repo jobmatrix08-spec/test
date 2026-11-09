@@ -1,1 +1,115 @@
-{}
+{
+  "page": {
+    "title": "تسيير المستخدمين",
+    "description": "تصرّف في الصلاحيات وبدّل حسابات الفريق في الحين."
+  },
+  "checking": "قاعد يتثبت…",
+  "testServer": "جرّب الخادم",
+  "createUser": "زيد مستخدم",
+  "cancel": "إلغي",
+  "confirm": "أكّد",
+  "editing": "قاعد يبدّل…",
+  "deleting": "قاعد يحذف…",
+  "roles": {
+    "label": "الدور",
+    "custom": "حساب بقائمة خاصة",
+    "cashierRepair": "كاشي + تصليح",
+    "technician": "تقني (تصليح وقطع)",
+    "admin": "مدير (كل الصلاحيات)",
+    "adminShort": "مدير",
+    "technicianShort": "تقني",
+    "cashierShort": "كاشي"
+  },
+  "createModal": {
+    "title": "زيد مستخدم",
+    "fullName": "الاسم الكامل",
+    "nameExample": "مثال: محمد",
+    "loginEmail": "الإيميل للدخول",
+    "password": "كلمة السر (6 حروف على الأقل)",
+    "passwordPlaceholder": "كلمة السر تتضبط في Firebase Auth",
+    "allowedMenus": "القوائم المسموح بها",
+    "technicianHelp": "التقني يتصرف في التصليح والقطع والمنتجات والحرفاء، من غير أسعار الشراء ولا قبض الفلوس.",
+    "menuHelp": "اختار الأقسام اللي ينجم المستخدم يدخللها:",
+    "creating": "قاعد يعمل الحساب...",
+    "submit": "اعمل الحساب"
+  },
+  "editModal": {
+    "title": "بدّل المستخدم",
+    "passwordResetHelp": "تبديل كلمة السر يصير بالرابط الآمن اللي يتبعت للإيميل هذا.",
+    "statusActive": "نشيط (الدخول مسموح)",
+    "statusBanned": "محظور (الدخول موش مسموح)",
+    "allowedMenus": "بدّل القوائم المسموح بها",
+    "allowedMenusHelp": "علّم على الأقسام اللي تظهر للمستخدم في القائمة الجانبية:"
+  },
+  "changePassword": {
+    "title": "بدّل كلمة السر",
+    "newPassword": "كلمة السر الجديدة",
+    "confirmPassword": "أكّد كلمة السر الجديدة"
+  },
+  "delete": {
+    "title": "احذف نهائياً",
+    "confirmation": "متأكد؟ العملية نهائية: الحساب والدخول متاع المستخدم باش يتحذفوا.",
+    "typeEmail": "اكتب الإيميل",
+    "confirmLabel": "تأكيد الحذف",
+    "lastAdmin": "ما تنجمش تحذف آخر مدير في المغازة."
+  },
+  "table": {
+    "empty": "ما لقيناش حتى مستخدم",
+    "userId": "المستخدم والمعرّف",
+    "login": "معلومات الدخول",
+    "securityCode": "كود الأمان",
+    "visibleMenus": "القوائم الظاهرة",
+    "status": "الحالة",
+    "actions": "العمليات",
+    "noName": "بلا اسم",
+    "you": "إنت",
+    "ownerId": "معرّف المالك",
+    "undefined": "موش محدد",
+    "creator": "اللي عمل الحساب",
+    "email": "الإيميل",
+    "copyEmail": "انسخ الإيميل",
+    "hideCode": "خبّي كود الأمان",
+    "showCode": "ورّي كود الأمان",
+    "hide": "خبّي",
+    "show": "ورّي"
+  },
+  "status": {
+    "inactive": "موش نشيط",
+    "active": "نشيط",
+    "primaryAccount": "الحساب الرئيسي"
+  },
+  "actions": {
+    "editProfile": "بدّل الحساب هذا",
+    "edit": "بدّل",
+    "changePassword": "بدّل كلمة السر",
+    "sendResetLink": "ابعث رابط تبديل كلمة السر",
+    "unblockUser": "حلّ الحظر على المستخدم",
+    "blockUser": "احظر المستخدم",
+    "unblock": "حلّ الحظر",
+    "block": "احظر",
+    "deleteUser": "احذف المستخدم نهائياً",
+    "deletePermanently": "احذف نهائياً"
+  },
+  "permissionMigration": {
+    "preview": "عاين ترحيل الصلاحيات",
+    "accountsWithoutPermissions_one": "فما حساب ما عندوش صلاحيات مضبوطة.",
+    "accountsWithoutPermissions_other": "فما {{count}} حسابات ما عندهمش صلاحيات مضبوطة.",
+    "downloadBackup": "حمّل نسخة JSON",
+    "running": "قاعد يرحّل…",
+    "confirm": "أكّد الترحيل"
+  },
+  "menus": {
+    "dashboard": { "name": "لوحة القيادة", "shortName": "الرئيسية", "description": "إحصائيات ورسوم عامة" },
+    "reparation": { "name": "قسم التصليح", "shortName": "التصليح", "description": "متابعة وتسيير التصليحات" },
+    "pieces": { "name": "قطع الغيار", "shortName": "القطع", "description": "الستوك ظاهر للكاشي؛ التقني يتصرف فيه الكل" },
+    "pos": { "name": "البيع / الكاسة", "shortName": "البيع", "description": "الكاسة والبيع المباشر والسلات" },
+    "products": { "name": "منتجات / خدمات", "shortName": "المنتجات", "description": "الكاشي يشوف؛ التقني يزيد ويتصرف" },
+    "clients": { "name": "تسيير الحرفاء", "shortName": "الحرفاء", "description": "قائمة الحرفاء ومتابعة الكريدي" },
+    "sales": { "name": "تاريخ البيوعات", "shortName": "البيوعات", "description": "متابعة البيوعات واللوّج عليهم" },
+    "invoices": { "name": "الفوترة", "shortName": "الفواتير", "description": "تعديل وتسيير الفواتير" },
+    "notes": { "name": "ملاحظات", "shortName": "ملاحظات", "description": "زيد ملاحظات وبرمجهم" },
+    "settings": { "name": "إعدادات المغازة", "shortName": "إعدادات", "description": "الإعدادات الأساسية" },
+    "users": { "name": "تسيير المستخدمين", "shortName": "المستخدمين", "description": "صلاحيات خاصة لتسيير الفريق" },
+    "startup": { "name": "القرآن والأذكار", "shortName": "القرآن", "description": "شاشة البداية والتلاوة الصوتية" }
+  }
+}
