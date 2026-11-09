@@ -209,6 +209,7 @@ export interface StoreSettings {
   tva: number;
   tvaEnabled?: boolean;
   tvaOptIn?: boolean;
+  sellerMentionMode?: 'none' | 'initial' | 'shortName';
   ownerId?: string;
   deleteCode?: string;
   minStockAlert?: number;

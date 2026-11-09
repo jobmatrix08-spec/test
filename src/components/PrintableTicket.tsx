@@ -5,6 +5,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { getInvoiceTotals } from '../lib/financial';
 import { formatProductDetails } from '../config/productAttributes';
+import { auditName } from '../lib/audit';
 import { useBrand } from './BrandProvider';
 
 interface Props {
@@ -49,6 +50,15 @@ export const PrintableTicket = forwardRef<HTMLDivElement, Props>(({ invoice, own
   const storePhone = storeSettings?.phone || '';
   const currency = storeSettings?.currency || 'DT';
   const totals = getInvoiceTotals(invoice);
+  const sellerName = typeof invoice.createdBy === 'object' && invoice.createdBy
+    ? auditName(invoice.createdBy).trim()
+    : '';
+  const sellerMode = storeSettings?.sellerMentionMode || 'initial';
+  const sellerLabel = sellerMode === 'initial'
+    ? `${Array.from(sellerName)[0]?.toLocaleUpperCase() || ''}.`
+    : sellerMode === 'shortName'
+      ? sellerName.split(/\s+/)[0] || ''
+      : '';
 
   return (
     <div ref={ref} className="p-5 w-[80mm] mx-auto bg-white text-black font-mono text-[12px] leading-tight">
@@ -63,6 +73,7 @@ export const PrintableTicket = forwardRef<HTMLDivElement, Props>(({ invoice, own
       <div>Client: {invoice.clientName}</div>
       {invoice.clientCode && <div>Code client: {invoice.clientCode}</div>}
       {invoice.clientPhone && <div>Tél: {invoice.clientPhone}</div>}
+      {sellerLabel && sellerMode !== 'none' && <div style={{ color: '#000000' }}>Servi par : {sellerLabel}</div>}
       <div className="border-t border-dashed border-black my-1"></div>
       <div className="my-2 space-y-1">
         {invoice.items.map((item, index) => (

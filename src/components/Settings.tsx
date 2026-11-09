@@ -339,6 +339,7 @@ function SettingsContent({
     messageTemplates: { ...DEFAULT_MESSAGE_TEMPLATES },
     tva: 0,
     tvaEnabled: false,
+    sellerMentionMode: 'initial',
     deleteCode: '',
     minStockAlert: 5
   });
@@ -918,6 +919,7 @@ function SettingsContent({
           messageTemplates: { ...DEFAULT_MESSAGE_TEMPLATES, ...data.messageTemplates },
           tva: financialSettings.tva || 0,
           tvaEnabled: financialSettings.tvaEnabled === true,
+          sellerMentionMode: data.sellerMentionMode || 'initial',
           deleteCode: data.deleteCode || '',
           minStockAlert: data.minStockAlert !== undefined ? data.minStockAlert : 5
         });
@@ -930,6 +932,7 @@ function SettingsContent({
           currency: 'DT',
           tva: 0,
           tvaEnabled: false,
+          sellerMentionMode: 'initial',
           minStockAlert: 5
         } as StoreSettings);
         setStoreFormData({
@@ -943,6 +946,7 @@ function SettingsContent({
           messageTemplates: { ...DEFAULT_MESSAGE_TEMPLATES },
           tva: 0,
           tvaEnabled: false,
+          sellerMentionMode: 'initial',
           deleteCode: '',
           minStockAlert: 5
         });
@@ -1195,6 +1199,22 @@ function SettingsContent({
                     onChange={(e) => setStoreFormData({ ...storeFormData, tvaEnabled: e.target.checked })}
                     className="h-5 w-5 shrink-0 rounded border-ds-border accent-ds-brand"
                   />
+                </label>
+
+                <label className="block space-y-1.5 text-sm font-bold text-ds-text">
+                  Mention du vendeur sur tickets et factures
+                  <Select
+                    value={storeFormData.sellerMentionMode}
+                    onChange={event => setStoreFormData({
+                      ...storeFormData,
+                      sellerMentionMode: event.target.value as NonNullable<StoreSettings['sellerMentionMode']>,
+                    })}
+                    className="text-base sm:text-sm"
+                  >
+                    <option value="none">Aucun</option>
+                    <option value="initial">Initiale</option>
+                    <option value="shortName">Nom court</option>
+                  </Select>
                 </label>
 
                 <Input

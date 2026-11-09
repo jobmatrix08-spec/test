@@ -11,7 +11,7 @@
 
 1. Caractéristiques produits — terminée (validée après correction)
 2. Journal d'activité — terminée
-3. Mention du vendeur + permissions manquantes — à faire
+3. Mention du vendeur + permissions manquantes — en cours
 4. Fondation i18n (Français / Arabe tunisien) + RTL — à faire
 5. i18n — POS, Products, Sales, Invoices, Clients — à faire
 6. i18n — Repairs, Expenses, Reports, Settings, Users — à faire
