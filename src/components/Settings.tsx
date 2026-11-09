@@ -20,6 +20,7 @@ import { useBrand } from './BrandProvider';
 import { slugifyAppName } from '../lib/brand';
 import { StartupPreferencesPanel } from './StartupPreferences';
 import ActivityLog from './ActivityLog';
+import { useTranslation } from 'react-i18next';
 
 interface SettingsProps {
   userProfile: UserProfile | null;
@@ -293,6 +294,7 @@ function SettingsContent({
   isIOS,
   isStandalone,
 }: SettingsProps) {
+  const { t } = useTranslation('settings');
   const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState<string | null>(null);
@@ -1202,7 +1204,7 @@ function SettingsContent({
                 </label>
 
                 <label className="block space-y-1.5 text-sm font-bold text-ds-text">
-                  Mention du vendeur sur tickets et factures
+                  {t('sellerMention')}
                   <Select
                     value={storeFormData.sellerMentionMode}
                     onChange={event => setStoreFormData({
@@ -1211,9 +1213,9 @@ function SettingsContent({
                     })}
                     className="text-base sm:text-sm"
                   >
-                    <option value="none">Aucun</option>
-                    <option value="initial">Initiale</option>
-                    <option value="shortName">Nom court</option>
+                    <option value="none">{t('sellerNone')}</option>
+                    <option value="initial">{t('sellerInitial')}</option>
+                    <option value="shortName">{t('sellerShortName')}</option>
                   </Select>
                 </label>
 
@@ -1385,9 +1387,9 @@ function SettingsContent({
             {/* Rubrique 3: Journal d'activité */}
             <div className="space-y-4">
               <div className="space-y-1">
-                <h3 className="text-sm font-black uppercase tracking-wider text-ds-text">3. Journal d'activité</h3>
+                <h3 className="text-sm font-black uppercase tracking-wider text-ds-text">{t('activity.title')}</h3>
                 <p className="text-sm font-medium leading-relaxed text-ds-muted">
-                  Téléchargez un fichier détaillé de l'historique d'activité (ventes, factures, créations/modifications/suppressions de produits) sur une période donnée. La période sélectionnée ne peut pas dépasser 1 mois.
+                  {t('activity.description')}
                 </p>
               </div>
 
@@ -1395,7 +1397,7 @@ function SettingsContent({
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-bold text-ds-text">Date de début</label>
+                  <label className="block text-sm font-bold text-ds-text">{t('activity.dateStart')}</label>
                   <div className="relative">
                     <Calendar className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-muted" />
                     <Input
@@ -1408,7 +1410,7 @@ function SettingsContent({
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-bold text-ds-text">Date de fin</label>
+                  <label className="block text-sm font-bold text-ds-text">{t('activity.dateEnd')}</label>
                   <div className="relative">
                     <Calendar className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-muted" />
                     <Input
@@ -1438,7 +1440,7 @@ function SettingsContent({
                   className="w-full"
                 >
                   <Eye className="w-4 h-4" />
-                  {isLoadingActivityView ? 'Chargement...' : 'Afficher dans l\'app'}
+                  {isLoadingActivityView ? t('activity.loading') : t('activity.show')}
                 </Button>
                 <Button
                   type="button"
@@ -1448,7 +1450,7 @@ function SettingsContent({
                   className="w-full"
                 >
                   <FileText className="w-4 h-4" />
-                  {isGeneratingActivity ? 'Génération...' : 'Télécharger (.xlsx)'}
+                  {isGeneratingActivity ? t('activity.generating') : t('activity.download')}
                 </Button>
               </div>
             </div>
@@ -1584,9 +1586,9 @@ function SettingsContent({
                   <FileText className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-ds-text">Journal d'activité</h3>
+                  <h3 className="text-sm font-bold text-ds-text">{t('activity.modalTitle')}</h3>
                   <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">
-                    Du {activityStartDate} au {activityEndDate} — {activityLogLines.length} entrée{activityLogLines.length > 1 ? 's' : ''}
+                    {t('activity.rangeSummary', { start: activityStartDate, end: activityEndDate, count: activityLogLines.length })}
                   </p>
                 </div>
               </div>
@@ -1594,7 +1596,7 @@ function SettingsContent({
                 type="button"
                 variant="ghost"
                 onClick={() => setShowActivityLogModal(false)}
-                aria-label="Fermer le journal d'activité"
+                aria-label={t('activity.close')}
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -1612,7 +1614,7 @@ function SettingsContent({
                 variant="secondary"
                 onClick={() => setShowActivityLogModal(false)}
               >
-                Fermer
+                {t('activity.close')}
               </Button>
             </div>
           </Card>

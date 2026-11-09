@@ -1,0 +1,46 @@
+{
+  "attributes": {
+    "type": "نوع الخصائص",
+    "none": "من غير نموذج",
+    "createType": "اعمل نوع",
+    "addType": "نوع",
+    "unspecified": "موش معبّى",
+    "booleanYes": "إي",
+    "booleanNo": "لا",
+    "addValue": "زيد قيمة لـ {{field}}",
+    "value": "قيمة",
+    "addFieldTo": "زيد خانة لـ « {{type}} »",
+    "label": "التسمية",
+    "text": "نص",
+    "choice": "اختيار",
+    "boolean": "إي/لا",
+    "number": "عدد",
+    "field": "خانة",
+    "serialNumber": "IMEI / رقم السيري",
+    "clearSerial": "امسح رقم السيري",
+    "types": {
+      "phone": "تليفون",
+      "computer": "كمبيوتر",
+      "screen-protection": "حماية شاشة",
+      "charger-cable": "شارجور/كابل",
+      "accessory": "إكسسوار عام"
+    },
+    "fields": {
+      "system": "النظام",
+      "ram": "RAM",
+      "storage": "التخزين",
+      "color": "اللون",
+      "condition": "الحالة",
+      "processor": "المعالج",
+      "anti-break": "ضدّ التكسير",
+      "connector": "الكونكتور",
+      "fast-charge": "شارج سريع",
+      "power": "القوة"
+    }
+  },
+  "audit": {
+    "createdBy": "عملو {{name}}",
+    "updatedBy": "بدّلو {{name}}",
+    "on": "نهار {{date}}"
+  }
+}

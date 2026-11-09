@@ -1,0 +1,46 @@
+{
+  "attributes": {
+    "type": "Type de caractéristiques",
+    "none": "Aucun modèle",
+    "createType": "Créer un type",
+    "addType": "Type",
+    "unspecified": "Non renseigné",
+    "booleanYes": "Oui",
+    "booleanNo": "Non",
+    "addValue": "Ajouter une valeur pour {{field}}",
+    "value": "Valeur",
+    "addFieldTo": "Ajouter un champ à « {{type}} »",
+    "label": "Libellé",
+    "text": "Texte",
+    "choice": "Choix",
+    "boolean": "Oui/non",
+    "number": "Nombre",
+    "field": "Champ",
+    "serialNumber": "IMEI / n° de série",
+    "clearSerial": "Effacer le numéro de série",
+    "types": {
+      "phone": "Téléphone",
+      "computer": "Ordinateur",
+      "screen-protection": "Protection d'écran",
+      "charger-cable": "Chargeur/câble",
+      "accessory": "Accessoire générique"
+    },
+    "fields": {
+      "system": "Système",
+      "ram": "RAM",
+      "storage": "Stockage",
+      "color": "Couleur",
+      "condition": "État",
+      "processor": "Processeur",
+      "anti-break": "Anti-casse",
+      "connector": "Connecteur",
+      "fast-charge": "Charge rapide",
+      "power": "Puissance"
+    }
+  },
+  "audit": {
+    "createdBy": "Créé par {{name}}",
+    "updatedBy": "Modifié par {{name}}",
+    "on": "le {{date}}"
+  }
+}

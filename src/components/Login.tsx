@@ -7,8 +7,11 @@ import { ALLOW_SELF_SIGNUP } from '../config/firebase';
 import BrandLogo from './BrandLogo';
 import { useBrand } from './BrandProvider';
 import { Button, Card, Input } from './ui';
+import { useTranslation } from 'react-i18next';
+import LanguageSelector from '../i18n/LanguageSelector';
 
 export default function Login({ initialMessage = '' }: { initialMessage?: string }) {
+  const { t } = useTranslation('auth');
   const { storeName } = useBrand();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -34,14 +37,14 @@ export default function Login({ initialMessage = '' }: { initialMessage?: string
       console.error('Google sign-in failed.');
 
       if (err?.code === 'auth/unauthorized-domain') {
-        setError(`Ce domaine n'est pas autorisé dans Firebase Console: ${window.location.hostname}. Ajoutez localhost ou ce domaine dans Authentication > Settings > Authorized domains.`);
+        setError(t('errors.unauthorizedDomain', { hostname: window.location.hostname }));
       } else if (err?.code === 'auth/operation-not-allowed') {
-        setError('Le fournisseur Google n\'est pas activé dans Firebase Console. Activez Google dans Authentication > Sign-in method.');
+        setError(t('errors.googleDisabled'));
       } else if (err?.code === 'auth/network-request-failed') {
-        setError('La connexion réseau a échoué. Vérifiez votre connexion Internet puis réessayez.');
+        setError(t('errors.network'));
       } else {
         console.error('Google sign-in redirect failed.');
-        setError('La redirection Google a échoué. Vérifiez les paramètres Firebase et réessayez.');
+        setError(t('errors.googleFailed'));
       }
     } finally {
       setLoading(false);
@@ -56,7 +59,7 @@ export default function Login({ initialMessage = '' }: { initialMessage?: string
     try {
       if (isRegistering) {
         if (!ALLOW_SELF_SIGNUP) {
-          throw new Error('L’inscription publique est désactivée. Contactez l’administrateur.');
+          throw new Error(t('errors.signupDisabled'));
         }
         await createUserWithEmailAndPassword(auth, email, password);
       } else {
@@ -91,15 +94,15 @@ export default function Login({ initialMessage = '' }: { initialMessage?: string
         if (profileData) {
           if (profileData.status === 'banned') {
             await signOut(auth);
-            throw new Error("Votre compte a été banni. Veuillez contacter l'administrateur.");
+            throw new Error(t('errors.banned'));
           }
         }
       }
     } catch (err: any) {
       if (err.code === 'auth/operation-not-allowed') {
-        setError("L'inscription par Email n'est pas activée dans la console Firebase. Utilisez Google ou activez 'Email/Password' dans l'onglet Authentication.");
+        setError(t('errors.emailDisabled'));
       } else {
-        setError(err.message || "Une erreur s'est produite lors de la connexion.");
+        setError(err.message || t('errors.generic'));
       }
     } finally {
       setLoading(false);
@@ -111,31 +114,34 @@ export default function Login({ initialMessage = '' }: { initialMessage?: string
     setResetMessage('');
     const cleanEmail = email.trim();
     if (!cleanEmail) {
-      setError('Saisissez votre adresse email pour recevoir un lien de réinitialisation.');
+      setError(t('errors.emailRequired'));
       return;
     }
     setLoading(true);
     try {
       await sendPasswordResetEmail(auth, cleanEmail);
-      setResetMessage('Si cette adresse correspond à un compte, un lien de réinitialisation a été envoyé.');
+      setResetMessage(t('errors.resetSent'));
     } catch (resetError) {
       const code = typeof resetError === 'object' && resetError !== null && 'code' in resetError ? resetError.code : '';
       setError(code === 'auth/invalid-email'
-        ? 'Veuillez saisir une adresse email valide.'
-        : 'Impossible d’envoyer le lien. Vérifiez votre connexion et réessayez.');
+        ? t('errors.emailInvalid')
+        : t('errors.resetFailed'));
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-ds-bg p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-ds-bg p-4">
+      <div className="flex w-full max-w-md justify-end">
+        <LanguageSelector />
+      </div>
       <Card className="w-full max-w-md p-6 sm:p-8">
         <div className="text-center mb-8">
           <BrandLogo variant="full" className="mb-5 justify-center" />
           <h1 className="sr-only">{storeName}</h1>
           <p className="mt-2 text-xs font-medium text-ds-muted sm:text-sm">
-            Connectez-vous à votre espace magasin
+            {t('subtitle')}
           </p>
         </div>
 
@@ -156,22 +162,22 @@ export default function Login({ initialMessage = '' }: { initialMessage?: string
             <div className="flex h-6 w-6 items-center justify-center rounded-full bg-ds-surface">
               <Chrome className="h-4 w-4 text-ds-brand" />
             </div>
-            <span>Se connecter avec Google</span>
+            <span>{t('google')}</span>
           </Button>
           <p className="text-center text-[11px] font-medium text-ds-muted">
-            Connexion sécurisée en 1 clic (Compte Super Admin pris en charge)
+            {t('secureGoogle')}
           </p>
         </div>
 
         <div className="my-6 flex items-center gap-4">
           <div className="h-px flex-1 bg-ds-border"></div>
-          <span className="text-[10px] font-black uppercase tracking-wider text-ds-muted">Ou avec identifiants</span>
+          <span className="text-[10px] font-black uppercase tracking-wider text-ds-muted">{t('orCredentials')}</span>
           <div className="h-px flex-1 bg-ds-border"></div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input
-            label="Email"
+            label={t('email')}
             type="email"
             autoComplete="email"
             required
@@ -181,7 +187,7 @@ export default function Login({ initialMessage = '' }: { initialMessage?: string
           />
 
           <Input
-            label="Mot de passe"
+            label={t('password')}
             type="password"
             autoComplete={isRegistering ? 'new-password' : 'current-password'}
             required
@@ -195,7 +201,7 @@ export default function Login({ initialMessage = '' }: { initialMessage?: string
             loading={loading}
             className="w-full text-xs font-bold shadow-ds-sm sm:text-sm"
           >
-            {loading ? 'Chargement...' : isRegistering ? "Créer un compte par Email" : 'Se connecter par Email'}
+            {loading ? t('loading') : isRegistering ? t('createAccount') : t('signInEmail')}
           </Button>
         </form>
 
@@ -206,7 +212,7 @@ export default function Login({ initialMessage = '' }: { initialMessage?: string
             disabled={loading}
             className="min-h-11 rounded-ds-sm px-3 text-xs font-semibold text-ds-brand underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand disabled:opacity-50"
           >
-            Mot de passe oublié ?
+            {t('forgotPassword')}
           </button>
           {resetMessage && <p role="status" className="mt-2 text-xs font-semibold text-ds-success">{resetMessage}</p>}
         </div>
@@ -216,7 +222,7 @@ export default function Login({ initialMessage = '' }: { initialMessage?: string
             onClick={() => setIsRegistering(!isRegistering)}
             className="min-h-11 px-2 text-xs font-semibold text-ds-brand transition-colors hover:text-ds-brand-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand"
           >
-            {isRegistering ? 'Déjà un compte ? Se connecter par Email' : "Besoin de créer un compte par Email ? S'inscrire"}
+            {isRegistering ? t('alreadyAccount') : t('needAccount')}
           </button>
         </div>}
       </Card>

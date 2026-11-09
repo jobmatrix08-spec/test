@@ -9,6 +9,7 @@ import {
 } from '../config/productAttributes';
 import type { Product } from '../types';
 import { Button, Input, Select } from './ui';
+import { useTranslation } from 'react-i18next';
 
 interface AttributeFieldsProps {
   productTypes?: ProductAttributeType[];
@@ -37,11 +38,18 @@ export default function AttributeFields({
   onSerialNumberChange,
   onProductTypesChange,
 }: AttributeFieldsProps) {
+  const { t } = useTranslation('products');
   const [newTypeName, setNewTypeName] = useState('');
   const [newField, setNewField] = useState<ProductAttributeField>(EMPTY_FIELD);
   const [newOption, setNewOption] = useState<Record<string, string>>({});
   const types = productTypes.length ? productTypes : DEFAULT_PRODUCT_ATTRIBUTE_TYPES;
   const selectedType = types.find(type => type.id === selectedTypeId);
+  const getTypeLabel = (type: ProductAttributeType) => type.id.startsWith('custom-')
+    ? type.name
+    : t(`attributes.types.${type.id}`, { defaultValue: type.name });
+  const getFieldLabel = (field: ProductAttributeField) => (
+    t(`attributes.fields.${field.key}`, { defaultValue: field.label })
+  );
   const suggestionsByKey = useMemo(() => {
     const suggestions: Record<string, string[]> = {};
     for (const product of products) {
@@ -91,17 +99,17 @@ export default function AttributeFields({
   return (
     <section className="col-span-2 space-y-3 rounded-ds-md border border-ds-border bg-ds-surface-2 p-3">
       <div>
-        <label htmlFor="product-attribute-type" className="mb-1 block text-sm font-medium text-ds-text">Type de caractéristiques</label>
+        <label htmlFor="product-attribute-type" className="mb-1 block text-sm font-medium text-ds-text">{t('attributes.type')}</label>
         <Select id="product-attribute-type" value={selectedTypeId} onChange={event => onTypeChange(event.target.value)} disabled={!canEdit} className="min-h-11 text-base sm:text-sm">
-          <option value="">Aucun modèle</option>
-          {types.map(type => <option key={type.id} value={type.id}>{type.name}</option>)}
+          <option value="">{t('attributes.none')}</option>
+          {types.map(type => <option key={type.id} value={type.id}>{getTypeLabel(type)}</option>)}
         </Select>
       </div>
 
       {canEdit && (
         <div className="flex gap-2">
-          <Input value={newTypeName} onChange={event => setNewTypeName(event.target.value)} placeholder="Créer un type" className="min-w-0 text-base sm:text-sm" />
-          <Button type="button" variant="secondary" onClick={addType} disabled={!newTypeName.trim()} className="min-h-11 shrink-0"><Plus className="h-4 w-4" /> Type</Button>
+          <Input value={newTypeName} onChange={event => setNewTypeName(event.target.value)} placeholder={t('attributes.createType')} className="min-w-0 text-base sm:text-sm" />
+          <Button type="button" variant="secondary" onClick={addType} disabled={!newTypeName.trim()} className="min-h-11 shrink-0"><Plus className="h-4 w-4" /> {t('attributes.addType')}</Button>
         </div>
       )}
 
@@ -109,12 +117,13 @@ export default function AttributeFields({
         const options = field.options || [];
         const suggestions = suggestionsByKey[field.label] || [];
         const dataListId = `product-attribute-values-${selectedType.id}-${field.key}`;
+        const fieldLabel = getFieldLabel(field);
         return (
           <div key={field.key}>
-            <label htmlFor={`product-attribute-${field.key}`} className="mb-1 block text-sm font-medium text-ds-text">{field.label}</label>
+            <label htmlFor={`product-attribute-${field.key}`} className="mb-1 block text-sm font-medium text-ds-text">{fieldLabel}</label>
             {field.type === 'boolean' ? (
               <Select id={`product-attribute-${field.key}`} value={attributes[field.label] || ''} onChange={event => updateField(field, event.target.value)} disabled={!canEdit} className="min-h-11 text-base sm:text-sm">
-                <option value="">Non renseigné</option><option value="Oui">Oui</option><option value="Non">Non</option>
+                <option value="">{t('attributes.unspecified')}</option><option value="Oui">{t('attributes.booleanYes')}</option><option value="Non">{t('attributes.booleanNo')}</option>
               </Select>
             ) : field.type === 'choice' ? (
               <div className="space-y-2">
@@ -122,8 +131,8 @@ export default function AttributeFields({
                 <datalist id={dataListId}>{[...new Set([...options, ...suggestions])].map(value => <option key={value} value={value} />)}</datalist>
                 {canEdit && (
                   <div className="flex gap-2">
-                    <Input value={newOption[field.key] || ''} onChange={event => setNewOption(current => ({ ...current, [field.key]: event.target.value }))} placeholder={`Ajouter une valeur pour ${field.label}`} className="min-w-0 text-base sm:text-sm" />
-                    <Button type="button" variant="secondary" onClick={() => addOption(field)} disabled={!newOption[field.key]?.trim()} className="min-h-11 shrink-0"><Plus className="h-4 w-4" /> Valeur</Button>
+                    <Input value={newOption[field.key] || ''} onChange={event => setNewOption(current => ({ ...current, [field.key]: event.target.value }))} placeholder={t('attributes.addValue', { field: fieldLabel })} className="min-w-0 text-base sm:text-sm" />
+                    <Button type="button" variant="secondary" onClick={() => addOption(field)} disabled={!newOption[field.key]?.trim()} className="min-h-11 shrink-0"><Plus className="h-4 w-4" /> {t('attributes.value')}</Button>
                   </div>
                 )}
               </div>
@@ -147,22 +156,22 @@ export default function AttributeFields({
 
       {canEdit && selectedType && (
         <div className="space-y-2 border-t border-ds-border pt-3">
-          <p className="text-xs font-bold text-ds-text-muted">Ajouter un champ à « {selectedType.name} »</p>
+          <p className="text-xs font-bold text-ds-text-muted">{t('attributes.addFieldTo', { type: getTypeLabel(selectedType) })}</p>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-            <Input value={newField.label} onChange={event => setNewField(current => ({ ...current, label: event.target.value }))} placeholder="Libellé" className="text-base sm:text-sm" />
+            <Input value={newField.label} onChange={event => setNewField(current => ({ ...current, label: event.target.value }))} placeholder={t('attributes.label')} className="text-base sm:text-sm" />
             <Select value={newField.type} onChange={event => setNewField(current => ({ ...current, type: event.target.value as ProductAttributeFieldType }))} className="min-h-11 text-base sm:text-sm">
-              <option value="text">Texte</option><option value="choice">Choix</option><option value="boolean">Oui/non</option><option value="number">Nombre</option>
+              <option value="text">{t('attributes.text')}</option><option value="choice">{t('attributes.choice')}</option><option value="boolean">{t('attributes.boolean')}</option><option value="number">{t('attributes.number')}</option>
             </Select>
-            <Button type="button" variant="secondary" onClick={addField} disabled={!newField.label.trim()} className="min-h-11"><Plus className="h-4 w-4" /> Champ</Button>
+            <Button type="button" variant="secondary" onClick={addField} disabled={!newField.label.trim()} className="min-h-11"><Plus className="h-4 w-4" /> {t('attributes.field')}</Button>
           </div>
         </div>
       )}
 
       <div>
-        <label htmlFor="product-serial-number" className="mb-1 block text-sm font-medium text-ds-text">IMEI / n° de série</label>
+        <label htmlFor="product-serial-number" className="mb-1 block text-sm font-medium text-ds-text">{t('attributes.serialNumber')}</label>
         <div className="flex gap-2">
           <Input id="product-serial-number" value={serialNumber} onChange={event => onSerialNumberChange(event.target.value)} readOnly={!canEdit} className="min-w-0 text-base sm:text-sm" />
-          {canEdit && serialNumber && <button type="button" onClick={() => onSerialNumberChange('')} aria-label="Effacer le numéro de série" className="min-h-11 min-w-11 rounded-ds-md border border-ds-border text-ds-text-muted"><X className="mx-auto h-4 w-4" /></button>}
+          {canEdit && serialNumber && <button type="button" onClick={() => onSerialNumberChange('')} aria-label={t('attributes.clearSerial')} className="min-h-11 min-w-11 rounded-ds-md border border-ds-border text-ds-text-muted"><X className="mx-auto h-4 w-4" /></button>}
         </div>
       </div>
     </section>

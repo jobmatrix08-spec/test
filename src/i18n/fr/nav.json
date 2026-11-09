@@ -1,0 +1,27 @@
+{
+  "sections": {
+    "sales": "Ventes",
+    "workshop": "Atelier",
+    "catalog": "Catalogue",
+    "tools": "Outils",
+    "administration": "Administration"
+  },
+  "dashboard": "Tableau de bord",
+  "pos": "Vente (Caisse)",
+  "salesHistory": "Historique ventes",
+  "invoices": "Facturation",
+  "cashSession": "Clôture de caisse",
+  "repairs": "Réparations",
+  "parts": "Pièces détachées",
+  "products": "Articles / Services",
+  "clients": "Clients",
+  "notes": "Mémos & Notes",
+  "startup": "Coran & Adhkar",
+  "users": "Utilisateurs",
+  "reports": "Rapports",
+  "expenses": "Dépenses",
+  "settings": "Paramètres",
+  "mainNavigation": "Navigation principale",
+  "openMenu": "Ouvrir le menu",
+  "closeMenu": "Fermer le menu"
+}

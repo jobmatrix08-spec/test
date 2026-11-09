@@ -19,6 +19,8 @@ import { PrintableTicket } from './PrintableTicket';
 import { addCashSessionTotals, requireOpenCashSession, useCashSession } from '../lib/cashSessions';
 import { calculatePurchaseTotals, getPurchaseCancellationStock, getPurchasePaymentBalance, getPurchaseReceiptStock } from '../lib/purchaseAccounting';
 import { Badge, Button, Card, EmptyState, Input, PageHeader, Select } from './ui';
+import { useTranslation } from 'react-i18next';
+import { getDateLocale } from '../i18n/format';
 
 interface InvoicesProps {
   userProfile: UserProfile | null;
@@ -123,6 +125,7 @@ function toInvoiceDate(value: unknown): Date | null {
 }
 
 export default function Invoices({ userProfile }: InvoicesProps) {
+  const { t: productT } = useTranslation('products');
   const brand = useBrand();
   const navigate = useNavigate();
   const { session: cashSession, loading: cashSessionLoading } = useCashSession(userProfile);
@@ -1634,8 +1637,8 @@ export default function Invoices({ userProfile }: InvoicesProps) {
                 <p className="mt-1 text-xs font-mono uppercase tracking-widest text-ds-muted">Date: {selectedInvoice.date?.toDate ? format(selectedInvoice.date.toDate(), 'PPP p', { locale: fr }) : 'Inconnue'}</p>
                 {userProfile?.role === 'admin' && (selectedInvoice.createdBy || selectedInvoice.updatedBy) && (
                   <p className="mt-1 text-[10px] text-ds-muted">
-                    {selectedInvoice.createdBy && <>Créé par {auditName(selectedInvoice.createdBy)}{auditDate(selectedInvoice.date) && ` le ${auditDate(selectedInvoice.date)}`}</>}
-                    {selectedInvoice.updatedBy && <> · Modifié par {auditName(selectedInvoice.updatedBy)}{auditDate(selectedInvoice.updatedAt) && ` le ${auditDate(selectedInvoice.updatedAt)}`}</>}
+                    {selectedInvoice.createdBy && <>{productT('audit.createdBy', { name: auditName(selectedInvoice.createdBy) })}{auditDate(selectedInvoice.date, getDateLocale()) && ` ${productT('audit.on', { date: auditDate(selectedInvoice.date, getDateLocale()) })}`}</>}
+                    {selectedInvoice.updatedBy && <> · {productT('audit.updatedBy', { name: auditName(selectedInvoice.updatedBy) })}{auditDate(selectedInvoice.updatedAt, getDateLocale()) && ` ${productT('audit.on', { date: auditDate(selectedInvoice.updatedAt, getDateLocale()) })}`}</>}
                   </p>
                 )}
               </div>

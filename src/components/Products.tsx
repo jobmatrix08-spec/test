@@ -12,6 +12,8 @@ import { slugifyAppName } from '../lib/brand';
 import { useBrand } from './BrandProvider';
 import { Badge, Button, Card, EmptyState, Input, PageHeader, Select } from './ui';
 import AttributeFields from './AttributeFields';
+import { useTranslation } from 'react-i18next';
+import { getDateLocale } from '../i18n/format';
 
 interface ProductsProps {
   userProfile: UserProfile | null;
@@ -44,6 +46,7 @@ function ean13Svg(value: string): string {
 }
 
 export default function Products({ userProfile }: ProductsProps) {
+  const { t } = useTranslation('products');
   const brand = useBrand();
   const ownerId = (userProfile?.role === 'admin' ? userProfile?.uid : userProfile?.ownerId) || userProfile?.uid || auth.currentUser?.uid;
   const isAdmin = userProfile?.role === 'admin';
@@ -1170,8 +1173,8 @@ export default function Products({ userProfile }: ProductsProps) {
                       <div className="font-medium text-ds-text">{product.name}</div>
                       {isAdmin && (product.createdBy || product.updatedBy) && (
                         <p className="mt-0.5 text-[10px] text-ds-text-muted">
-                          {product.createdBy && <>Créé par {auditName(product.createdBy)}{auditDate(product.createdAt) && ` le ${auditDate(product.createdAt)}`}</>}
-                          {product.updatedBy && <> · Modifié par {auditName(product.updatedBy)}{auditDate(product.updatedAt) && ` le ${auditDate(product.updatedAt)}`}</>}
+                          {product.createdBy && <>{t('audit.createdBy', { name: auditName(product.createdBy) })}{auditDate(product.createdAt, getDateLocale()) && ` ${t('audit.on', { date: auditDate(product.createdAt, getDateLocale()) })}`}</>}
+                          {product.updatedBy && <> · {t('audit.updatedBy', { name: auditName(product.updatedBy) })}{auditDate(product.updatedAt, getDateLocale()) && ` ${t('audit.on', { date: auditDate(product.updatedAt, getDateLocale()) })}`}</>}
                         </p>
                       )}
                       <div className="flex flex-col gap-0.5">

@@ -2,7 +2,7 @@ import React, { useEffect, useState, Component } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { onAuthStateChanged, signOut, User } from 'firebase/auth';
 import { auth, db } from './firebase';
-import { doc, getDoc, setDoc, onSnapshot, collection, query, orderBy, where } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, onSnapshot, collection, query, orderBy, where } from 'firebase/firestore';
 import { 
   LayoutDashboard, 
   Package, 
@@ -38,47 +38,51 @@ import { useBrand } from './components/BrandProvider';
 import { ThemeSelector } from './components/ThemeProvider';
 import { ALLOW_SELF_SIGNUP } from './config/firebase';
 import { useCashSession } from './lib/cashSessions';
+import { useTranslation } from 'react-i18next';
+import LanguageSelector from './i18n/LanguageSelector';
+import { setAppLanguage, type AppLanguage } from './i18n/language';
+import { formatDateTime, getDateLocale } from './i18n/format';
 export { hasMenuAccess } from './lib/permissions';
 
 const NAV_SECTIONS = [
   {
-    title: 'Ventes',
+    title: 'sections.sales',
     items: [
-      { id: 'dashboard', name: 'Tableau de bord', path: '/', icon: LayoutDashboard },
-      { id: 'pos', name: 'Vente (Caisse)', path: '/pos', icon: ShoppingCart },
-      { id: 'sales', name: 'Historique ventes', path: '/sales', icon: History },
-      { id: 'invoices', name: 'Facturation', path: '/invoices', icon: FileText },
-      { id: 'invoices', name: 'Clôture de caisse', path: '/cash-session', icon: CircleDollarSign },
+      { id: 'dashboard', name: 'dashboard', path: '/', icon: LayoutDashboard },
+      { id: 'pos', name: 'pos', path: '/pos', icon: ShoppingCart },
+      { id: 'sales', name: 'salesHistory', path: '/sales', icon: History },
+      { id: 'invoices', name: 'invoices', path: '/invoices', icon: FileText },
+      { id: 'invoices', name: 'cashSession', path: '/cash-session', icon: CircleDollarSign },
     ],
   },
   {
-    title: 'Atelier',
+    title: 'sections.workshop',
     items: [
-      { id: 'reparation', name: 'Réparations', path: '/repairs', icon: Wrench },
-      { id: 'pieces', name: 'Pièces détachées', path: '/parts', icon: Package },
+      { id: 'reparation', name: 'repairs', path: '/repairs', icon: Wrench },
+      { id: 'pieces', name: 'parts', path: '/parts', icon: Package },
     ],
   },
   {
-    title: 'Catalogue',
+    title: 'sections.catalog',
     items: [
-      { id: 'products', name: 'Articles / Services', path: '/products', icon: Package },
-      { id: 'clients', name: 'Clients', path: '/clients', icon: Users },
+      { id: 'products', name: 'products', path: '/products', icon: Package },
+      { id: 'clients', name: 'clients', path: '/clients', icon: Users },
     ],
   },
   {
-    title: 'Outils',
+    title: 'sections.tools',
     items: [
-      { id: 'notes', name: 'Mémos & Notes', path: '/notes', icon: StickyNote },
-      { id: 'startup', name: 'Coran & Adhkar', path: '/settings#startup-settings', icon: BookOpen, adminOnly: true },
+      { id: 'notes', name: 'notes', path: '/notes', icon: StickyNote },
+      { id: 'startup', name: 'startup', path: '/settings#startup-settings', icon: BookOpen, adminOnly: true },
     ],
   },
   {
-    title: 'Administration',
+    title: 'sections.administration',
     items: [
-      { id: 'users', name: 'Utilisateurs', path: '/users', icon: UserCheck, adminOnly: true },
-      { id: 'reports', name: 'Rapports', path: '/reports', icon: BarChart3, adminOnly: true },
-      { id: 'expenses', name: 'Dépenses', path: '/expenses', icon: CircleDollarSign, adminOnly: true },
-      { id: 'settings', name: 'Paramètres', path: '/settings', icon: SettingsIcon },
+      { id: 'users', name: 'users', path: '/users', icon: UserCheck, adminOnly: true },
+      { id: 'reports', name: 'reports', path: '/reports', icon: BarChart3, adminOnly: true },
+      { id: 'expenses', name: 'expenses', path: '/expenses', icon: CircleDollarSign, adminOnly: true },
+      { id: 'settings', name: 'settings', path: '/settings', icon: SettingsIcon },
     ],
   },
 ];
@@ -105,12 +109,13 @@ function getFirstAccessiblePath(userProfile: UserProfile | null): string {
 }
 
 function CurrentPageTitle({ userProfile }: { userProfile: UserProfile | null }) {
+  const { t } = useTranslation('nav');
   const location = useLocation();
   const currentItem = getAccessibleNavigation(userProfile)
     .flatMap(section => section.items)
     .find(item => item.path === `${location.pathname}${location.hash}` || item.path === location.pathname);
 
-  return <h1 className="truncate text-base font-bold text-ds-text sm:text-lg">{currentItem?.name || 'Paramètres'}</h1>;
+  return <h1 className="truncate text-base font-bold text-ds-text sm:text-lg">{currentItem ? t(currentItem.name) : t('settings')}</h1>;
 }
 
 // Components
@@ -237,6 +242,8 @@ function Sidebar({
   cashSession: CashSessionRecord | null;
   cashSessionLoading: boolean;
 }) {
+  const { t: navT } = useTranslation('nav');
+  const { t } = useTranslation('common');
   const { storeName } = useBrand();
   const location = useLocation();
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
@@ -263,15 +270,15 @@ function Sidebar({
             <div className="min-w-0">
               <BrandLogo variant="full" />
             </div>
-            <button onClick={() => setIsOpen(false)} aria-label="Fermer le menu" className="ms-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-ds-muted transition-colors hover:bg-ds-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand lg:hidden">
+            <button onClick={() => setIsOpen(false)} aria-label={navT('closeMenu')} className="ms-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-ds-muted transition-colors hover:bg-ds-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand lg:hidden">
               <X className="h-5 w-5" />
             </button>
           </div>
 
-          <nav aria-label="Navigation principale" className="flex-1 space-y-3 overflow-y-auto px-4 py-5">
+          <nav aria-label={navT('mainNavigation')} className="flex-1 space-y-3 overflow-y-auto px-4 py-5">
             {navSections.map(section => (
-              <section key={section.title} aria-label={section.title}>
-                <h2 className="px-3 pb-2 pt-3 text-[10px] font-bold uppercase tracking-[0.15em] text-ds-muted">{section.title}</h2>
+              <section key={section.title} aria-label={navT(section.title)}>
+                <h2 className="px-3 pb-2 pt-3 text-[10px] font-bold uppercase tracking-[0.15em] text-ds-muted">{navT(section.title)}</h2>
                 <div className="space-y-1">
                   {section.items.map((item) => {
                     const Icon = item.icon;
@@ -292,7 +299,7 @@ function Sidebar({
                         aria-current={isActive ? 'page' : undefined}
                       >
                         <Icon className={cn("h-[18px] w-[18px] shrink-0", isActive ? "text-ds-brand" : "text-ds-muted")} />
-                        <span className="flex-1">{item.name}</span>
+                        <span className="flex-1">{navT(item.name)}</span>
                         {item.id === 'notes' && todayNotesCount > 0 && (
                           <span className={cn("min-w-[18px] rounded-full px-2 py-0.5 text-center text-[10px] font-black", isActive ? "bg-ds-brand text-ds-brand-contrast" : "bg-ds-danger-soft text-ds-danger")}>
                             {todayNotesCount}
@@ -315,12 +322,12 @@ function Sidebar({
             <div className="flex flex-col gap-3 rounded-ds-lg border border-ds-border bg-ds-surface-2 p-4">
               <div className="flex items-center gap-2.5">
                 <Badge variant={cashSession ? 'success' : 'neutral'} className="min-h-7 px-2 text-[10px] uppercase tracking-wide">
-                  {cashSession ? 'Caisse ouverte' : cashSessionLoading ? 'Chargement de la caisse…' : 'Aucune caisse ouverte'}
+                  {cashSession ? t('cashOpen') : cashSessionLoading ? t('loadingCash') : t('noCash')}
                 </Badge>
               </div>
-              {cashSession && <p className="text-[12px] font-medium text-ds-muted">Session depuis {cashSession.openedAt?.toDate?.().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) || '—'}, par {userProfile?.name || userProfile?.email || 'Utilisateur'}</p>}
+              {cashSession && <p className="text-[12px] font-medium text-ds-muted">{t('sessionSince', { time: cashSession.openedAt?.toDate?.() ? formatDateTime(cashSession.openedAt.toDate(), { hour: '2-digit', minute: '2-digit' }) : '—', name: userProfile?.name || userProfile?.email || t('unknownUser') })}</p>}
               <Link to="/cash-session" onClick={() => setIsOpen(false)} className="flex min-h-11 items-center justify-center rounded-ds-md bg-ds-brand px-3 text-sm font-bold text-ds-brand-contrast transition-colors hover:bg-ds-brand-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand">
-                {cashSession ? 'Clôturer la caisse' : 'Ouvrir la caisse'}
+                {cashSession ? t('closeCash') : t('openCash')}
               </Link>
             </div>
           </div>}
@@ -331,10 +338,10 @@ function Sidebar({
               <div className="rounded-ds-md border border-ds-warning/20 bg-ds-warning-soft p-3 text-xs text-ds-warning">
                 <div className="mb-1 flex items-center gap-2 text-[10px] font-black uppercase tracking-wider">
                   <WifiOff className="h-3.5 w-3.5 animate-pulse" />
-                  <Badge variant="warning" className="min-h-7 px-2">Mode Hors-ligne</Badge>
+                  <Badge variant="warning" className="min-h-7 px-2">{t('offlineMode')}</Badge>
                 </div>
                 <p className="text-[11px] font-medium leading-relaxed">
-                  Modifications sauvegardées localement. {pendingCount > 0 ? `${pendingCount} opération(s) en attente.` : 'Prêt pour reconnexion.'}
+                  {t('localSaved')} {pendingCount > 0 ? t('operationsWaiting', { count: pendingCount }) : t('reconnectReady')}
                 </p>
               </div>
             ) : pendingCount > 0 ? (
@@ -342,21 +349,21 @@ function Sidebar({
                 <div className="mb-1 flex items-center justify-between gap-2 text-[10px] font-black uppercase tracking-wider">
                   <span className="flex items-center gap-1.5">
                     <RefreshCcw className={cn("h-3.5 w-3.5", syncing && "animate-spin")} />
-                    <Badge variant="info" className="min-h-7 px-2">Synchronisation</Badge>
+                    <Badge variant="info" className="min-h-7 px-2">{t('syncing')}</Badge>
                   </span>
                   <span className="rounded-full bg-ds-brand px-1.5 py-0.5 text-[9px] text-ds-brand-contrast">
                     {pendingCount}
                   </span>
                 </div>
                 <p className="mb-2 text-[11px] font-medium leading-relaxed text-ds-muted">
-                  Des modifications locales sont en attente d'envoi.
+                  {t('localPending')}
                 </p>
                 <button
                   disabled={syncing}
                   onClick={handleTriggerSync}
                   className="min-h-11 w-full rounded-ds-sm border border-ds-brand px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-ds-brand transition-colors hover:bg-ds-brand hover:text-ds-brand-contrast focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand disabled:opacity-50"
                 >
-                  {syncing ? 'En cours...' : 'Synchroniser maintenant'}
+                  {syncing ? t('syncingNow') : t('syncNow')}
                 </button>
               </div>
             ) : null}
@@ -365,17 +372,17 @@ function Sidebar({
             {deferredPrompt && (
               <div className="rounded-ds-md border border-ds-border bg-ds-surface p-3 text-xs text-ds-text">
                 <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-ds-text">
-                  ✨ Installer l'App
+                  ✨ {t('installApp')}
                 </div>
                 <p className="mb-2.5 text-[11px] font-medium leading-relaxed text-ds-muted">
-                  Lancez {storeName} en plein écran directement depuis votre écran d'accueil.
+                  {t('launchFullscreen', { storeName })}
                 </p>
                 <button
                   onClick={handleInstallApp}
                   className="flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-ds-sm bg-ds-brand px-3 py-2 text-[10px] font-black uppercase tracking-wider text-ds-brand-contrast transition-colors hover:bg-ds-brand-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand"
                 >
                   <Package className="w-3.5 h-3.5" />
-                  Installer maintenant
+                  {t('installNow')}
                 </button>
               </div>
             )}
@@ -384,10 +391,10 @@ function Sidebar({
             {isIOS && !isStandalone && (
               <div className="rounded-ds-md border border-ds-border bg-ds-surface p-3 text-xs text-ds-text">
                 <div className="mb-1 text-[10px] font-black uppercase tracking-wider text-ds-text">
-                  📲 Installer sur iPhone
+                  📲 {t('installOnIphone')}
                 </div>
                 <p className="text-[11px] font-medium leading-relaxed text-ds-muted">
-                  Appuyez sur <span className="font-bold">Partager</span> (<span className="text-[13px]">⎋</span>) puis sur <span className="font-bold">"Sur l'écran d'accueil"</span> (<span className="text-[13px]">⊕</span>).
+                  {t('tapShare')}
                 </p>
               </div>
             )}
@@ -399,21 +406,31 @@ function Sidebar({
                 {(userProfile?.name || userProfile?.email || 'U').slice(0, 1).toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-bold text-ds-text">{userProfile?.name || userProfile?.email || 'Utilisateur'}</p>
-                <p className="mt-0.5 text-xs font-medium text-ds-muted">{userProfile?.role === 'admin' ? 'Administrateur' : userProfile?.allowedMenus?.includes('reparation') && !userProfile.allowedMenus.includes('products') ? 'Technicien' : 'Casier'}</p>
+                <p className="truncate text-sm font-bold text-ds-text">{userProfile?.name || userProfile?.email || t('unknownUser')}</p>
+                <p className="mt-0.5 text-xs font-medium text-ds-muted">{userProfile?.role === 'admin' ? t('administrator') : userProfile?.allowedMenus?.includes('reparation') && !userProfile.allowedMenus.includes('products') ? t('technician') : t('cashier')}</p>
               </div>
             </div>
             <button
               onClick={async () => {
-                localStorage.clear();
-                sessionStorage.clear();
+                try {
+                  const preferredLanguage = localStorage.getItem('app-language');
+                  localStorage.clear();
+                  if (preferredLanguage) localStorage.setItem('app-language', preferredLanguage);
+                } catch (error) {
+                  console.warn('Unable to clear local application data while preserving the language preference.', error);
+                }
+                try {
+                  sessionStorage.clear();
+                } catch (error) {
+                  console.warn('Unable to clear temporary session data.', error);
+                }
                 await signOut(auth);
                 window.location.reload();
               }}
               className="flex min-h-11 w-full items-center gap-3 rounded-ds-md px-4 py-3 text-xs font-extrabold uppercase tracking-wider text-ds-danger transition-colors hover:bg-ds-danger-soft focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-danger"
             >
               <LogOut className="h-4 w-4 text-ds-muted" />
-              Déconnexion
+              {t('logout')}
             </button>
           </div>
         </div>
@@ -425,6 +442,7 @@ function Sidebar({
 // Overlay bloquant affiché lorsque l'application est hors ligne :
 // grise toute la page, bloque clics / focus / clavier et affiche un message.
 function OfflineBlocker() {
+  const { t } = useTranslation('common');
   useEffect(() => {
     // Retire le focus de tout champ actif (zone de texte, bouton...)
     if (document.activeElement instanceof HTMLElement) {
@@ -451,10 +469,10 @@ function OfflineBlocker() {
         <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-tr from-indigo-600 to-cyan-500 flex items-center justify-center mb-4 shadow-md shadow-indigo-600/20">
           <WifiOff className="w-8 h-8 text-white" />
         </div>
-        <h2 className="text-xl font-black font-display text-slate-800 mb-2">Connexion Internet requise</h2>
+        <h2 className="text-xl font-black font-display text-slate-800 mb-2">{t('internetRequired')}</h2>
         <p className="text-slate-500 text-sm leading-relaxed">
-          Vérifiez votre connexion Internet.<br />
-          Aucune action n'est possible tant que vous êtes hors ligne.
+          {t('checkInternet')}<br />
+          {t('offlineBlocked')}
         </p>
       </div>
     </div>
@@ -462,6 +480,9 @@ function OfflineBlocker() {
 }
 
 export default function App() {
+  const { t: commonT } = useTranslation('common');
+  const { t: authT } = useTranslation('auth');
+  const { t: navT } = useTranslation('nav');
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [authMessage, setAuthMessage] = useState('');
@@ -566,10 +587,17 @@ export default function App() {
     }
   };
 
-  // Dynamic formatted human date in French
+  // Dynamic date follows the selected application language.
   const getFormattedDate = () => {
-    const raw = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
-    return raw.charAt(0).toUpperCase() + raw.slice(1);
+    const raw = formatDateTime(new Date(), { weekday: 'long', day: 'numeric', month: 'long' });
+    const locale = getDateLocale();
+    return raw.charAt(0).toLocaleUpperCase(locale) + raw.slice(1);
+  };
+
+  const handleLanguageChange = async (language: AppLanguage) => {
+    if (!userProfile?.uid) return;
+    await updateDoc(doc(db, 'users', userProfile.uid), { preferredLanguage: language });
+    setUserProfile(current => current ? { ...current, preferredLanguage: language } : current);
   };
 
   // Listen to today's notes
@@ -641,7 +669,7 @@ export default function App() {
           updateLowStock();
         },
         () => {
-          setHeaderNotificationError('Impossible de charger les alertes de stock.');
+          setHeaderNotificationError(commonT('stockAlertLoadError'));
           console.error('Unable to load store-scoped stock notifications.');
         },
       ));
@@ -652,7 +680,7 @@ export default function App() {
           updateLowStock();
         }
       }, () => {
-        setHeaderNotificationError('Impossible de charger le seuil d’alerte de stock.');
+        setHeaderNotificationError(commonT('stockThresholdLoadError'));
         console.error('Unable to load the store stock-alert threshold.');
       }));
     } else {
@@ -671,7 +699,7 @@ export default function App() {
           unpaidRepairs: records.filter(repair => Number(repair.debt) > 0).length,
         }));
       }, () => {
-        setHeaderNotificationError('Impossible de charger les alertes de réparations.');
+        setHeaderNotificationError(commonT('repairAlertLoadError'));
         console.error('Unable to load store-scoped repair notifications.');
       }));
     } else {
@@ -688,7 +716,7 @@ export default function App() {
           }));
         },
         () => {
-          setHeaderNotificationError('Impossible de charger les alertes d’impayés.');
+          setHeaderNotificationError(commonT('unpaidAlertLoadError'));
           console.error('Unable to load store-scoped unpaid-sale notifications.');
         },
       ));
@@ -723,10 +751,13 @@ export default function App() {
             if (isFirebaseUser) {
               signOut(auth);
             }
-            setAuthMessage('Votre compte a été banni. Veuillez contacter l\'administrateur.');
+            setAuthMessage(authT('errors.banned'));
             setLoading(false);
           } else {
             const repairedProfile = { ...profileData };
+            if (repairedProfile.preferredLanguage === 'fr' || repairedProfile.preferredLanguage === 'ar') {
+              void setAppLanguage(repairedProfile.preferredLanguage);
+            }
             if (repairedProfile.role === 'admin' && repairedProfile.ownerId !== repairedProfile.uid) {
               repairedProfile.ownerId = repairedProfile.uid;
               setDoc(userRef, { ownerId: repairedProfile.uid }, { merge: true })
@@ -754,7 +785,7 @@ export default function App() {
             await signOut(auth);
             setUser(null);
             setUserProfile(null);
-            setAuthMessage('Compte non autorisé, contactez l’administrateur.');
+            setAuthMessage(authT('errors.unauthorizedAccount'));
             setLoading(false);
             return;
           }
@@ -776,6 +807,9 @@ export default function App() {
           }
         }
 
+        if (profileData.preferredLanguage === 'fr' || profileData.preferredLanguage === 'ar') {
+          void setAppLanguage(profileData.preferredLanguage);
+        }
         setAuthMessage('');
         setUser(firebaseUser);
         setUserProfile(profileData);
@@ -783,7 +817,7 @@ export default function App() {
         startProfileListener(firebaseUser.uid, true);
         } catch (error) {
           console.error('Unable to load the authenticated account profile.');
-          setAuthMessage('Impossible de vérifier votre compte. Réessayez ou contactez l’administrateur.');
+          setAuthMessage(authT('errors.profileCheck'));
           await signOut(auth);
           setUser(null);
           setUserProfile(null);
@@ -794,7 +828,11 @@ export default function App() {
           unsubscribeProfile();
           unsubscribeProfile = null;
         }
-        localStorage.removeItem('custom_session');
+        try {
+          localStorage.removeItem('custom_session');
+        } catch (error) {
+          console.warn('Unable to remove the obsolete session from local storage.', error);
+        }
         setUser(null);
         setUserProfile(null);
         setLoading(false);
@@ -816,9 +854,9 @@ export default function App() {
   const canAccessCashSession = hasMenuAccess(userProfile, 'pos') || hasMenuAccess(userProfile, 'invoices');
   const canViewSalesNotifications = canAccessCashSession || hasMenuAccess(userProfile, 'sales');
   const allHeaderNotificationItems: { id: string; label: string; count: number; path: string; variant: 'warning' | 'success' | 'danger' }[] = [
-    { id: 'lowStock', label: 'Articles sous le seuil de stock', count: headerNotifications.lowStock, path: '/products', variant: 'warning' },
-    { id: 'readyRepairs', label: 'Réparations prêtes à être récupérées', count: headerNotifications.readyRepairs, path: '/repairs', variant: 'success' },
-    { id: 'unpaid', label: 'Ventes ou réparations avec impayé', count: headerNotifications.unpaidSales + headerNotifications.unpaidRepairs, path: hasMenuAccess(userProfile, 'sales') ? '/sales' : '/repairs', variant: 'danger' },
+    { id: 'lowStock', label: commonT('lowStockLabel'), count: headerNotifications.lowStock, path: '/products', variant: 'warning' },
+    { id: 'readyRepairs', label: commonT('readyRepairsLabel'), count: headerNotifications.readyRepairs, path: '/repairs', variant: 'success' },
+    { id: 'unpaid', label: commonT('unpaidLabel'), count: headerNotifications.unpaidSales + headerNotifications.unpaidRepairs, path: hasMenuAccess(userProfile, 'sales') ? '/sales' : '/repairs', variant: 'danger' },
   ];
   const headerNotificationItems = allHeaderNotificationItems.filter(item =>
     item.count > 0 && (item.id !== 'unpaid' || canViewSalesNotifications)
@@ -868,7 +906,7 @@ export default function App() {
             <header className="sticky top-0 z-30 flex min-h-16 min-w-0 items-center justify-between gap-2 border-b border-ds-border bg-ds-surface px-3 py-2 text-ds-text sm:px-4 lg:px-8">
               <button 
                 onClick={() => setSidebarOpen(true)}
-                aria-label="Ouvrir le menu"
+                aria-label={navT('openMenu')}
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-ds-md border border-ds-border bg-ds-surface text-ds-muted transition-colors hover:bg-ds-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand lg:hidden"
               >
                 <Menu className="h-5 w-5" />
@@ -879,7 +917,7 @@ export default function App() {
                   <CurrentPageTitle userProfile={userProfile} />
                   {canAccessCashSession && <p className="flex items-center gap-1.5 truncate text-[10px] font-semibold text-ds-muted lg:hidden">
                     <span className={cn("h-2 w-2 shrink-0 rounded-full", activeCashSession ? "bg-ds-success" : "bg-ds-text-muted")} />
-                    {activeCashSession ? 'Caisse ouverte' : cashSessionLoading ? 'Chargement de la caisse…' : 'Aucune caisse ouverte'}
+                    {activeCashSession ? commonT('cashOpen') : cashSessionLoading ? commonT('loadingCash') : commonT('noCash')}
                   </p>}
                 </div>
               </div>
@@ -889,12 +927,12 @@ export default function App() {
                 {isOnline ? (
                   <Badge variant="success" className="min-h-10 gap-2 uppercase tracking-[0.08em]">
                     <span className="h-2 w-2 animate-pulse rounded-full bg-ds-success" />
-                    En ligne
+                    {commonT('online')}
                   </Badge>
                 ) : (
                   <Badge variant="danger" className="min-h-10 gap-2 uppercase tracking-[0.08em]">
                     <span className="h-2 w-2 animate-pulse rounded-full bg-ds-danger" />
-                    Hors ligne
+                    {commonT('offline')}
                   </Badge>
                 )}
 
@@ -908,15 +946,16 @@ export default function App() {
                         ? "cursor-pointer border-ds-border bg-ds-surface text-ds-muted hover:bg-ds-surface-2"
                         : "cursor-not-allowed border-ds-border bg-ds-surface-2 text-ds-muted"
                     )}
-                    title={isOnline ? "Des opérations sont en attente de synchronisation. Cliquez pour synchroniser." : "Les opérations seront synchronisées dès le retour de la connexion."}
+                    title={isOnline ? commonT('syncPendingTitle') : commonT('syncOnReconnectTitle')}
                   >
                     <RefreshCcw className={cn("h-3.5 w-3.5 text-ds-brand", syncing && "animate-spin")} />
-                    <span>{pendingCount} en attente</span>
+                    <span>{commonT('operationsWaitingSync', { count: pendingCount })}</span>
                   </button>
                 )}
               </div>
               
               {/* Interactive Date & Notes Notification Badge widget */}
+              <LanguageSelector compact className="shrink-0" onLanguageChange={handleLanguageChange} />
               <div className="relative ms-auto flex shrink-0 items-center gap-2 lg:ms-4 lg:gap-3.5" onClick={(e) => e.stopPropagation()}>
                 <div className="hidden min-h-10 items-center gap-2 rounded-full border border-ds-border bg-ds-surface px-3.5 font-mono text-[11px] font-medium text-ds-muted lg:flex">
                   <Calendar className="h-4 w-4 text-ds-brand" />
@@ -933,8 +972,8 @@ export default function App() {
                         ? "border-ds-border bg-ds-surface text-ds-text hover:bg-ds-surface-2"
                         : "border-ds-border bg-ds-surface text-ds-muted hover:bg-ds-surface-2"
                     )}
-                    title={headerNotificationCount > 0 ? `${headerNotificationCount} notification(s)` : "Aucune notification"}
-                    aria-label={`Notifications${headerNotificationCount ? ` (${headerNotificationCount})` : ''}`}
+                    title={headerNotificationCount > 0 ? commonT('notificationCount', { count: headerNotificationCount }) : commonT('noNotifications')}
+                    aria-label={headerNotificationCount ? commonT('notificationCount', { count: headerNotificationCount }) : commonT('notifications')}
                   >
                     <Bell className="h-[18px] w-[18px]" />
                     {headerNotificationCount > 0 && (
@@ -949,14 +988,14 @@ export default function App() {
                       <div className="mb-2.5 flex items-center justify-between border-b border-ds-border pb-2.5">
                         <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-ds-text">
                           <Bell className="h-4 w-4 text-ds-brand" />
-                          Notifications
+                          {commonT('notifications')}
                         </span>
                         <Badge variant="neutral" className="min-h-7 rounded-ds-sm px-2 py-0.5 text-[10px] uppercase">
-                          {headerNotificationCount} active{headerNotificationCount > 1 ? 's' : ''}
+                          {commonT('activeNotifications', { count: headerNotificationCount })}
                         </Badge>
                       </div>
 
-                      <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                      <div className="max-h-56 space-y-2 overflow-y-auto pe-1">
                         {headerNotificationError && <p role="alert" className="rounded-ds-sm bg-ds-danger-soft p-2 text-[10px] font-semibold text-ds-danger">{headerNotificationError}</p>}
                         {headerNotificationItems.map(item => (
                           <Link key={item.id} to={item.path} onClick={() => setShowNotesPopover(false)}
@@ -967,8 +1006,8 @@ export default function App() {
                         ))}
                         {hasMenuAccess(userProfile, 'notes') && (
                           <div className="border-t border-ds-border pt-2">
-                            <p className="mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide text-ds-muted"><StickyNote className="h-3.5 w-3.5 text-ds-brand" /> Mémos d’aujourd’hui</p>
-                            {todayNotes.length === 0 ? <p className="px-1 text-[10px] text-ds-muted">Aucun mémo pour aujourd’hui.</p> : todayNotes.map(note => (
+                            <p className="mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide text-ds-muted"><StickyNote className="h-3.5 w-3.5 text-ds-brand" /> {commonT('memosToday')}</p>
+                            {todayNotes.length === 0 ? <p className="px-1 text-[10px] text-ds-muted">{commonT('noMemosToday')}</p> : todayNotes.map(note => (
                               <div key={note.id} className="mb-2 rounded-ds-md border border-ds-border bg-ds-surface-2 p-2.5">
                                 <p className="text-xs font-extrabold text-ds-text">{note.title}</p>
                                 <p className="mt-1 line-clamp-3 text-[10px] leading-relaxed text-ds-muted">{note.content}</p>
@@ -979,8 +1018,8 @@ export default function App() {
                         {headerNotificationItems.length === 0 && todayNotes.length === 0 && !headerNotificationError ? (
                           <div className="py-4 text-center text-ds-muted">
                             <CheckCircle className="mx-auto mb-1.5 h-7 w-7 text-ds-success" />
-                            <p className="text-[10px] font-[900] uppercase tracking-wide text-ds-muted">Tout est en ordre</p>
-                            <p className="mt-0.5 text-[9px] font-semibold text-ds-muted">Aucune notification à traiter.</p>
+                            <p className="text-[10px] font-[900] uppercase tracking-wide text-ds-muted">{commonT('allClear')}</p>
+                            <p className="mt-0.5 text-[9px] font-semibold text-ds-muted">{commonT('noNotificationToHandle')}</p>
                           </div>
                         ) : null}
                       </div>
@@ -991,7 +1030,7 @@ export default function App() {
                           onClick={() => setShowNotesPopover(false)}
                           className="inline-flex min-h-11 w-full items-center justify-center rounded-ds-md bg-ds-brand py-2 text-[10px] font-extrabold uppercase tracking-wider text-ds-brand-contrast transition-colors hover:bg-ds-brand-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand"
                         >
-                          Gérer tous les mémos
+                          {commonT('manageAllMemos')}
                         </Link>
                       </div>}
                     </div>
@@ -1000,8 +1039,8 @@ export default function App() {
                 ) : (
                   <button
                     type="button"
-                    aria-label="Notifications"
-                    title="Notifications"
+                    aria-label={commonT('notifications')}
+                    title={commonT('notifications')}
                     disabled
                     className="flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-full border border-ds-border bg-ds-surface text-ds-muted"
                   >
@@ -1013,8 +1052,8 @@ export default function App() {
               {hasMenuAccess(userProfile, 'pos') && (
                 <Link
                   to="/pos"
-                  aria-label="Ouvrir la caisse"
-                  title="Ouvrir la caisse"
+                  aria-label={commonT('openCashbox')}
+                  title={commonT('openCashbox')}
                   className="flex h-11 w-11 shrink-0 items-center justify-center rounded-ds-md bg-ds-brand text-ds-brand-contrast shadow-ds-sm transition-colors hover:bg-ds-brand-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand"
                 >
                   <CircleDollarSign className="h-5 w-5" />

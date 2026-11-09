@@ -1,0 +1,20 @@
+{
+  "sellerMention": "Mention du vendeur sur tickets et factures",
+  "sellerNone": "Aucun",
+  "sellerInitial": "Initiale",
+  "sellerShortName": "Nom court",
+  "sellerServedBy": "Servi par : {{name}}",
+  "activity": {
+    "title": "3. Journal d'activité",
+    "description": "Téléchargez un fichier détaillé de l'historique d'activité (ventes, factures, créations/modifications/suppressions de produits) sur une période donnée. La période sélectionnée ne peut pas dépasser 1 mois.",
+    "dateStart": "Date de début",
+    "dateEnd": "Date de fin",
+    "show": "Afficher dans l'app",
+    "download": "Télécharger (.xlsx)",
+    "loading": "Chargement…",
+    "generating": "Génération…",
+    "modalTitle": "Journal d'activité",
+    "close": "Fermer",
+    "rangeSummary": "Du {{start}} au {{end}} — {{count}} entrée(s)"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "audit": {
+    "title": "Journal d’activité",
+    "description": "Actions sur les produits, ventes et factures. Le journal est écrit côté client et n’est pas infalsifiable.",
+    "type": "Type",
+    "allTypes": "Tous les types",
+    "product": "Produit",
+    "sale": "Vente",
+    "invoice": "Facture",
+    "user": "Utilisateur",
+    "allUsers": "Tous les utilisateurs",
+    "from": "Du",
+    "to": "Au",
+    "loadError": "Impossible de charger le journal d’activité. Vérifiez vos autorisations Firestore.",
+    "loading": "Chargement du journal…",
+    "empty": "Aucune activité pour ces filtres.",
+    "unknownUser": "Utilisateur inconnu",
+    "entry": "entrée",
+    "entries": "entrées",
+    "create": "création",
+    "update": "modification",
+    "cancel": "annulation",
+    "delete": "suppression",
+    "page": "page {{current}}/{{total}}",
+    "summary": {
+      "total": "montant",
+      "client": "client",
+      "status": "statut",
+      "stock": "stock",
+      "price": "prix"
+    }
+  }
+}

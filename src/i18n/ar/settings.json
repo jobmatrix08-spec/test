@@ -1,0 +1,20 @@
+{
+  "sellerMention": "ذكر البائع في التيكيات والفواتير",
+  "sellerNone": "بلا",
+  "sellerInitial": "الحرف الأول",
+  "sellerShortName": "الاسم المختصر",
+  "sellerServedBy": "باعلك: {{name}}",
+  "activity": {
+    "title": "3. سجلّ النشاط",
+    "description": "حمّل ملف مفصّل بتاريخ النشاط (البيوعات والفواتير وإنشاء/تبديل/حذف المنتجات) للفترة اللي تختارها. الفترة ما تفوتش شهر.",
+    "dateStart": "من تاريخ",
+    "dateEnd": "إلى تاريخ",
+    "show": "وريه في التطبيق",
+    "download": "حمّل (.xlsx)",
+    "loading": "قاعد يحمّل…",
+    "generating": "قاعد يجهّز…",
+    "modalTitle": "سجلّ النشاط",
+    "close": "سكّر",
+    "rangeSummary": "من {{start}} إلى {{end}} — {{count}} مدخل"
+  }
+}

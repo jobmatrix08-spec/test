@@ -1,5 +1,4 @@
 import React, { forwardRef, useEffect, useState } from 'react';
-import { format } from 'date-fns';
 import { Invoice, StoreSettings } from '../types';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../firebase';
@@ -7,6 +6,8 @@ import { getInvoiceTotals } from '../lib/financial';
 import { formatProductDetails } from '../config/productAttributes';
 import { auditName } from '../lib/audit';
 import { useBrand } from './BrandProvider';
+import { useTranslation } from 'react-i18next';
+import { formatDateTime } from '../i18n/format';
 
 interface Props {
   invoice: Invoice;
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export const PrintableTicket = forwardRef<HTMLDivElement, Props>(({ invoice, ownerId }, ref) => {
+  const { t } = useTranslation('settings');
   const brand = useBrand();
   const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
 
@@ -30,20 +32,18 @@ export const PrintableTicket = forwardRef<HTMLDivElement, Props>(({ invoice, own
     return unsubscribe;
   }, [ownerId, invoice.ownerId]);
 
-  let dateStr = '';
-  try {
-    if (invoice.date && typeof invoice.date.toDate === 'function') {
-      dateStr = format(invoice.date.toDate(), 'dd/MM/yyyy HH:mm');
-    } else if (invoice.date instanceof Date) {
-      dateStr = format(invoice.date, 'dd/MM/yyyy HH:mm');
-    } else if (typeof invoice.date === 'string') {
-      dateStr = format(new Date(invoice.date), 'dd/MM/yyyy HH:mm');
-    } else {
-      dateStr = format(new Date(), 'dd/MM/yyyy HH:mm');
-    }
-  } catch (e) {
-    dateStr = format(new Date(), 'dd/MM/yyyy HH:mm');
-  }
+  const invoiceDate = invoice.date && typeof invoice.date.toDate === 'function'
+    ? invoice.date.toDate()
+    : invoice.date instanceof Date || typeof invoice.date === 'string'
+      ? new Date(invoice.date)
+      : new Date();
+  const dateStr = formatDateTime(Number.isNaN(invoiceDate.getTime()) ? new Date() : invoiceDate, {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 
   const storeName = storeSettings?.storeName || brand.storeName;
   const storeAddress = storeSettings?.address || '';
@@ -73,7 +73,7 @@ export const PrintableTicket = forwardRef<HTMLDivElement, Props>(({ invoice, own
       <div>Client: {invoice.clientName}</div>
       {invoice.clientCode && <div>Code client: {invoice.clientCode}</div>}
       {invoice.clientPhone && <div>Tél: {invoice.clientPhone}</div>}
-      {sellerLabel && sellerMode !== 'none' && <div style={{ color: '#000000' }}>Servi par : {sellerLabel}</div>}
+      {sellerLabel && sellerMode !== 'none' && <div style={{ color: '#000000' }}>{t('sellerServedBy', { name: sellerLabel })}</div>}
       <div className="border-t border-dashed border-black my-1"></div>
       <div className="my-2 space-y-1">
         {invoice.items.map((item, index) => (

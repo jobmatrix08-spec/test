@@ -383,16 +383,16 @@
   }
 }
 
-@font-face {
-  font-family: "Amiri";
-  src: url("/fonts/Amiri-Regular.ttf") format("truetype");
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
+.font-arabic {
+  font-family: "Noto Sans Arabic", sans-serif;
 }
 
-.font-arabic {
-  font-family: "Amiri", serif;
+html[lang^="ar"] body,
+html[lang^="ar"] button,
+html[lang^="ar"] input,
+html[lang^="ar"] select,
+html[lang^="ar"] textarea {
+  font-family: "Noto Sans Arabic", sans-serif;
 }
 
 html {

@@ -13,8 +13,8 @@
 1. Caractéristiques produits — terminée (validée après correction)
 2. Journal d'activité — terminée
 3. Mention du vendeur + permissions manquantes — terminée
-4. Fondation i18n (Français / Arabe tunisien) + RTL — à faire
-5. i18n — POS, Products, Sales, Invoices, Clients — à faire
+4. Fondation i18n (Français / Arabe tunisien) + RTL — terminée
+5. i18n — POS, Products, Sales, Invoices, Clients — en cours
 6. i18n — Repairs, Expenses, Reports, Settings, Users — à faire
 7. i18n — Dashboard, notifications, audit final — à faire
 
@@ -43,3 +43,12 @@
 - Permissions existantes inventoriées dans `docs/PERMISSIONS-INVENTORY.md` ; aucune permission nouvelle ni changement Firestore.
 - `npm run lint` et `npm run build` réussis au départ et après vérification ; avertissement du bundle supérieur à 500 kB.
 - Affichage imprimé non vérifié visuellement.
+
+## Vérification de la marche 4
+
+- Initialisation i18next/react-i18next avec 14 namespaces JSON par langue, français par défaut et fallback français.
+- Langue sauvegardée dans `localStorage` sous gestion d’erreur et dans `users.preferredLanguage` lorsqu’un profil authentifié est disponible ; sélecteur dans le Header et Login.
+- `lang`/`dir` suivent la langue choisie ; Noto Sans Arabic appliqué uniquement en arabe. Les libellés de navigation, Login, les nouveaux champs produit, le journal d’activité et les métadonnées vendeur sont traduits.
+- Dates du Header, ticket et journal formatées via `Intl` en `fr-TN` / `ar-TN` avec chiffres latins.
+- `npm run lint`, `npm run build` et `npm test` réussis (39 tests). Le build signale toujours un bundle supérieur à 500 kB.
+- RTL et impression non vérifiés visuellement aux largeurs 360/768/1280 px.

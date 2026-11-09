@@ -141,6 +141,7 @@ export interface UserProfile {
   allowedMenus?: string[];
   permissions?: Partial<Record<PermissionMenuId, Partial<Record<PermissionFlag, boolean>>>>;
   securityCode?: string;
+  preferredLanguage?: 'fr' | 'ar';
   ownerId?: string;
   creatorId?: string;
   createdAt?: string;
