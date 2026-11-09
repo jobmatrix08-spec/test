@@ -1,5 +1,9 @@
 {
   "sellerMention": "Mention du vendeur sur tickets et factures",
+  "documentLanguage": "Langue des documents imprimés",
+  "documentFrench": "Français",
+  "documentArabic": "Arabe",
+  "documentBilingual": "Bilingue",
   "sellerNone": "Aucun",
   "sellerInitial": "Initiale",
   "sellerShortName": "Nom court",

@@ -14,7 +14,7 @@
 2. Journal d'activité — terminée
 3. Mention du vendeur + permissions manquantes — terminée
 4. Fondation i18n (Français / Arabe tunisien) + RTL — terminée
-5. i18n — POS, Products, Sales, Invoices, Clients — en cours
+5. i18n — POS, Products, Sales, Invoices, Clients — terminée
 6. i18n — Repairs, Expenses, Reports, Settings, Users — à faire
 7. i18n — Dashboard, notifications, audit final — à faire
 
@@ -52,3 +52,12 @@
 - Dates du Header, ticket et journal formatées via `Intl` en `fr-TN` / `ar-TN` avec chiffres latins.
 - `npm run lint`, `npm run build` et `npm test` réussis (39 tests). Le build signale toujours un bundle supérieur à 500 kB.
 - RTL et impression non vérifiés visuellement aux largeurs 360/768/1280 px.
+
+## Vérification de la marche 5
+
+- POS, produits, historique des ventes, factures, clients, sélecteur client et création rapide de client traduits en français et arabe tunisien ; données saisies et valeurs métier conservées.
+- Styles directionnels des écrans concernés convertis en propriétés logiques.
+- Réglage boutique « Langue des documents » (français par défaut / arabe / bilingue) ajouté ; tickets imprimés utilisent des libellés, dates et direction selon ce réglage, avec couleurs d’impression fixes.
+- `npm run lint`, `npm run build` et `npm test` réussis (39 tests). Le build signale toujours un bundle supérieur à 500 kB. Les namespaces touchés ont des clés fr/ar correspondantes.
+- Interface, RTL et impression non vérifiés visuellement aux largeurs 360/768/1280 px.
+- Limite : `server.ts` génère encore les PDF de factures avec des libellés français fixes et ne lit pas `documentLanguage`. La préférence est transmise par le client, mais le rendu PDF du serveur ne peut pas être traduit sans modifier le fichier interdit.

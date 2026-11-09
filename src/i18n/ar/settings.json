@@ -1,5 +1,9 @@
 {
   "sellerMention": "ذكر البائع في التيكيات والفواتير",
+  "documentLanguage": "لغة الوثائق المطبوعة",
+  "documentFrench": "فرنسي",
+  "documentArabic": "عربي",
+  "documentBilingual": "باللغتين",
   "sellerNone": "بلا",
   "sellerInitial": "الحرف الأول",
   "sellerShortName": "الاسم المختصر",

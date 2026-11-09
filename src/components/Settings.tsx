@@ -342,6 +342,7 @@ function SettingsContent({
     tva: 0,
     tvaEnabled: false,
     sellerMentionMode: 'initial',
+    documentLanguage: 'fr',
     deleteCode: '',
     minStockAlert: 5
   });
@@ -922,6 +923,7 @@ function SettingsContent({
           tva: financialSettings.tva || 0,
           tvaEnabled: financialSettings.tvaEnabled === true,
           sellerMentionMode: data.sellerMentionMode || 'initial',
+          documentLanguage: data.documentLanguage || 'fr',
           deleteCode: data.deleteCode || '',
           minStockAlert: data.minStockAlert !== undefined ? data.minStockAlert : 5
         });
@@ -935,6 +937,7 @@ function SettingsContent({
           tva: 0,
           tvaEnabled: false,
           sellerMentionMode: 'initial',
+          documentLanguage: 'fr',
           minStockAlert: 5
         } as StoreSettings);
         setStoreFormData({
@@ -949,6 +952,7 @@ function SettingsContent({
           tva: 0,
           tvaEnabled: false,
           sellerMentionMode: 'initial',
+          documentLanguage: 'fr',
           deleteCode: '',
           minStockAlert: 5
         });
@@ -1216,6 +1220,22 @@ function SettingsContent({
                     <option value="none">{t('sellerNone')}</option>
                     <option value="initial">{t('sellerInitial')}</option>
                     <option value="shortName">{t('sellerShortName')}</option>
+                  </Select>
+                </label>
+
+                <label className="block space-y-1.5 text-sm font-bold text-ds-text">
+                  {t('documentLanguage')}
+                  <Select
+                    value={storeFormData.documentLanguage}
+                    onChange={event => setStoreFormData({
+                      ...storeFormData,
+                      documentLanguage: event.target.value as NonNullable<StoreSettings['documentLanguage']>,
+                    })}
+                    className="text-base sm:text-sm"
+                  >
+                    <option value="fr">{t('documentFrench')}</option>
+                    <option value="ar">{t('documentArabic')}</option>
+                    <option value="both">{t('documentBilingual')}</option>
                   </Select>
                 </label>
 

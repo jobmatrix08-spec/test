@@ -179,7 +179,7 @@ export default function Products({ userProfile }: ProductsProps) {
           playBeep('success');
           setFormData(prev => ({ ...prev, barcode }));
           setScanStatus('scanned');
-          setScanMessage(`Code détecté avec succès : ${barcode}`);
+          setScanMessage(t('ui.enterBarcodeSuccess', { barcode }));
           setTimeout(() => {
             setScanStatus('idle');
             setScanMessage('');
@@ -368,7 +368,7 @@ export default function Products({ userProfile }: ProductsProps) {
       setMigrationBackupDownloaded(false);
     } catch (error) {
       console.error('[ERROR] Product cost migration failed:', error);
-      setErrorMsg(error instanceof Error ? `Migration interrompue : ${error.message}` : `Migration interrompue : ${String(error)}`);
+      setErrorMsg(t('ui.migrationFailed', { error: error instanceof Error ? error.message : String(error) }));
     } finally {
       setMigrationBusy(false);
     }
@@ -385,12 +385,12 @@ export default function Products({ userProfile }: ProductsProps) {
     // sinon chaque vente de ce produit génère un bénéfice négatif.
     if (isAdmin && !formData.isService && (formData.sellPrice || 0) < (formData.buyPrice || 0)) {
       setErrorMsg(
-        `Le prix de vente (${(formData.sellPrice || 0).toFixed(3)}) doit être supérieur ou égal au prix d'achat (${(formData.buyPrice || 0).toFixed(3)}). Vendre en dessous du prix d'achat génère une perte sur chaque vente.`
+        t('ui.priceBelowCost', { sellPrice: (formData.sellPrice || 0).toFixed(3), buyPrice: (formData.buyPrice || 0).toFixed(3) })
       );
       return;
     }
     if (editingProduct && formData.isService !== (editingProduct.inventoryType === 'service')) {
-      setErrorMsg('Le type d’article ne peut pas être converti après sa création. Créez un nouvel article avec le type souhaité.');
+      setErrorMsg(t('ui.typeCannotConvert'));
       return;
     }
     try {
@@ -546,7 +546,7 @@ export default function Products({ userProfile }: ProductsProps) {
       closeModal();
     } catch (error: any) {
       if (error?.message === 'OFFLINE') {
-        setErrorMsg("Vérifiez votre connexion Internet.");
+        setErrorMsg(t('ui.noInternet'));
       } else {
         console.error("[ERROR] Failed to save product:", error);
         setErrorMsg(error?.message || String(error));
@@ -627,10 +627,10 @@ export default function Products({ userProfile }: ProductsProps) {
     } catch (error: any) {
       playBeep('error');
       if (error?.message === 'OFFLINE') {
-        alert("Vérifiez votre connexion Internet.");
+        alert(t('ui.noInternet'));
       } else {
         console.error("[ERROR] Failed to replenish product stock:", error);
-        alert("Échec de l'approvisionnement. Réessayez.");
+        alert(t('ui.restockFailed'));
       }
     } finally {
       setIsSubmitting(false);
@@ -646,7 +646,7 @@ export default function Products({ userProfile }: ProductsProps) {
         if (!current.exists()) throw new Error('Cet article n’existe plus.');
         const stock = Number(current.data().stock) || 0;
         const nextStock = stock + delta;
-        if (nextStock < 0) throw new Error('Le stock ne peut pas être négatif.');
+        if (nextStock < 0) throw new Error(t('ui.stockNegative'));
         const version = (Number(current.data().stockVersion) || 0) + 1;
         const movementRef = doc(db, 'stock_movements', `product_${product.id}_v${version}`);
         transaction.update(productRef, {
@@ -708,7 +708,7 @@ export default function Products({ userProfile }: ProductsProps) {
         suppliesSnap.forEach(d => {
           const quantity = Number(d.data().quantity) || 0;
           totalIn += quantity;
-          movements.push({ type: 'in', qty: quantity, date: toDate(d.data().date), label: 'Entrée / appro.' });
+          movements.push({ type: 'in', qty: quantity, date: toDate(d.data().date), label: t('ui.stockIn') });
         });
 
         const salesSnap = await getDocs(query(collection(db, 'sales'), where('ownerId', '==', ownerId)));
@@ -872,12 +872,12 @@ export default function Products({ userProfile }: ProductsProps) {
   const printBarcode = () => {
     const ean13 = normalizeEan13(formData.barcode.trim());
     if (!ean13) {
-      setErrorMsg('Pour imprimer une étiquette, saisissez ou générez un code EAN-13 valide.');
+      setErrorMsg(t('ui.barcodeInvalid'));
       return;
     }
     const printWindow = window.open('', '_blank', 'width=420,height=320');
     if (!printWindow) {
-      setErrorMsg('La fenêtre d’impression a été bloquée par le navigateur.');
+      setErrorMsg(t('ui.printBlocked'));
       return;
     }
     setFormData(current => ({ ...current, barcode: ean13 }));
@@ -959,7 +959,7 @@ export default function Products({ userProfile }: ProductsProps) {
 
     const exists = categories.some(c => c.name.toLowerCase() === newCategoryName.trim().toLowerCase());
     if (exists) {
-      alert('Cette catégorie existe déjà.');
+      alert(t('ui.duplicateCategory'));
       return;
     }
     
@@ -978,7 +978,7 @@ export default function Products({ userProfile }: ProductsProps) {
       setNewCategoryName('');
     } catch (error: any) {
       if (error?.message === 'OFFLINE') {
-        alert("Vérifiez votre connexion Internet.");
+        alert(t('ui.noInternet'));
       } else {
         handleFirestoreError(error, OperationType.CREATE, 'categories');
       }
@@ -988,7 +988,7 @@ export default function Products({ userProfile }: ProductsProps) {
   };
 
   const handleResetDefaultCategories = async () => {
-    if (!confirm('Voulez-vous restaurer les catégories de base par défaut ?')) return;
+    if (!confirm(t('ui.restoreCategoriesConfirm'))) return;
     const defaults = [
       { id: 'cat_alimentation', name: 'Alimentation' },
       { id: 'cat_boissons', name: 'Boissons' },
@@ -1047,31 +1047,31 @@ export default function Products({ userProfile }: ProductsProps) {
   return (
     <div className="mx-auto w-full max-w-[1680px] min-w-0 space-y-6 xl:space-y-8">
       <PageHeader
-        title="Articles vendables en caisse"
+        title={t('ui.title')}
         actions={<div className="flex flex-wrap gap-2.5">
           {isAdmin && <button
             onClick={previewProductCostMigration}
             disabled={!productCostsLoaded || migrationBusy}
             className="inline-flex min-h-ds-touch-target items-center justify-center gap-2 rounded-ds-md border border-ds-warning/20 bg-ds-warning-soft px-4 py-3 text-xs font-black uppercase tracking-wider text-ds-warning disabled:opacity-50"
           >
-            <Shield className="h-4 w-4" /> Migrer les prix d’achat
+            <Shield className="h-4 w-4" /> {t('ui.migratePrices')}
           </button>}
           {canAddEdit && <Button
             onClick={() => openModal()}
             className="group px-5 py-3 text-xs font-black uppercase tracking-wider shadow-ds-sm"
           >
             <Plus className="w-4 h-4 transition-transform group-hover:rotate-90 duration-300" />
-            + NOUVEL ARTICLE
+            {t('ui.newArticle')}
           </Button>}
         </div>}
       />
 
       {isAdmin && migrationPreview.length > 0 && <section className="space-y-3 rounded-ds-lg border border-ds-warning/20 bg-ds-warning-soft p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div><h2 className="font-black text-ds-warning">Aperçu de la séparation des prix</h2><p className="text-xs text-ds-warning">{migrationPreview.length} article(s) contiennent encore un prix d’achat dans « products ».</p></div>
+          <div><h2 className="font-black text-ds-warning">{t('ui.separatePricesPreview')}</h2><p className="text-xs text-ds-warning">{t('ui.priceSeparationWarning', { count: migrationPreview.length })}</p></div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="secondary" onClick={downloadProductCostBackup} className="border-ds-warning/30 text-ds-warning">Télécharger la sauvegarde JSON</Button>
-            <Button onClick={() => void confirmProductCostMigration()} disabled={!migrationBackupDownloaded || migrationBusy} className="border-ds-warning bg-ds-warning text-ds-brand-contrast hover:brightness-90">{migrationBusy ? 'Migration…' : 'Confirmer la migration'}</Button>
+            <Button variant="secondary" onClick={downloadProductCostBackup} className="border-ds-warning/30 text-ds-warning">{t('ui.downloadBackup')}</Button>
+            <Button onClick={() => void confirmProductCostMigration()} disabled={!migrationBackupDownloaded || migrationBusy} className="border-ds-warning bg-ds-warning text-ds-brand-contrast hover:brightness-90">{migrationBusy ? t('ui.migration') : t('ui.confirmMigration')}</Button>
           </div>
         </div>
         <ul className="max-h-40 space-y-1 overflow-y-auto text-xs text-ds-text">{migrationPreview.slice(0, 100).map(item => <li key={item.id} className="rounded-lg bg-ds-surface/80 px-3 py-2">{item.name} · {item.buyPrice.toFixed(3)} {storeSettings?.currency || 'DT'}</li>)}</ul>
@@ -1082,34 +1082,34 @@ export default function Products({ userProfile }: ProductsProps) {
           <div className="flex flex-col gap-3 sm:flex-row xl:gap-4">
             {/* Search bar */}
             <div className="relative min-w-0 flex-1 sm:max-w-md">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-ds-text-muted" />
+              <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-ds-text-muted" />
               <Input
                 type="text"
                 name="product-search"
                 autoComplete="off"
-                placeholder="Rechercher un article ou scanner un code-barres..."
+                placeholder={t('ui.searchPlaceholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                aria-label="Rechercher un article ou scanner un code-barres"
-                className="pl-11 pr-4 text-base sm:text-sm"
+                aria-label={t('ui.searchLabel')}
+                className="ps-11 pe-4 text-base sm:text-sm"
               />
             </div>
 
             {/* Category filter */}
             <div className="relative w-full sm:w-auto">
-              <Tag className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ds-accent pointer-events-none" />
+              <Tag className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ds-accent pointer-events-none" />
               <Select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                aria-label="Filtrer par catégorie"
-                className="min-w-0 pl-10 pr-8 text-base sm:min-w-[180px] sm:text-sm"
+                aria-label={t('ui.categoryFilter')}
+                className="min-w-0 ps-10 pe-8 text-base sm:min-w-[180px] sm:text-sm"
               >
-                <option value="all">Toutes les catégories</option>
+                <option value="all">{t('ui.allCategories')}</option>
                 {filterCategories.map(catName => (
                   <option key={catName} value={catName}>{catName}</option>
                 ))}
               </Select>
-              <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
+              <div className="pointer-events-none absolute inset-y-0 end-3 flex items-center">
                 <svg className="w-3.5 h-3.5 text-ds-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -1121,7 +1121,7 @@ export default function Products({ userProfile }: ProductsProps) {
               <button
                 onClick={() => setSelectedCategory('all')}
                 className="inline-flex min-h-ds-touch-target items-center gap-1.5 rounded-ds-md border border-ds-brand/20 bg-ds-brand-soft px-3 py-2.5 text-xs font-black uppercase tracking-wider text-ds-brand transition-all cursor-pointer hover:bg-ds-brand-soft/80"
-                title="Réinitialiser le filtre"
+                title={t('ui.resetFilter')}
               >
                 <X className="w-3.5 h-3.5" />
                 {selectedCategory}
@@ -1132,29 +1132,30 @@ export default function Products({ userProfile }: ProductsProps) {
           {/* Results summary */}
           {(searchTerm || selectedCategory !== 'all') && (
             <p className="mt-2.5 text-xs font-bold uppercase tracking-wider text-ds-text-muted">
-              {filteredProducts.length} résultat{filteredProducts.length !== 1 ? 's' : ''} trouvé{filteredProducts.length !== 1 ? 's' : ''}
-              {selectedCategory !== 'all' && <span className="text-ds-brand"> · {selectedCategory}</span>}
+              {selectedCategory !== 'all'
+                ? t(filteredProducts.length === 1 ? 'ui.searchResultsInCategory_one' : 'ui.searchResultsInCategory_other', { count: filteredProducts.length, category: selectedCategory })
+                : t(filteredProducts.length === 1 ? 'ui.searchResults_one' : 'ui.searchResults_other', { count: filteredProducts.length })}
             </p>
           )}
         </div>
 
         <div className="min-w-0 max-w-full overflow-x-auto text-sm font-medium text-ds-text">
-          <table className="responsive-card-table w-full min-w-0 border-collapse text-left sm:min-w-0">
+          <table className="responsive-card-table w-full min-w-0 border-collapse text-start sm:min-w-0">
             <thead>
               <tr className="border-b border-ds-border bg-ds-surface-2 text-xs font-extrabold uppercase tracking-widest text-ds-text-muted">
-                <th className="px-6 py-4">ARTICLE</th>
-                <th className="px-6 py-4">CATÉGORIE</th>
-                {canViewBuyPrice && <th className="px-6 py-4">PRIX ACHAT</th>}
-                <th className="px-6 py-4">PRIX VENTE</th>
-                <th className="px-6 py-4">STOCK</th>
-                {canManageItems && <th className="px-6 py-4 text-right">ACTIONS</th>}
+                <th className="px-6 py-4">{t('ui.article')}</th>
+                <th className="px-6 py-4">{t('ui.category')}</th>
+                {canViewBuyPrice && <th className="px-6 py-4">{t('ui.purchasePrice')}</th>}
+                <th className="px-6 py-4">{t('ui.sellPrice')}</th>
+                <th className="px-6 py-4">{t('ui.stock')}</th>
+                {canManageItems && <th className="px-6 py-4 text-end">{t('ui.actions')}</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-ds-border">
               {loading ? (
                 <tr>
                   <td colSpan={4 + (canViewBuyPrice ? 1 : 0) + (canManageItems ? 1 : 0)} className="px-6 py-10">
-                    <div className="space-y-3" role="status" aria-label="Chargement des produits">
+                    <div className="space-y-3" role="status" aria-label={t('ui.loadingProducts')}>
                       <div className="mx-auto h-4 max-w-48 animate-pulse rounded bg-ds-surface-2" />
                       <div className="mx-auto h-3 max-w-64 animate-pulse rounded bg-ds-surface-2" />
                     </div>
@@ -1163,13 +1164,13 @@ export default function Products({ userProfile }: ProductsProps) {
               ) : filteredProducts.length === 0 ? (
                 <tr>
                   <td colSpan={4 + (canViewBuyPrice ? 1 : 0) + (canManageItems ? 1 : 0)} className="px-6 py-10">
-                    <EmptyState title="Aucun produit trouvé" description="Modifiez la recherche ou le filtre de catégorie." />
+                    <EmptyState title={t('ui.noProductFound')} description={t('ui.editSearchCategory')} />
                   </td>
                 </tr>
               ) : (
                 filteredProducts.map((product) => (
                   <tr key={product.id} className="transition-colors hover:bg-ds-surface-2/70">
-                    <td data-label="Article" className="px-6 py-4">
+                    <td data-label={t('ui.article')} className="px-6 py-4">
                       <div className="font-medium text-ds-text">{product.name}</div>
                       {isAdmin && (product.createdBy || product.updatedBy) && (
                         <p className="mt-0.5 text-[10px] text-ds-text-muted">
@@ -1196,14 +1197,14 @@ export default function Products({ userProfile }: ProductsProps) {
                         )}
                       </div>
                     </td>
-                    <td data-label="Catégorie" className="px-6 py-4">
+                    <td data-label={t('ui.category')} className="px-6 py-4">
                       <Badge variant="info" className="capitalize">
                         {product.category}
                       </Badge>
                     </td>
-                    {canViewBuyPrice && <td data-label="Prix achat" className="px-6 py-4 text-ds-text-muted font-mono">{product.inventoryType === 'service' ? '—' : `${(productCosts[product.id] ?? product.buyPrice ?? 0).toFixed(3)} ${storeSettings?.currency || 'DT'}`}</td>}
-                    <td data-label="Prix vente" className="px-6 py-4 text-base font-bold font-mono text-ds-text">{product.sellPrice.toFixed(3)} {storeSettings?.currency || 'DT'}</td>
-                    <td data-label="Stock" className="px-6 py-4">
+                    {canViewBuyPrice && <td data-label={t('ui.purchasePrice')} className="px-6 py-4 text-ds-text-muted font-mono" dir="ltr">{product.inventoryType === 'service' ? '—' : `${(productCosts[product.id] ?? product.buyPrice ?? 0).toFixed(3)} ${storeSettings?.currency || 'DT'}`}</td>}
+                    <td data-label={t('ui.sellPrice')} className="px-6 py-4 text-base font-bold font-mono text-ds-text" dir="ltr">{product.sellPrice.toFixed(3)} {storeSettings?.currency || 'DT'}</td>
+                    <td data-label={t('ui.stock')} className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         {(() => {
                           const threshold = product.lowStockAlert !== undefined && product.lowStockAlert >= 0
@@ -1213,7 +1214,7 @@ export default function Products({ userProfile }: ProductsProps) {
                           return (
                             <>
                               {product.inventoryType === 'service' ? (
-                                <Badge variant="neutral">Service</Badge>
+                                <Badge variant="neutral">{t('ui.service')}</Badge>
                               ) : (
                                 <Badge
                                   variant={product.stock <= 0 ? 'danger' : isLow ? 'warning' : 'success'}
@@ -1227,8 +1228,8 @@ export default function Products({ userProfile }: ProductsProps) {
                         })()}
                       </div>
                       {canAdjustStock && product.inventoryType !== 'service' && <div className="mt-2 flex items-center gap-2">
-                        <button onClick={() => void adjustProductStock(product, -1)} disabled={product.stock <= 0} className="min-h-11 min-w-11 rounded-lg border border-ds-border bg-ds-surface text-ds-text-muted disabled:opacity-40" title="Retirer une unité">−</button>
-                        <button onClick={() => void adjustProductStock(product, 1)} className="min-h-11 min-w-11 rounded-lg border border-ds-border bg-ds-surface text-ds-text-muted" title="Ajouter une unité">+</button>
+                        <button onClick={() => void adjustProductStock(product, -1)} disabled={product.stock <= 0} className="min-h-11 min-w-11 rounded-lg border border-ds-border bg-ds-surface text-ds-text-muted disabled:opacity-40" title={t('ui.removeUnit')}>−</button>
+                        <button onClick={() => void adjustProductStock(product, 1)} className="min-h-11 min-w-11 rounded-lg border border-ds-border bg-ds-surface text-ds-text-muted" title={t('ui.addUnit')}>+</button>
                         <button
                           onClick={() => {
                             setReplenishProduct(product);
@@ -1236,14 +1237,14 @@ export default function Products({ userProfile }: ProductsProps) {
                             setReplenishPrice(isAdmin ? (productCosts[product.id] ?? product.buyPrice).toFixed(3) : '');
                           }}
                           className="inline-flex min-h-11 items-center gap-1 rounded-lg border border-ds-success/20 bg-ds-success-soft px-3 py-1.5 text-xs font-black uppercase tracking-wider text-ds-success hover:brightness-95"
-                          title="Approvisionner (ajouter du stock) pour cet article"
+                          title={t('ui.restock')}
                         >
                           + À STOCK
                         </button>
-                        <button onClick={() => void openHistory(product)} className="min-h-11 min-w-11 rounded-lg border border-ds-border bg-ds-surface text-ds-text-muted" title="Historique du stock"><History className="w-4 h-4" /></button>
+                        <button onClick={() => void openHistory(product)} className="min-h-11 min-w-11 rounded-lg border border-ds-border bg-ds-surface text-ds-text-muted" title={t('ui.stockHistory')}><History className="w-4 h-4" /></button>
                       </div>}
                     </td>
-                    {canManageItems && <td data-label="Actions" className="px-6 py-4 text-right">
+                    {canManageItems && <td data-label={t('ui.actions')} className="px-6 py-4 text-end">
                       <div className="flex items-center justify-end gap-2">
                         {canAddEdit && <button
                           onClick={() => requestSecureAction('edit', product)}
@@ -1273,9 +1274,9 @@ export default function Products({ userProfile }: ProductsProps) {
           <Card className="flex max-h-[calc(100vh-24px)] w-full max-w-lg flex-col overflow-hidden rounded-ds-lg p-0 shadow-ds-md sm:max-h-[85vh]">
             <div className="flex-shrink-0 flex items-center justify-between border-b border-ds-border bg-ds-surface-2 px-6 py-4">
               <h2 className="text-lg font-bold text-ds-text">
-                {editingProduct ? 'Modifier Article' : 'Nouvel Article'}
+                {editingProduct ? t('ui.editArticle') : t('ui.newArticleTitle')}
               </h2>
-              <button onClick={closeModal} className="min-h-11 min-w-11 rounded-lg p-2 text-ds-text-muted hover:bg-ds-surface cursor-pointer" aria-label="Fermer">
+              <button onClick={closeModal} className="min-h-11 min-w-11 rounded-lg p-2 text-ds-text-muted hover:bg-ds-surface cursor-pointer" aria-label={t('ui.close')}>
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1290,7 +1291,7 @@ export default function Products({ userProfile }: ProductsProps) {
                 )}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div className="col-span-2">
-                    <label htmlFor="product-name" className="mb-1 block text-sm font-medium text-ds-text">Nom de l'article</label>
+                    <label htmlFor="product-name" className="mb-1 block text-sm font-medium text-ds-text">{t('ui.productName')}</label>
                     <Input
                       id="product-name"
                       type="text"
@@ -1302,12 +1303,12 @@ export default function Products({ userProfile }: ProductsProps) {
                   </div>
 
                   <div className="col-span-2">
-                    <label htmlFor="product-reference" className="mb-1 block text-sm font-medium text-ds-text">Référence</label>
+                    <label htmlFor="product-reference" className="mb-1 block text-sm font-medium text-ds-text">{t('ui.reference')}</label>
                     <Input
                       id="product-reference"
                       type="text"
                       value={formData.reference}
-                      placeholder="Ex: REF-001"
+                      placeholder={t('ui.referenceExample')}
                       onChange={(e) => setFormData({ ...formData, reference: e.target.value })}
                       className="text-base sm:text-sm"
                     />
@@ -1316,27 +1317,27 @@ export default function Products({ userProfile }: ProductsProps) {
                   <div className="col-span-2 space-y-2">
                     <div className="flex items-center justify-between">
                       <label htmlFor="product-barcode" className="block text-xs font-black uppercase tracking-wider text-ds-text">
-                        Code-barres
+                        {t('ui.barcode')}
                       </label>
                       <Badge variant="success" className="gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-ds-success animate-pulse" />
-                        Scanner Douchette Prêt
+                        {t('ui.scannerReady')}
                       </Badge>
                     </div>
                     
                     <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                      <div className="absolute inset-y-0 start-0 ps-3.5 flex items-center pointer-events-none">
                         <Barcode className="h-4.5 w-4.5 text-ds-brand group-focus-within:text-ds-brand-hover" />
                       </div>
                       <Input
                         id="product-barcode"
                         type="text"
-                        placeholder="Pointez votre douchette et flashez"
+                        placeholder={t('ui.scanBarcode')}
                         value={formData.barcode}
                         onChange={(e) => setFormData({ ...formData, barcode: decodeAzertyBarcode(e.target.value) })}
-                        className="min-h-[56px] pl-11 pr-36 font-mono text-base font-bold sm:text-xs"
+                        className="min-h-[56px] ps-11 pe-36 font-mono text-base font-bold sm:text-xs"
                       />
-                      <div className="absolute right-1.5 top-1.5 flex items-center gap-1">
+                      <div className="absolute end-1.5 top-1.5 flex items-center gap-1">
                         <button
                           type="button"
                           onClick={() => {
@@ -1345,17 +1346,17 @@ export default function Products({ userProfile }: ProductsProps) {
                             playBeep('success');
                           }}
                           className="min-h-11 rounded-lg border border-ds-border bg-ds-surface-2 px-2.5 text-[10px] font-black uppercase tracking-wider text-ds-text-muted transition-colors hover:bg-ds-border cursor-pointer"
-                          title="Générer un code-barres aléatoire commençant par 619 Tunisie"
+                          title={t('ui.generateBarcode')}
                         >
-                          Générer
+                          {t('ui.generate')}
                         </button>
                         <button
                           type="button"
                           onClick={printBarcode}
                           className="min-h-11 rounded-lg bg-ds-brand px-2.5 text-[10px] font-black uppercase tracking-wider text-ds-brand-contrast transition-colors hover:bg-ds-brand-hover cursor-pointer"
-                          title="Imprimer l’étiquette EAN-13"
+                          title={t('ui.printBarcode')}
                         >
-                          Imprimer
+                          {t('ui.print')}
                         </button>
                       </div>
                     </div>
@@ -1368,7 +1369,7 @@ export default function Products({ userProfile }: ProductsProps) {
                     )}
                     
                     <p className="font-sans text-[10px] leading-relaxed text-ds-text-muted">
-                      Vous pouvez scanner directement le produit à tout moment pendant que ce formulaire est ouvert. La douchette remplira automatiquement ce champ et émettra un signal sonore.
+                      {t('ui.barcodeHelp')}
                     </p>
                   </div>
 
@@ -1385,28 +1386,28 @@ export default function Products({ userProfile }: ProductsProps) {
                       className="mt-0.5 h-4 w-4 rounded border-ds-border text-ds-brand focus:ring-ds-brand"
                     />
                     <span>
-                      <span className="block font-bold">C'est un service (main-d'œuvre) — sans prix d'achat ni stock</span>
-                      <span className="block text-xs text-ds-text-muted">Les services sont vendables sans suivi ni décrément de stock.</span>
-                      {!!editingProduct && <span className="block text-xs text-ds-text-muted">Le type d’article ne peut pas être converti après sa création.</span>}
+                      <span className="block font-bold">{t('ui.serviceLabel')}</span>
+                      <span className="block text-xs text-ds-text-muted">{t('ui.serviceDescription')}</span>
+                      {!!editingProduct && <span className="block text-xs text-ds-text-muted">{t('ui.serviceTypeImmutable')}</span>}
                     </span>
                   </label>
 
                   <div className="col-span-2">
-                    <label htmlFor="product-category" className="mb-1 block text-sm font-medium text-ds-text">Catégorie</label>
+                    <label htmlFor="product-category" className="mb-1 block text-sm font-medium text-ds-text">{t('ui.category')}</label>
                     <div className="flex gap-2">
                       <Select
                         id="product-category"
                         value={formData.category}
                         onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                        aria-label="Catégorie du produit"
+                        aria-label={t('ui.productCategory')}
                         className="flex-1 text-base sm:text-sm"
                         required
                       >
                         {categories.length === 0 ? (
-                          <option value="">⚠️ Veuillez créer une catégorie</option>
+                          <option value="">{t('ui.createCategory')}</option>
                         ) : (
                           <>
-                            <option value="">-- Choisir une catégorie --</option>
+                            <option value="">{t('ui.chooseCategory')}</option>
                             {categories.map(cat => (
                               <option key={cat.id} value={cat.name}>{cat.name}</option>
                             ))}
@@ -1418,7 +1419,7 @@ export default function Products({ userProfile }: ProductsProps) {
                         onClick={() => setIsQuickCategoryModalOpen(true)}
                         disabled={!canAddEdit}
                         className="min-h-11 min-w-11 rounded-xl bg-ds-brand-soft text-ds-brand hover:bg-ds-brand/15 transition-colors cursor-pointer"
-                        title="Ajouter une catégorie"
+                        title={t('ui.addCategory')}
                       >
                         <Plus className="w-5 h-5" />
                       </button>
@@ -1437,20 +1438,20 @@ export default function Products({ userProfile }: ProductsProps) {
                     onSerialNumberChange={serialNumber => setFormData(current => ({ ...current, serialNumber }))}
                     onProductTypesChange={(productTypes: ProductAttributeType[]) => {
                       if (!ownerId) {
-                        setErrorMsg('Impossible d’enregistrer les modèles sans identifiant de boutique.');
+                        setErrorMsg(t('ui.storeIdMissing'));
                         return;
                       }
                       setStoreSettings(current => current ? { ...current, productAttributeTypes: productTypes } : current);
                       void setDoc(doc(db, 'settings', ownerId), { productAttributeTypes: productTypes }, { merge: true })
                         .catch(error => {
                           console.error('Unable to save product attribute types:', error);
-                          setErrorMsg('Impossible d’enregistrer les modèles de caractéristiques.');
+                          setErrorMsg(t('ui.attributesSaveFailed'));
                         });
                     }}
                   />
 
                   {!formData.isService && <div>
-                    <label htmlFor="product-stock" className="mb-1 block text-sm font-medium text-ds-text">Stock Initial</label>
+                    <label htmlFor="product-stock" className="mb-1 block text-sm font-medium text-ds-text">{t('ui.initialStock')}</label>
                     <Input
                       id="product-stock"
                       type="number"
@@ -1464,7 +1465,7 @@ export default function Products({ userProfile }: ProductsProps) {
                   </div>}
 
                   {!formData.isService && <div>
-                    <label htmlFor="product-low-stock-alert" className="mb-1 block text-sm font-medium text-ds-text">Alerte stock faible (0)</label>
+                    <label htmlFor="product-low-stock-alert" className="mb-1 block text-sm font-medium text-ds-text">{t('ui.lowStockAlert')}</label>
                     <Input
                       id="product-low-stock-alert"
                       type="number"
@@ -1476,7 +1477,7 @@ export default function Products({ userProfile }: ProductsProps) {
                   </div>}
 
                   {canViewBuyPrice && !formData.isService && <div>
-                    <label htmlFor="product-buy-price" className="mb-1 block text-sm font-medium text-ds-text">Prix Achat ({storeSettings?.currency || 'DT'})</label>
+                    <label htmlFor="product-buy-price" className="mb-1 block text-sm font-medium text-ds-text">{t('ui.purchasePrice')} ({storeSettings?.currency || 'DT'})</label>
                     <Input
                       id="product-buy-price"
                       type="text"
@@ -1504,7 +1505,7 @@ export default function Products({ userProfile }: ProductsProps) {
                   </div>}
 
                   <div>
-                    <label htmlFor="product-sell-price" className="mb-1 block text-sm font-medium text-ds-text">Prix Vente ({storeSettings?.currency || 'DT'})</label>
+                    <label htmlFor="product-sell-price" className="mb-1 block text-sm font-medium text-ds-text">{t('ui.sellPrice')} ({storeSettings?.currency || 'DT'})</label>
                     <Input
                       id="product-sell-price"
                       type="text"
@@ -1532,7 +1533,7 @@ export default function Products({ userProfile }: ProductsProps) {
                   </div>
 
                   <div className="col-span-2">
-                    <label htmlFor="product-expiration-date" className="mb-1 block text-sm font-medium text-ds-text">Date Expiration</label>
+                    <label htmlFor="product-expiration-date" className="mb-1 block text-sm font-medium text-ds-text">{t('ui.expirationDate')}</label>
                     <Input
                       id="product-expiration-date"
                       type="date"
@@ -1551,7 +1552,7 @@ export default function Products({ userProfile }: ProductsProps) {
                   onClick={closeModal}
                   className="flex-1 text-sm"
                 >
-                  Annuler
+                  {t('ui.cancel')}
                 </Button>
                 <Button
                   type="submit"
@@ -1559,7 +1560,7 @@ export default function Products({ userProfile }: ProductsProps) {
                   loading={isSubmitting}
                   className="flex-1 text-sm"
                 >
-                  {isSubmitting ? 'Enregistrement…' : (editingProduct ? 'Enregistrer' : 'Ajouter')}
+                  {isSubmitting ? t('ui.saving') : (editingProduct ? t('ui.save') : t('ui.add'))}
                 </Button>
               </div>
             </form>
@@ -1573,9 +1574,9 @@ export default function Products({ userProfile }: ProductsProps) {
             <div className="flex items-center justify-between border-b border-ds-border bg-ds-surface-2 px-6 py-4">
               <h2 className="flex items-center gap-2 text-base font-black uppercase tracking-wide text-ds-text">
                 <Tag className="w-4 h-4 text-ds-brand animate-pulse" />
-                Gérer les Catégories
+                {t('ui.manageCategories')}
               </h2>
-              <button onClick={() => setIsQuickCategoryModalOpen(false)} className="min-h-11 min-w-11 rounded-lg p-2 text-ds-text-muted hover:bg-ds-surface cursor-pointer" aria-label="Fermer">
+              <button onClick={() => setIsQuickCategoryModalOpen(false)} className="min-h-11 min-w-11 rounded-lg p-2 text-ds-text-muted hover:bg-ds-surface cursor-pointer" aria-label={t('ui.close')}>
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1583,7 +1584,7 @@ export default function Products({ userProfile }: ProductsProps) {
             <div className="space-y-5 p-5">
               {/* Add form */}
               <form onSubmit={handleQuickCategoryAdd} className="space-y-2">
-                <label htmlFor="new-category-name" className="block text-xs font-black uppercase tracking-wider text-ds-text-muted">Nouveau nom de catégorie</label>
+                <label htmlFor="new-category-name" className="block text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('ui.newCategoryName')}</label>
                 <div className="flex gap-2">
                   <Input
                     id="new-category-name"
@@ -1593,14 +1594,14 @@ export default function Products({ userProfile }: ProductsProps) {
                     value={newCategoryName}
                     onChange={(e) => setNewCategoryName(e.target.value)}
                     className="flex-1 text-base sm:text-sm"
-                    placeholder="Ex: Boissons, Fruits..."
+                    placeholder={t('ui.categoryExamples')}
                   />
                   <Button
                     type="submit"
                     className="text-xs font-black uppercase tracking-wider"
                   >
                     <Plus className="w-4 h-4" />
-                    Ajouter
+                    {t('ui.add')}
                   </Button>
                 </div>
               </form>
@@ -1608,20 +1609,20 @@ export default function Products({ userProfile }: ProductsProps) {
               {/* List of existing categories */}
               <div className="space-y-2.5">
                 <span className="mb-1 block border-b border-ds-border pb-1.5 text-xs font-black uppercase tracking-wider text-ds-text-muted">
-                  Catégories existantes ({categories.length})
+                  {t('ui.existingCategories', { count: categories.length })}
                 </span>
                 
-                <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                <div className="space-y-1.5 max-h-56 overflow-y-auto pe-1">
                   {categories.length === 0 ? (
-                    <EmptyState className="py-6" title="Aucune catégorie enregistrée" />
+                    <EmptyState className="py-6" title={t('ui.noCategories')} />
                   ) : (
                     categories.map((cat) => (
                       <div key={cat.id} className="group flex items-center justify-between rounded-xl border border-ds-border bg-ds-surface-2 px-3 py-2 transition-all hover:bg-ds-surface">
                         {deletingCatId === cat.id ? (
-                          <div className="flex items-center justify-between w-full animate-in fade-in slide-in-from-right-1 duration-150">
+                          <div className="flex items-center justify-between w-full animate-in fade-in slide-in-from-end-1 duration-150">
                             <span className="flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-ds-danger">
                               <AlertTriangle className="w-3.5 h-3.5 text-ds-danger" />
-                              Supprimer?
+                              {t('ui.deleteQuestion')}
                             </span>
                             <div className="flex items-center gap-1.5">
                               <button
@@ -1629,14 +1630,14 @@ export default function Products({ userProfile }: ProductsProps) {
                                 onClick={() => setDeletingCatId(null)}
                                 className="min-h-11 rounded-lg bg-ds-surface-2 px-3 py-1 text-[10px] font-bold text-ds-text-muted hover:text-ds-text transition-colors cursor-pointer"
                               >
-                                Non
+                                {t('ui.no')}
                               </button>
                               <button
                                 type="button"
                                 onClick={() => executeCategoryDelete(cat.id, cat.name)}
                                 className="min-h-11 rounded-lg bg-ds-danger px-3 py-1 text-[10px] font-black text-ds-brand-contrast hover:brightness-90 transition-all cursor-pointer"
                               >
-                                Oui
+                                {t('ui.yes')}
                               </button>
                             </div>
                           </div>
@@ -1651,7 +1652,7 @@ export default function Products({ userProfile }: ProductsProps) {
                               type="button"
                               onClick={() => setDeletingCatId(cat.id)}
                               className="min-h-11 min-w-11 rounded-lg p-1.5 text-ds-text-muted hover:bg-ds-danger-soft hover:text-ds-danger transition-colors cursor-pointer"
-                              title={`Supprimer la catégorie ${cat.name}`}
+                              title={t('ui.deleteCategoryTitle', { name: cat.name })}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -1669,9 +1670,9 @@ export default function Products({ userProfile }: ProductsProps) {
                 type="button"
                 onClick={handleResetDefaultCategories}
                 className="min-h-11 text-ds-text-muted hover:text-ds-brand text-[10px] font-black uppercase tracking-wider underline cursor-pointer"
-                title="Restaurer les catégories de base par défaut"
+                title={t('ui.restoreCategories')}
               >
-                Réinit. défauts
+                {t('ui.resetDefaults')}
               </button>
               <Button
                 variant="secondary"
@@ -1682,7 +1683,7 @@ export default function Products({ userProfile }: ProductsProps) {
                 }}
                 className="text-xs font-black uppercase tracking-wider"
               >
-                Fermer
+                {t('ui.close')}
               </Button>
             </div>
           </Card>
@@ -1696,22 +1697,22 @@ export default function Products({ userProfile }: ProductsProps) {
             <div className="flex items-center justify-between border-b border-ds-border bg-ds-danger-soft/60 px-6 py-4">
               <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-ds-text">
                 <Shield className="w-4 h-4 text-ds-danger" />
-                Code de sécurité requis
+                {t('ui.securityRequired')}
               </h3>
               <button
                 onClick={() => { setShowSecurityModal(false); setPendingAction(null); setPendingProduct(null); setSecurityCode(''); setSecurityError(false); }}
                 className="min-h-11 min-w-11 rounded-lg p-1.5 text-ds-text-muted hover:bg-ds-surface"
-                aria-label="Fermer"
+                aria-label={t('ui.close')}
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="space-y-4 p-6">
               <p className="text-xs font-medium text-ds-text-muted">
-                Saisissez le code de sécurité à 4 chiffres pour autoriser {pendingAction === 'edit' ? 'la modification' : 'la suppression'} du produit <strong className="text-ds-text">"{pendingProduct.name}"</strong>.
+                {t('ui.securityPrompt', { action: t(pendingAction === 'edit' ? 'ui.editAction' : 'ui.deleteAction'), name: pendingProduct.name })}
               </p>
               <div className="relative">
-                <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ds-text-muted" />
+                <Shield className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ds-text-muted" />
                 <Input
                   type={showSecurityInput ? 'text' : 'password'}
                   name="product-security-code"
@@ -1719,7 +1720,7 @@ export default function Products({ userProfile }: ProductsProps) {
                   maxLength={4}
                   inputMode="numeric"
                   autoFocus
-                  aria-label="Code de sécurité à 4 chiffres"
+                  aria-label={t('ui.securityCode')}
                   value={securityCode}
                   onChange={(e) => {
                     const val = e.target.value.replace(/[^0-9]/g, '').slice(0, 4);
@@ -1732,7 +1733,7 @@ export default function Products({ userProfile }: ProductsProps) {
                     }
                   }}
                   placeholder="● ● ● ●"
-                  className={`w-full pl-9 pr-10 py-3 border-2 rounded-xl text-center text-xl font-mono font-black tracking-[0.5em] outline-none transition-colors ${
+                  className={`w-full ps-9 pe-10 py-3 border-2 rounded-xl text-center text-xl font-mono font-black tracking-[0.5em] outline-none transition-colors ${
                     securityError
                       ? 'border-ds-danger bg-ds-danger-soft text-ds-danger focus:border-ds-danger'
                       : 'border-ds-border bg-ds-surface text-ds-text focus:border-ds-brand focus:ring-2 focus:ring-ds-brand/10'
@@ -1741,8 +1742,8 @@ export default function Products({ userProfile }: ProductsProps) {
                 <button
                   type="button"
                   onClick={() => setShowSecurityInput(!showSecurityInput)}
-                  className="absolute right-0 top-1/2 min-h-11 min-w-11 -translate-y-1/2 text-ds-text-muted hover:text-ds-text"
-                  aria-label={showSecurityInput ? 'Masquer le code' : 'Afficher le code'}
+                  className="absolute end-0 top-1/2 min-h-11 min-w-11 -translate-y-1/2 text-ds-text-muted hover:text-ds-text"
+                  aria-label={showSecurityInput ? t('ui.hideCode') : t('ui.showCode')}
                 >
                   {showSecurityInput ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" /> }
                 </button>
@@ -1750,7 +1751,7 @@ export default function Products({ userProfile }: ProductsProps) {
               {securityError && (
                 <p className="flex items-center gap-1.5 text-xs font-bold text-ds-danger">
                   <AlertCircle className="w-3.5 h-3.5" />
-                  Code incorrect. Veuillez réessayer.
+                  {t('ui.incorrectCode')}
                 </p>
               )}
               <div className="flex gap-3 pt-1">
@@ -1759,13 +1760,13 @@ export default function Products({ userProfile }: ProductsProps) {
                   onClick={() => { setShowSecurityModal(false); setPendingAction(null); setPendingProduct(null); setSecurityCode(''); setSecurityError(false); }}
                   className="flex-1 text-xs uppercase tracking-wider"
                 >
-                  Annuler
+                  {t('ui.cancel')}
                 </Button>
                 <Button
                   onClick={confirmSecureAction}
                   className="flex-1 text-xs font-black uppercase tracking-wider"
                 >
-                  Valider
+                  {t('ui.confirm')}
                 </Button>
               </div>
             </div>
@@ -1782,9 +1783,9 @@ export default function Products({ userProfile }: ProductsProps) {
                 <AlertTriangle className="w-6 h-6 animate-pulse" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-sm font-black uppercase tracking-wider text-ds-text">Supprimer le produit ?</h3>
+                <h3 className="text-sm font-black uppercase tracking-wider text-ds-text">{t('ui.deleteProductTitle')}</h3>
                 <p className="text-xs leading-relaxed text-ds-text-muted">
-                  Êtes-vous sûr de vouloir supprimer définitivement le produit <strong className="text-ds-text">"{productToDelete.name}"</strong> ? Cette action est irréversible.
+                  {t('ui.deleteProductConfirm', { name: productToDelete.name })}
                 </p>
               </div>
             </div>
@@ -1803,7 +1804,7 @@ export default function Products({ userProfile }: ProductsProps) {
                 onClick={() => setProductToDelete(null)}
                 className="text-xs font-bold uppercase tracking-wider"
               >
-                Annuler
+                {t('ui.cancel')}
               </Button>
               <Button
                 variant="danger"
@@ -1811,7 +1812,7 @@ export default function Products({ userProfile }: ProductsProps) {
                 onClick={executeProductDelete}
                 className="text-xs font-black uppercase tracking-wider"
               >
-                Supprimer
+                {t('ui.delete')}
               </Button>
             </div>
           </Card>
@@ -1824,12 +1825,12 @@ export default function Products({ userProfile }: ProductsProps) {
           <Card className="flex max-h-[calc(100vh-24px)] w-full max-w-md flex-col overflow-hidden rounded-ds-lg p-0 shadow-ds-md sm:max-h-[85vh]">
             <div className="flex-shrink-0 flex items-center justify-between border-b border-ds-border px-6 py-4">
               <h3 className="text-sm font-black uppercase tracking-wider text-ds-text">
-                Approvisionner : {replenishProduct.name}
+                {t('ui.replenishTitle', { name: replenishProduct.name })}
               </h3>
               <button 
                 onClick={() => setReplenishProduct(null)}
                 className="min-h-11 min-w-11 rounded-lg p-1 text-ds-text-muted hover:bg-ds-surface-2 cursor-pointer"
-                aria-label="Fermer"
+                aria-label={t('ui.close')}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1839,14 +1840,14 @@ export default function Products({ userProfile }: ProductsProps) {
               <div className="flex-1 touch-pan-y space-y-4 overflow-y-auto p-6">
                 <div>
                   <label htmlFor="replenish-quantity" className="mb-1 block text-xs font-black uppercase tracking-wider text-ds-text-muted">
-                    Quantité à ajouter au stock
+                    {t('ui.quantityToAdd')}
                   </label>
                   <Input
                     id="replenish-quantity"
                     type="number"
                     required
                     min="1"
-                    placeholder="Ex: 50"
+                    placeholder="50"
                     value={replenishQty}
                     onChange={(e) => setReplenishQty(e.target.value)}
                     className="text-base font-bold sm:text-sm"
@@ -1855,7 +1856,7 @@ export default function Products({ userProfile }: ProductsProps) {
 
                 {isAdmin && <div>
                   <label htmlFor="replenish-buy-price" className="mb-1 block text-xs font-black uppercase tracking-wider text-ds-text-muted">
-                    Prix d'achat unitaire ({storeSettings?.currency || 'DT'})
+                    {t('ui.unitPurchasePrice', { currency: storeSettings?.currency || 'DT' })}
                   </label>
                   <Input
                     id="replenish-buy-price"
@@ -1863,7 +1864,7 @@ export default function Products({ userProfile }: ProductsProps) {
                     step="0.001"
                     required
                     min="0.001"
-                    placeholder="Ex: 2.500"
+                    placeholder="2.500"
                     value={replenishPrice}
                     onChange={(e) => setReplenishPrice(e.target.value)}
                     className="font-mono text-base font-bold sm:text-sm"
@@ -1873,16 +1874,16 @@ export default function Products({ userProfile }: ProductsProps) {
                 {isAdmin && replenishQty && replenishPrice && (
                   <div className="my-2 space-y-1 rounded-xl border border-ds-border bg-ds-surface-2 p-3.5">
                     <div className="flex justify-between text-xs font-medium text-ds-text-muted">
-                      <span>Quantité :</span>
+                      <span>{t('ui.quantity')}</span>
                       <span className="font-bold text-ds-text">{replenishQty}</span>
                     </div>
                     <div className="flex justify-between text-xs font-medium text-ds-text-muted">
-                      <span>Prix unitaire :</span>
-                      <span className="font-bold text-ds-text">{parseFloat(replenishPrice).toFixed(3)} {storeSettings?.currency || 'DT'}</span>
+                      <span>{t('ui.unitPrice')}</span>
+                      <span className="font-bold text-ds-text" dir="ltr">{parseFloat(replenishPrice).toFixed(3)} {storeSettings?.currency || 'DT'}</span>
                     </div>
                     <div className="my-1.5 flex justify-between border-t border-ds-border pt-1.5 text-xs font-bold text-ds-text">
-                      <span>Dépense totale estimée :</span>
-                      <span className="font-black text-ds-success">
+                      <span>{t('ui.estimatedExpense')}</span>
+                      <span className="font-black text-ds-success" dir="ltr">
                         {(parseInt(replenishQty) * parseFloat(replenishPrice)).toFixed(3)} {storeSettings?.currency || 'DT'}
                       </span>
                     </div>
@@ -1897,7 +1898,7 @@ export default function Products({ userProfile }: ProductsProps) {
                   onClick={() => setReplenishProduct(null)}
                   className="text-xs font-bold uppercase tracking-wider"
                 >
-                  Annuler
+                  {t('ui.cancel')}
                 </Button>
                 <Button
                   type="submit"
@@ -1905,7 +1906,7 @@ export default function Products({ userProfile }: ProductsProps) {
                   loading={isSubmitting}
                   className="text-xs font-black uppercase tracking-wider"
                 >
-                  {isSubmitting ? 'En cours…' : 'Confirmer'}
+                  {isSubmitting ? t('ui.inProgress') : t('ui.confirm')}
                 </Button>
               </div>
             </form>
@@ -1920,12 +1921,12 @@ export default function Products({ userProfile }: ProductsProps) {
             <div className="flex-shrink-0 flex items-center justify-between border-b border-ds-border bg-ds-surface-2 px-6 py-4">
               <h2 className="flex items-center gap-2 text-lg font-bold text-ds-text">
                 <History className="w-5 h-5 text-ds-brand" />
-                Historique : {historyProduct.name}
+                {t('ui.historyTitle', { name: historyProduct.name })}
               </h2>
               <button
                 onClick={() => setHistoryProduct(null)}
                 className="min-h-11 min-w-11 rounded-lg p-2 text-ds-text-muted hover:bg-ds-surface cursor-pointer"
-                aria-label="Fermer"
+                aria-label={t('ui.close')}
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1935,14 +1936,14 @@ export default function Products({ userProfile }: ProductsProps) {
               {historyLoading && (
                 <div className="flex flex-col items-center justify-center gap-3 py-10 text-ds-text-muted" role="status">
                   <Loader2 className="w-8 h-8 animate-spin" />
-                  <span className="text-sm font-medium">Chargement de l'historique…</span>
+                  <span className="text-sm font-medium">{t('ui.loadingHistory')}</span>
                 </div>
               )}
 
               {!historyLoading && historyError && (
                 <div className="flex items-start gap-2 rounded-xl border border-ds-danger/20 bg-ds-danger-soft p-3.5 text-xs font-medium text-ds-danger">
                   <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                  <span>Erreur : {historyError}</span>
+                  <span>{t('ui.historyError', { error: historyError })}</span>
                 </div>
               )}
 
@@ -1955,15 +1956,15 @@ export default function Products({ userProfile }: ProductsProps) {
                     {/* Résumé */}
                     <div className="grid grid-cols-3 gap-2">
                       <div className="rounded-xl border border-ds-success/20 bg-ds-success-soft p-3 text-center">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-ds-success">Entrées</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-ds-success">{t('ui.inbound')}</div>
                         <div className="text-xl font-black text-ds-success">{historyTotals.totalIn}</div>
                       </div>
                       <div className="rounded-xl border border-ds-accent/20 bg-ds-accent-soft p-3 text-center">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-ds-accent">Ventes</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-ds-accent">{t('ui.outbound')}</div>
                         <div className="text-xl font-black text-ds-accent">{historyTotals.totalOut}</div>
                       </div>
                       <div className="rounded-xl border border-ds-border bg-ds-surface-2 p-3 text-center">
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-ds-text-muted">Théorique</div>
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-ds-text-muted">{t('ui.theoreticalStock')}</div>
                         <div className="text-xl font-black text-ds-text">{theoretical}</div>
                       </div>
                     </div>
@@ -1978,12 +1979,12 @@ export default function Products({ userProfile }: ProductsProps) {
                         : <AlertTriangle className="mt-0.5 w-5 h-5 flex-shrink-0 text-ds-warning" />}
                       <div className="text-xs leading-relaxed">
                         <div className="font-bold text-ds-text">
-                          Stock affiché : {displayedStock} &nbsp;·&nbsp; Théorique : {theoretical} &nbsp;·&nbsp; Écart : {gap > 0 ? '+' : ''}{gap}
+                          {t('ui.stockSummary', { displayed: displayedStock, theoretical, gap: `${gap > 0 ? '+' : ''}${gap}` })}
                         </div>
                         <div className="mt-1 text-ds-text-muted">
-                          {gap === 0 && "Cohérent : le stock affiché correspond aux mouvements enregistrés."}
-                          {gap > 0 && `${gap} unité(s) en trop. Cause probable : édition manuelle du stock, ou vente hors-ligne dont la décrémentation a été écrasée à la synchronisation.`}
-                          {gap < 0 && `${-gap} unité(s) manquante(s). Cause probable : vente comptée en double, ou approvisionnement non enregistré.`}
+                          {gap === 0 && t('ui.coherentStock')}
+                          {gap > 0 && t('ui.excessStock', { count: gap })}
+                          {gap < 0 && t('ui.missingStock', { count: -gap })}
                         </div>
                       </div>
                     </div>
@@ -1991,11 +1992,11 @@ export default function Products({ userProfile }: ProductsProps) {
                     {/* Journal des mouvements */}
                     <div>
                       <div className="mb-2 text-xs font-bold uppercase tracking-wider text-ds-text-muted">
-                        Mouvements ({historyMovements.length})
+                        {t('ui.movements', { count: historyMovements.length })}
                       </div>
                       {historyMovements.length === 0 ? (
                         <div className="py-4 text-center text-sm italic text-ds-text-muted">
-                          Aucun mouvement enregistré. Le stock a probablement été saisi manuellement.
+                          {t('ui.noMovements')}
                         </div>
                       ) : (
                         <div className="space-y-1.5">

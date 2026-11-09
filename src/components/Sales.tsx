@@ -6,8 +6,6 @@ import { Sale, Invoice, UserProfile, Product } from '../types';
 import { formatProductDetails } from '../config/productAttributes';
 import { handleFirestoreError, OperationType } from '../App';
 import { Search, Calendar, User, ShoppingBag, Eye, X, Printer, Download, TrendingUp, Receipt, AlertCircle, CheckCircle2, Clock, Trash2, Shield, EyeOff, Package } from 'lucide-react';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { cn } from '../lib/utils';
 import { addPendingOperation } from '../lib/offlineManager';
 import { computeSaleProfit } from '../lib/financial';
@@ -15,12 +13,15 @@ import { getAuditActor, logAudit } from '../lib/audit';
 import { slugifyAppName } from '../lib/brand';
 import { useBrand } from './BrandProvider';
 import { Badge, Button, Card, EmptyState, Input, PageHeader } from './ui';
+import { useTranslation } from 'react-i18next';
+import { formatDateTime, formatDocumentDate } from '../i18n/format';
 
 interface SalesProps {
   userProfile: UserProfile | null;
 }
 
 export default function Sales({ userProfile }: SalesProps) {
+  const { t } = useTranslation('sales');
   const brand = useBrand();
   const [sales, setSales] = useState<Sale[]>([]);
   const [saleCostSnapshots, setSaleCostSnapshots] = useState<Record<string, Array<{ productId: string; quantity: number; unitBuyPrice: number | null }>>>({});
@@ -242,7 +243,7 @@ export default function Sales({ userProfile }: SalesProps) {
       setSaleToDelete(null);
     } catch (err: any) {
       console.error("Failed to delete sale:", err);
-      alert("Erreur lors de la suppression de la vente: " + err.message);
+      alert(t('deleteFailed', { message: err.message }));
     } finally {
       setDeleting(false);
     }
@@ -251,17 +252,17 @@ export default function Sales({ userProfile }: SalesProps) {
   const downloadPDF = async (sale: Sale) => {
     try {
       if (!sale.invoiceId) {
-        alert("Aucune facture associée à cette vente.");
+        alert(t('noInvoice'));
         return;
       }
       const invoiceSnap = await getDoc(doc(db, 'invoices', sale.invoiceId));
       if (!invoiceSnap.exists()) {
-        alert("Facture introuvable.");
+        alert(t('invoiceMissing'));
         return;
       }
       const invoice = { id: invoiceSnap.id, ...invoiceSnap.data() } as Invoice;
       const currentUser = auth.currentUser;
-      if (!currentUser) throw new Error('Session invalide. Veuillez vous reconnecter.');
+      if (!currentUser) throw new Error(t('sessionInvalid'));
       const [idToken, settingsSnap] = await Promise.all([
         currentUser.getIdToken(),
         getDoc(doc(db, 'settings', ownerId))
@@ -278,10 +279,11 @@ export default function Sales({ userProfile }: SalesProps) {
           storeName: storeSettings.storeName || brand.storeName,
           address: storeSettings.address,
           phone: storeSettings.phone,
-          date: invoice.date?.toDate ? format(invoice.date.toDate(), 'dd/MM/yyyy HH:mm') : format(new Date(), 'dd/MM/yyyy HH:mm')
+          documentLanguage: storeSettings.documentLanguage || 'fr',
+          date: formatDocumentDate(invoice.date?.toDate ? invoice.date.toDate() : new Date(), storeSettings.documentLanguage || 'fr')
         })
       });
-      if (!response.ok) throw new Error('Impossible de générer la facture PDF.');
+      if (!response.ok) throw new Error(t('pdfFailed'));
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -403,8 +405,8 @@ export default function Sales({ userProfile }: SalesProps) {
   return (
     <div className="min-w-0 space-y-6 font-sans">
       <PageHeader
-        title="Historique des ventes"
-        description={`${sales.length} transaction${sales.length > 1 ? 's' : ''} enregistrée${sales.length > 1 ? 's' : ''}`}
+        title={t('title')}
+        description={t('transactionCount', { count: sales.length })}
       />
 
       {/* KPI Cards */}
@@ -412,23 +414,23 @@ export default function Sales({ userProfile }: SalesProps) {
         {/* Chiffre encaissé */}
         <Card className="border-ds-brand bg-ds-brand p-5 text-ds-brand-contrast shadow-ds-md">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold uppercase tracking-wider opacity-80">Encaissé</p>
+              <p className="text-xs font-semibold uppercase tracking-wider opacity-80">{t('collected')}</p>
               <div className="flex h-9 w-9 items-center justify-center rounded-ds-md bg-white/15">
                 <TrendingUp className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-2xl font-black font-mono tracking-tight">{totalRevenue.toFixed(3)}<span className="ml-1 text-sm font-bold opacity-80">DT</span></p>
+            <p className="text-2xl font-black font-mono tracking-tight">{totalRevenue.toFixed(3)}<span className="ms-1 text-sm font-bold opacity-80">DT</span></p>
         </Card>
 
         {/* Ventes payées */}
         <Card className="p-5">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-ds-muted">Payées</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-ds-muted">{t('paid')}</p>
             <div className="flex h-9 w-9 items-center justify-center rounded-ds-md bg-ds-success-soft">
               <CheckCircle2 className="w-4 h-4 text-ds-success" />
             </div>
           </div>
-          <p className="text-2xl font-black text-ds-text font-mono">{paidCount}<span className="ml-1 text-sm font-bold text-ds-muted">/ {sales.length}</span></p>
+          <p className="text-2xl font-black text-ds-text font-mono">{paidCount}<span className="ms-1 text-sm font-bold text-ds-muted">/ {sales.length}</span></p>
           <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-ds-surface-2">
             <div
               className="h-full rounded-full bg-ds-success transition-all duration-700"
@@ -440,13 +442,13 @@ export default function Sales({ userProfile }: SalesProps) {
         {/* Dettes */}
         <Card className="p-5">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold uppercase tracking-wider text-ds-muted">Dettes</p>
+            <p className="text-xs font-semibold uppercase tracking-wider text-ds-muted">{t('debts')}</p>
             <div className="flex h-9 w-9 items-center justify-center rounded-ds-md bg-ds-warning-soft">
               <AlertCircle className="w-4 h-4 text-ds-warning" />
             </div>
           </div>
-          <p className="text-2xl font-black text-ds-text font-mono">{totalDebt.toFixed(3)}<span className="ml-1 text-sm font-bold text-ds-muted">DT</span></p>
-          <p className="mt-1 text-xs font-medium text-ds-warning">{sales.filter(s => s.debt > 0).length} vente{sales.filter(s => s.debt > 0).length > 1 ? 's' : ''} en attente</p>
+          <p className="text-2xl font-black text-ds-text font-mono">{totalDebt.toFixed(3)}<span className="ms-1 text-sm font-bold text-ds-muted">DT</span></p>
+          <p className="mt-1 text-xs font-medium text-ds-warning">{t('salesPending', { count: sales.filter(s => s.debt > 0).length })}</p>
         </Card>
       </div>
 
@@ -456,25 +458,25 @@ export default function Sales({ userProfile }: SalesProps) {
           <div className="w-full sm:max-w-md">
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-ds-text">
               <Package className="w-3.5 h-3.5" />
-              Historique par code produit
+              {t('productHistory')}
             </label>
             <div className="relative">
-              <Package className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ds-muted" />
+              <Package className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ds-muted" />
               <Input
                 type="text"
                 name="product-code-search"
-                placeholder="Code-barres, ID ou nom du produit…"
+                placeholder={t('productSearch')}
                 value={productCode}
                 onChange={(e) => setProductCode(e.target.value)}
                 autoComplete="off"
                 autoCorrect="off"
                 spellCheck={false}
-                className="pl-10 pr-10"
+                className="ps-10 pe-10"
               />
               {productCode && (
                 <button
                   onClick={() => setProductCode('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-ds-sm p-2 text-ds-muted hover:bg-ds-surface-2 hover:text-ds-text"
+                  className="absolute end-3 top-1/2 -translate-y-1/2 rounded-ds-sm p-2 text-ds-muted hover:bg-ds-surface-2 hover:text-ds-text"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -483,7 +485,7 @@ export default function Sales({ userProfile }: SalesProps) {
           </div>
           {productCode.trim() && (
             <Badge variant="info" className="shrink-0">
-              {filteredSales.length} vente{filteredSales.length > 1 ? 's' : ''} trouvée{filteredSales.length > 1 ? 's' : ''}
+              {t('foundSales', { count: filteredSales.length })}
             </Badge>
           )}
         </div>
@@ -494,17 +496,17 @@ export default function Sales({ userProfile }: SalesProps) {
         {/* Toolbar */}
         <div className="flex flex-col items-start justify-between gap-3 border-b border-ds-border p-4 sm:flex-row sm:items-center sm:p-5">
           <div className="relative w-full sm:max-w-xs">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ds-muted" />
+            <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ds-muted" />
             <Input
               type="text"
               name="sales-search"
-              placeholder="Client ou ID…"
+              placeholder={t('clientSearch')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
-              className="pl-10 pr-4"
+              className="ps-10 pe-4"
             />
           </div>
 
@@ -521,7 +523,7 @@ export default function Sales({ userProfile }: SalesProps) {
                     : "bg-ds-surface-2 text-ds-muted hover:bg-ds-border"
                 )}
               >
-                {f === 'all' ? 'Tout' : f === 'paid' ? '✓ Payé' : '⚠ Partiel'}
+                {f === 'all' ? t('filterAll') : f === 'paid' ? t('filterPaid') : t('filterPartial')}
               </button>
             ))}
           </div>
@@ -529,14 +531,14 @@ export default function Sales({ userProfile }: SalesProps) {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          <table className="responsive-card-table w-full text-left">
+          <table className="responsive-card-table w-full text-start">
             <thead>
                 <tr className="border-b border-ds-border bg-ds-surface-2">
-                  <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-[0.15em] text-ds-muted">Date</th>
-                  <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-[0.15em] text-ds-muted">Client</th>
-                  <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-[0.15em] text-ds-muted">Total</th>
-                  <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-[0.15em] text-ds-muted">Statut</th>
-                  <th className="px-6 py-3.5 text-right text-[10px] font-black uppercase tracking-[0.15em] text-ds-muted">Action</th>
+                  <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-[0.15em] text-ds-muted">{t('date')}</th>
+                  <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-[0.15em] text-ds-muted">{t('client')}</th>
+                  <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-[0.15em] text-ds-muted">{t('total')}</th>
+                  <th className="px-6 py-3.5 text-[10px] font-black uppercase tracking-[0.15em] text-ds-muted">{t('status')}</th>
+                  <th className="px-6 py-3.5 text-end text-[10px] font-black uppercase tracking-[0.15em] text-ds-muted">{t('action')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-ds-border">
@@ -556,8 +558,8 @@ export default function Sales({ userProfile }: SalesProps) {
                   <td colSpan={5} className="px-6 py-10">
                   <EmptyState
                     icon={<Receipt className="h-10 w-10" />}
-                    title="Aucune vente trouvée"
-                    description="Essayez un autre terme de recherche"
+                    title={t('noSales')}
+                    description={t('trySearch')}
                   />
                   </td>
                 </tr>
@@ -568,40 +570,40 @@ export default function Sales({ userProfile }: SalesProps) {
                     className="group cursor-pointer transition-colors hover:bg-ds-brand-soft/50"
                     onClick={() => setSelectedSale(sale)}
                   >
-                    <td data-label="Date" className="px-6 py-4">
+                    <td data-label={t('date')} className="px-6 py-4">
                       <div className="text-sm font-bold text-ds-text">
-                        {sale.date?.toDate ? format(sale.date.toDate(), 'dd MMM yyyy', { locale: fr }) : '—'}
+                        {sale.date?.toDate ? formatDateTime(sale.date.toDate(), { dateStyle: 'medium' }) : '—'}
                       </div>
                       <div className="flex items-center gap-1 mt-0.5">
                         <Clock className="w-3 h-3 text-ds-muted" />
                         <span className="text-[10px] font-mono text-ds-muted">
-                          {sale.date?.toDate ? format(sale.date.toDate(), 'HH:mm') : '—'}
+                          {sale.date?.toDate ? formatDateTime(sale.date.toDate(), { hour: '2-digit', minute: '2-digit' }) : '—'}
                         </span>
                       </div>
                     </td>
-                    <td data-label="Client" className="px-6 py-4">
+                    <td data-label={t('client')} className="px-6 py-4">
                       <div className="flex items-center gap-2.5">
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-ds-sm bg-ds-brand-soft text-[10px] font-black text-ds-brand">
                           {sale.clientName?.[0]?.toUpperCase() || '?'}
                         </div>
-                        <span className="text-sm font-bold text-ds-text">{sale.clientName || 'Client inconnu'}</span>
+                        <span className="text-sm font-bold text-ds-text">{sale.clientName || t('unknownClient')}</span>
                         {saleHasLoss(sale) && (
-                          <Badge variant="danger" className="min-h-0 px-2 py-0.5 text-[9px] uppercase">Vendu à perte</Badge>
+                          <Badge variant="danger" className="min-h-0 px-2 py-0.5 text-[9px] uppercase">{t('soldAtLoss')}</Badge>
                         )}
                       </div>
                     </td>
-                    <td data-label="Total" className="px-6 py-4">
+                    <td data-label={t('total')} className="px-6 py-4">
                       <span className="text-sm font-black text-ds-text font-mono">{sale.total.toFixed(3)}</span>
-                      <span className="ml-1 text-[10px] font-bold text-ds-muted">DT</span>
+                      <span className="ms-1 text-[10px] font-bold text-ds-muted">DT</span>
                     </td>
-                    <td data-label="Statut" className="px-6 py-4">
+                    <td data-label={t('status')} className="px-6 py-4">
                       {sale.debt > 0 ? (
                       <Badge variant="warning">-{sale.debt.toFixed(3)} DT</Badge>
                       ) : (
-                      <Badge variant="success">Payé</Badge>
+                      <Badge variant="success">{t('paidLabel')}</Badge>
                       )}
                     </td>
-                    <td data-label="Actions" className="px-6 py-4 text-right">
+                    <td data-label={t('actions')} className="px-6 py-4 text-end">
                       <div className="flex items-center justify-end gap-2">
                         <Button
                           type="button"
@@ -610,7 +612,7 @@ export default function Sales({ userProfile }: SalesProps) {
                           size="sm"
                         >
                           <Eye className="w-3.5 h-3.5" />
-                          Voir
+                          {t('view')}
                         </Button>
 
                         <Button
@@ -630,10 +632,10 @@ export default function Sales({ userProfile }: SalesProps) {
                           }}
                           variant="danger"
                           size="sm"
-                          title="Supprimer cette vente"
+                          title={t('deleteSaleTitle')}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                          Supprimer
+                          {t('delete')}
                         </Button>
                       </div>
                     </td>
@@ -647,7 +649,7 @@ export default function Sales({ userProfile }: SalesProps) {
         {/* Footer count */}
         {!loading && filteredSales.length > 0 && (
           <div className="border-t border-ds-border bg-ds-surface-2 px-6 py-3">
-            <p className="text-xs font-medium text-ds-muted">{filteredSales.length} résultat{filteredSales.length > 1 ? 's' : ''}</p>
+            <p className="text-xs font-medium text-ds-muted">{t('resultCount', { count: filteredSales.length })}</p>
           </div>
         )}
       </Card>
@@ -666,11 +668,11 @@ export default function Sales({ userProfile }: SalesProps) {
                   <Receipt className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-base font-black text-ds-text leading-none">Détails de la vente</h2>
+                  <h2 className="text-base font-black text-ds-text leading-none">{t('saleDetails')}</h2>
                   <p className="mt-0.5 text-[10px] font-mono uppercase tracking-wider text-ds-muted">{selectedSale.id.slice(0, 12)}…</p>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => setSelectedSale(null)} aria-label="Fermer">
+              <Button variant="ghost" size="sm" onClick={() => setSelectedSale(null)} aria-label={t('close')}>
                 <X className="w-5 h-5" />
               </Button>
             </div>
@@ -679,7 +681,7 @@ export default function Sales({ userProfile }: SalesProps) {
               {/* Client + Date */}
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="rounded-ds-md border border-ds-border bg-ds-surface-2 p-4">
-                  <p className="mb-2 text-[10px] font-black uppercase tracking-[0.15em] text-ds-muted">Client</p>
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-[0.15em] text-ds-muted">{t('client')}</p>
                   <div className="flex items-center gap-2">
                     <div className="flex h-8 w-8 items-center justify-center rounded-ds-md bg-ds-brand-soft text-xs font-black text-ds-brand">
                       {selectedSale.clientName?.[0]?.toUpperCase() || '?'}
@@ -688,11 +690,11 @@ export default function Sales({ userProfile }: SalesProps) {
                   </div>
                 </div>
                 <div className="rounded-ds-md border border-ds-border bg-ds-surface-2 p-4">
-                  <p className="mb-2 text-[10px] font-black uppercase tracking-[0.15em] text-ds-muted">Date & heure</p>
+                  <p className="mb-2 text-[10px] font-black uppercase tracking-[0.15em] text-ds-muted">{t('dateTime')}</p>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 shrink-0 text-ds-brand" />
                     <span className="text-sm font-bold text-ds-text">
-                      {selectedSale.date?.toDate ? format(selectedSale.date.toDate(), 'PPP p', { locale: fr }) : 'Inconnue'}
+                      {selectedSale.date?.toDate ? formatDateTime(selectedSale.date.toDate(), { dateStyle: 'long', timeStyle: 'short' }) : t('unknown')}
                     </span>
                   </div>
                 </div>
@@ -701,16 +703,16 @@ export default function Sales({ userProfile }: SalesProps) {
               {/* Items Table */}
               <div>
                 <p className="mb-3 flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.15em] text-ds-muted">
-                  <ShoppingBag className="w-3.5 h-3.5" /> Articles vendus
+                  <ShoppingBag className="w-3.5 h-3.5" /> {t('soldItems')}
                 </p>
                 <div className="overflow-x-auto rounded-ds-md border border-ds-border">
-                  <table className="w-full min-w-[420px] text-left">
+                  <table className="w-full min-w-[420px] text-start">
                     <thead>
                       <tr className="border-b border-ds-border bg-ds-surface-2">
-                        <th className="px-5 py-3 text-[10px] font-black uppercase tracking-wider text-ds-muted">Produit</th>
-                        <th className="px-5 py-3 text-center text-[10px] font-black uppercase tracking-wider text-ds-muted">Qté</th>
-                        <th className="px-5 py-3 text-right text-[10px] font-black uppercase tracking-wider text-ds-muted">P.U</th>
-                        <th className="px-5 py-3 text-right text-[10px] font-black uppercase tracking-wider text-ds-muted">Total</th>
+                        <th className="px-5 py-3 text-[10px] font-black uppercase tracking-wider text-ds-muted">{t('product')}</th>
+                        <th className="px-5 py-3 text-center text-[10px] font-black uppercase tracking-wider text-ds-muted">{t('quantity')}</th>
+                        <th className="px-5 py-3 text-end text-[10px] font-black uppercase tracking-wider text-ds-muted">{t('unitPrice')}</th>
+                        <th className="px-5 py-3 text-end text-[10px] font-black uppercase tracking-wider text-ds-muted">{t('total')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-ds-border">
@@ -723,8 +725,8 @@ export default function Sales({ userProfile }: SalesProps) {
                           <td className="px-5 py-3 text-center">
                             <Badge variant="info" className="min-h-0 px-2 py-1">{item.quantity}</Badge>
                           </td>
-                          <td className="px-5 py-3 text-right text-xs font-mono text-ds-muted">{item.price.toFixed(3)}</td>
-                          <td className="px-5 py-3 text-right text-sm font-black text-ds-brand font-mono">{item.total.toFixed(3)} DT</td>
+                          <td className="px-5 py-3 text-end text-xs font-mono text-ds-muted">{item.price.toFixed(3)}</td>
+                          <td className="px-5 py-3 text-end text-sm font-black text-ds-brand font-mono">{item.total.toFixed(3)} DT</td>
                         </tr>
                       ))}
                     </tbody>
@@ -735,16 +737,16 @@ export default function Sales({ userProfile }: SalesProps) {
               {/* Summary */}
               <Card className="space-y-3 bg-ds-surface-2 p-5">
                 <div className="flex justify-between items-center text-sm text-ds-muted">
-                  <span className="font-bold uppercase tracking-wider text-xs">Total vente</span>
+                  <span className="font-bold uppercase tracking-wider text-xs">{t('saleTotal')}</span>
                   <span className="font-mono">{selectedSale.total.toFixed(3)} DT</span>
                 </div>
                 <div className="flex justify-between items-center border-t border-ds-border pt-3">
-                  <span className="font-black uppercase tracking-wider text-xs">Montant payé</span>
+                  <span className="font-black uppercase tracking-wider text-xs">{t('amountPaid')}</span>
                   <span className="text-xl font-black font-mono text-ds-success">{selectedSale.paid.toFixed(3)} DT</span>
                 </div>
                 {selectedSale.debt > 0 && (
                   <div className="flex justify-between items-center border-t border-ds-border pt-3">
-                    <span className="text-xs font-black uppercase tracking-wider text-ds-warning">Reste à payer</span>
+                    <span className="text-xs font-black uppercase tracking-wider text-ds-warning">{t('remaining')}</span>
                     <span className="text-xl font-black font-mono text-ds-warning">{selectedSale.debt.toFixed(3)} DT</span>
                   </div>
                 )}
@@ -758,14 +760,14 @@ export default function Sales({ userProfile }: SalesProps) {
                 className="flex-1"
               >
                 <Download className="w-4 h-4" />
-                Télécharger PDF
+                {t('downloadPdf')}
               </Button>
               <Button type="button" variant="secondary"
                 onClick={() => window.print()}
                 className="flex-1"
               >
                 <Printer className="w-4 h-4" />
-                Imprimer
+                {t('print')}
               </Button>
             </div>
           </div>
@@ -779,18 +781,18 @@ export default function Sales({ userProfile }: SalesProps) {
             <div className="flex items-center justify-between border-b border-ds-border bg-ds-danger-soft px-6 py-4">
               <h3 className="flex items-center gap-2 text-sm font-black uppercase tracking-wider text-ds-text">
                 <Shield className="w-4 h-4 text-ds-danger" />
-                Code de sécurité requis
+                {t('securityRequired')}
               </h3>
-              <Button variant="ghost" size="sm" onClick={() => { setShowSecurityModal(false); setPendingDeleteSale(null); }} aria-label="Fermer">
+              <Button variant="ghost" size="sm" onClick={() => { setShowSecurityModal(false); setPendingDeleteSale(null); }} aria-label={t('close')}>
                 <X className="w-4 h-4" />
               </Button>
             </div>
             <div className="p-6 space-y-4">
               <p className="text-sm text-ds-muted">
-                Saisissez le code de sécurité à 4 chiffres pour autoriser la suppression de cette vente.
+                {t('securityDescription')}
               </p>
               <div className="relative">
-                <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ds-muted" />
+                <Shield className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ds-muted" />
                 <Input
                   type={showSecurityInput ? 'text' : 'password'}
                   name="sale-security-code"
@@ -817,7 +819,7 @@ export default function Sales({ userProfile }: SalesProps) {
                     }
                   }}
                   placeholder="● ● ● ●"
-                  className={`pl-9 pr-10 text-center text-xl font-mono font-black tracking-[0.5em] ${
+                  className={`ps-9 pe-10 text-center text-xl font-mono font-black tracking-[0.5em] ${
                     securityError
                       ? 'border-ds-danger bg-ds-danger-soft text-ds-danger'
                       : ''
@@ -826,7 +828,7 @@ export default function Sales({ userProfile }: SalesProps) {
                 <button
                   type="button"
                   onClick={() => setShowSecurityInput(!showSecurityInput)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-ds-sm p-2 text-ds-muted hover:bg-ds-surface-2 hover:text-ds-text"
+                  className="absolute end-3 top-1/2 -translate-y-1/2 rounded-ds-sm p-2 text-ds-muted hover:bg-ds-surface-2 hover:text-ds-text"
                 >
                   {showSecurityInput ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" /> }
                 </button>
@@ -834,7 +836,7 @@ export default function Sales({ userProfile }: SalesProps) {
               {securityError && (
                 <p className="flex items-center gap-1.5 text-sm font-semibold text-ds-danger">
                   <AlertCircle className="w-3.5 h-3.5" />
-                  Code incorrect. Veuillez réessayer.
+                  {t('incorrectCode')}
                 </p>
               )}
               <div className="flex gap-3 pt-1">
@@ -843,7 +845,7 @@ export default function Sales({ userProfile }: SalesProps) {
                   variant="secondary"
                   className="flex-1"
                 >
-                  Annuler
+                  {t('cancel')}
                 </Button>
                 <Button
                   onClick={() => {
@@ -861,7 +863,7 @@ export default function Sales({ userProfile }: SalesProps) {
                   disabled={securityCode.length !== 4}
                   className="flex-1"
                 >
-                  Confirmer
+                  {t('confirm')}
                 </Button>
               </div>
             </div>
@@ -878,12 +880,12 @@ export default function Sales({ userProfile }: SalesProps) {
                 <AlertCircle className="w-6 h-6 animate-pulse" />
               </div>
               <div className="space-y-1">
-                <h3 className="text-sm font-black uppercase tracking-wider text-ds-text">Supprimer la vente ?</h3>
+                <h3 className="text-sm font-black uppercase tracking-wider text-ds-text">{t('deleteSaleQuestion')}</h3>
                 <p className="text-sm leading-relaxed text-ds-muted">
-                  Êtes-vous sûr de vouloir supprimer définitivement la vente <strong className="text-ds-text">#{saleToDelete.id.slice(0, 8)}...</strong> d'un montant de <strong className="text-ds-text">{saleToDelete.total.toFixed(3)} DT</strong> ?
+                  {t('deleteSaleConfirm', { id: saleToDelete.id.slice(0, 8), amount: saleToDelete.total.toFixed(3) })}
                 </p>
                 <p className="mt-1 rounded-ds-sm border border-ds-danger/20 bg-ds-danger-soft p-2 text-xs font-semibold leading-normal text-ds-danger">
-                  Cette opération va restaurer automatiquement les stocks, recalculer les rapports financiers, et soustraire la dette associée à ce client.
+                  {t('deleteSaleWarning')}
                 </p>
               </div>
             </div>
@@ -895,7 +897,7 @@ export default function Sales({ userProfile }: SalesProps) {
                 disabled={deleting}
                 onClick={() => setSaleToDelete(null)}
               >
-                Annuler
+                {t('cancel')}
               </Button>
               <Button
                 type="button"
@@ -905,10 +907,10 @@ export default function Sales({ userProfile }: SalesProps) {
               >
                 {deleting ? (
                   <>
-                    <span>Suppression...</span>
+                    <span>{t('deleting')}</span>
                   </>
                 ) : (
-                  <span>Confirmer</span>
+                  <span>{t('confirm')}</span>
                 )}
               </Button>
             </div>

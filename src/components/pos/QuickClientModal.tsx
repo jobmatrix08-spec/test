@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X } from 'lucide-react';
 import type { Client } from '../../types';
 import { handleFirestoreError, OperationType } from '../../App';
@@ -24,6 +25,7 @@ export default function QuickClientModal({
   onCreated,
   onClose,
 }: QuickClientModalProps) {
+  const { t } = useTranslation('clients');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
@@ -35,7 +37,7 @@ export default function QuickClientModal({
     const normalizedName = name.trim();
     const normalizedPhoneValue = normalizedPhone(phone);
     if (!normalizedName) {
-      setError('Le nom du client est obligatoire.');
+      setError(t('nameRequired'));
       return;
     }
     if (phone.trim() && (
@@ -43,17 +45,17 @@ export default function QuickClientModal({
       normalizedPhoneValue.length < 7 ||
       normalizedPhoneValue.length > 15
     )) {
-      setError('Saisissez un numéro de téléphone valide.');
+      setError(t('phoneInvalid'));
       return;
     }
     if (normalizedPhoneValue && clients.some(client =>
       normalizedPhone(client.phone || '') === normalizedPhoneValue,
     )) {
-      setError('Un client avec ce numéro de téléphone existe déjà.');
+      setError(t('duplicatePhone'));
       return;
     }
     if (!ownerId) {
-      setError('Impossible de déterminer la boutique pour enregistrer ce client.');
+      setError(t('storeUnknown'));
       return;
     }
 
@@ -70,7 +72,7 @@ export default function QuickClientModal({
       onCreated(client);
     } catch (createError) {
       handleFirestoreError(createError, OperationType.CREATE, 'clients');
-      setError('Le client n’a pas pu être enregistré. Vérifiez votre connexion et réessayez.');
+      setError(t('saveFailed'));
     } finally {
       setSaving(false);
     }
@@ -90,31 +92,31 @@ export default function QuickClientModal({
         className="w-full max-w-md overflow-hidden p-0 shadow-ds-md"
       >
         <div className="flex items-center justify-between border-b border-ds-border bg-ds-surface-2 px-5 py-4">
-          <h2 id="quick-client-title" className="text-lg font-bold text-ds-text">Nouveau client</h2>
-          <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={saving} aria-label="Fermer">
+          <h2 id="quick-client-title" className="text-lg font-bold text-ds-text">{t('newClient')}</h2>
+          <Button type="button" variant="ghost" size="sm" onClick={onClose} disabled={saving} aria-label={t('close')}>
             <X className="h-5 w-5" />
           </Button>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4 p-5">
           <Input
-            label="Nom complet"
+            label={t('fullName')}
             autoFocus
             required
             maxLength={120}
             value={name}
             onChange={event => setName(event.target.value)}
-            placeholder="Nom du client"
+            placeholder={t('quickName')}
           />
           <Input
-            label="Téléphone"
+            label={t('phone')}
             type="tel"
             maxLength={30}
             value={phone}
             onChange={event => setPhone(event.target.value)}
-            placeholder="Ex. +216 21 000 000"
+            placeholder={t('phoneExample')}
           />
           <label className="grid gap-1.5 text-sm font-medium text-ds-text">
-            Adresse / notes
+            {t('addressNotes')}
             <textarea
               rows={2}
               maxLength={500}
@@ -126,10 +128,10 @@ export default function QuickClientModal({
           {error && <p role="alert" className="text-sm font-medium text-ds-danger">{error}</p>}
           <div className="flex gap-3 pt-1">
             <Button type="button" variant="secondary" className="flex-1" onClick={onClose} disabled={saving}>
-              Annuler
+              {t('cancel')}
             </Button>
             <Button type="submit" className="flex-1" disabled={saving}>
-              {saving ? 'Enregistrement…' : 'Créer le client'}
+              {saving ? t('saving') : t('quickCreate')}
             </Button>
           </div>
         </form>

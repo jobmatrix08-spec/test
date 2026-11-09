@@ -10,7 +10,6 @@ import { formatProductDetails, normalizeAttributeValue } from '../config/product
 import { handleFirestoreError, OperationType } from '../App';
 import { Search, ShoppingCart, Trash2, Plus, Minus, User, CreditCard, CheckCircle, AlertCircle, Printer, X, FileText, Barcode, Filter, Tag, Coins, Percent, TrendingUp, Flame, Package } from 'lucide-react';
 import { cn, decodeAzertyBarcode } from '../lib/utils';
-import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { PrintableTicket } from './PrintableTicket';
 import { can } from '../lib/permissions';
@@ -20,12 +19,15 @@ import { useBrand } from './BrandProvider';
 import ClientPicker from './pos/ClientPicker';
 import QuickClientModal from './pos/QuickClientModal';
 import { Badge, Button, Card, EmptyState, Input, PageHeader, Select } from './ui';
+import { useTranslation } from 'react-i18next';
+import { formatDateTime, formatDocumentDate } from '../i18n/format';
 
 interface POSProps {
   userProfile: UserProfile | null;
 }
 
 export default function POS({ userProfile }: POSProps) {
+  const { t } = useTranslation('pos');
   const brand = useBrand();
   const navigate = useNavigate();
   const { session: cashSession, loading: cashSessionLoading } = useCashSession(userProfile);
@@ -79,7 +81,7 @@ export default function POS({ userProfile }: POSProps) {
         window.print();
       } catch (e) {
         console.error('Erreur lors de l\'impression:', e);
-        alert('L\'impression a échoué. Veuillez essayer d\'ouvrir l\'application dans un nouvel onglet.');
+        alert(t('errors.printFailed'));
       }
     }, 500);
   };
@@ -350,7 +352,7 @@ export default function POS({ userProfile }: POSProps) {
       const existing = prev.find(item => item.productId === product.id);
       if (existing) {
         if (product.inventoryType !== 'service' && existing.quantity >= product.stock) {
-          setError(`Stock insuffisant pour ${product.name} (Disponible: ${product.stock})`);
+          setError(t('errors.stockInsufficient', { name: product.name, stock: product.stock }));
           setTimeout(() => setError(null), 3000);
           return prev;
         }
@@ -382,7 +384,7 @@ export default function POS({ userProfile }: POSProps) {
         
         if (product) {
           if (product.inventoryType !== 'service' && newQty > product.stock) {
-            setError(`Stock insuffisant pour ${item.name} (Disponible: ${product.stock})`);
+            setError(t('errors.stockInsufficient', { name: item.name, stock: product.stock }));
             setTimeout(() => setError(null), 3000);
             return item;
           }
@@ -485,7 +487,7 @@ export default function POS({ userProfile }: POSProps) {
       return;
     }
     if (product.inventoryType !== 'service' && newQty > product.stock) {
-      setError(`Stock insuffisant pour ${product.name} (Disponible: ${product.stock})`);
+      setError(t('errors.stockInsufficient', { name: product.name, stock: product.stock }));
       setTimeout(() => setError(null), 3000);
       return;
     }
@@ -540,7 +542,7 @@ export default function POS({ userProfile }: POSProps) {
   const downloadPDF = async (invoice: Invoice) => {
     try {
       const currentUser = auth.currentUser;
-      if (!currentUser) throw new Error('Session invalide. Veuillez vous reconnecter.');
+      if (!currentUser) throw new Error(t('errors.sessionInvalid'));
       const idToken = await currentUser.getIdToken();
       const response = await apiFetch('/invoices/pdf', {
         method: 'POST',
@@ -553,10 +555,11 @@ export default function POS({ userProfile }: POSProps) {
           storeName: storeSettings?.storeName || brand.storeName,
           address: storeSettings?.address,
           phone: storeSettings?.phone,
-          date: format(new Date(), 'dd/MM/yyyy HH:mm')
+          documentLanguage: storeSettings?.documentLanguage || 'fr',
+          date: formatDocumentDate(new Date(), storeSettings?.documentLanguage || 'fr')
         })
       });
-      if (!response.ok) throw new Error('Impossible de générer la facture PDF.');
+      if (!response.ok) throw new Error(t('errors.pdfFailed'));
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -574,14 +577,14 @@ export default function POS({ userProfile }: POSProps) {
     if (cart.length === 0) return;
     if (!cashSession) {
       setError(cashSessionLoading
-        ? 'Vérification de la caisse en cours…'
-        : 'Aucune caisse ouverte. Ouvrez une session avant de vendre.');
+        ? t('errors.cashChecking')
+        : t('errors.cashRequired'));
       return;
     }
 
     // Crédit : un client enregistré est obligatoire (impossible pour un client de passage)
     if (isCredit && !selectedClient) {
-      setError('Veuillez sélectionner un client. Un crédit ne peut pas être enregistré pour un client de passage.');
+      setError(t('errors.selectClient'));
       return;
     }
 
@@ -592,13 +595,13 @@ export default function POS({ userProfile }: POSProps) {
     if (!isCredit) {
       if (!selectedClient) {
         if (Math.abs(paidAmount - cartTotal) > 0.001) {
-          setError(`Pour un client passagé, le montant payé doit être obligatoirement égal au montant total de la vente (${cartTotal.toFixed(3)} ${currency}).`);
+          setError(t('errors.walkInExact', { total: cartTotal.toFixed(3), currency }));
           setIsProcessing(false);
           return;
         }
       } else {
         if (paidAmount > cartTotal + 0.001) {
-          setError(`Le montant payé ne peut pas dépasser le montant total de la vente (${cartTotal.toFixed(3)} ${currency}).`);
+          setError(t('errors.paidExceeds', { total: cartTotal.toFixed(3), currency }));
           setIsProcessing(false);
           return;
         }
@@ -627,7 +630,7 @@ export default function POS({ userProfile }: POSProps) {
           preflight,
         ]);
       } catch {
-        throw new Error('Vérifiez votre connexion Internet.');
+        throw new Error(t('errors.offline'));
       }
 
       {
@@ -822,11 +825,11 @@ export default function POS({ userProfile }: POSProps) {
           await apiFetch(`/financial/sales/${encodeURIComponent(committedSaleId)}/costs`, { method: 'POST' });
         } catch (costError) {
           console.error('Sale purchase-cost snapshot failed after sale commit.');
-          setError(`Vente enregistrée, mais le coût d'achat n'a pas pu être figé. ${costError instanceof Error ? costError.message : ''}`);
+          setError(t('errors.saleCostFailed', { details: costError instanceof Error ? costError.message : '' }));
         }
       }
 
-      setSaleSuccess(isCredit ? 'Vente enregistrée à crédit !' : 'Vente validée avec succès !');
+      setSaleSuccess(isCredit ? t('saleSavedCredit') : t('saleSaved'));
       setLastInvoice(generatedInvoice);
       setCart([]);
       setReceivedCash(0);
@@ -846,7 +849,7 @@ export default function POS({ userProfile }: POSProps) {
   return (
     <div className="mx-auto min-w-0 max-w-full space-y-4 pb-4 xl:space-y-5">
       <PageHeader
-        title="Vente"
+        title={t('title')}
         actions={
           <Button
             className="lg:hidden"
@@ -855,7 +858,7 @@ export default function POS({ userProfile }: POSProps) {
             aria-expanded={isCartExpanded}
           >
             <ShoppingCart className="h-4 w-4" />
-            Panier ({cart.length})
+            {t('cartCount', { count: cart.length })}
           </Button>
         }
       />
@@ -879,8 +882,8 @@ export default function POS({ userProfile }: POSProps) {
           "order-0 flex items-center justify-between gap-3 rounded-ds-lg p-3 text-sm lg:col-span-12",
           cashSessionLoading ? "border border-ds-accent/20 bg-ds-accent-soft text-ds-accent" : "border border-ds-danger/20 bg-ds-danger-soft text-ds-danger"
         )}>
-          <span>{cashSessionLoading ? 'Vérification de la caisse…' : 'Aucune session ouverte : la vente est bloquée.'}</span>
-          {!cashSessionLoading && <Button type="button" onClick={() => navigate('/cash-session')} className="shrink-0">Ouvrir la caisse</Button>}
+          <span>{cashSessionLoading ? t('checkingCash') : t('saleBlocked')}</span>
+          {!cashSessionLoading && <Button type="button" onClick={() => navigate('/cash-session')} className="shrink-0">{t('openCash')}</Button>}
         </div>
       )}
       {/* Hidden printable ticket for POS - Render outside #root using Portal */}
@@ -896,7 +899,7 @@ export default function POS({ userProfile }: POSProps) {
       {/* Floating Scan Notification */}
       {scanNotification && (
         <div className={cn(
-          "absolute left-1/2 top-4 z-[90] flex max-w-[calc(100%-1rem)] -translate-x-1/2 items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-black shadow-md backdrop-blur-md transition-all",
+          "absolute start-1/2 top-4 z-[90] flex max-w-[calc(100%-1rem)] -translate-x-1/2 items-center gap-2 rounded-full border px-3 py-1.5 text-[11px] font-black shadow-md backdrop-blur-md transition-all",
           scanNotification.type === 'success'
             ? "border-ds-success/20 bg-ds-success-soft/95 text-ds-success"
             : "border-ds-danger/20 bg-ds-danger-soft/95 text-ds-danger"
@@ -919,10 +922,10 @@ export default function POS({ userProfile }: POSProps) {
               <div className="flex items-center gap-1.5">
                 <div className="relative flex items-center justify-center">
                           <Barcode className={cn("h-4 w-4 text-ds-success", scannerActive && "animate-pulse")} />
-                  {scannerActive && <span className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-ds-success" />}
+                  {scannerActive && <span className="absolute -end-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-ds-success" />}
                 </div>
                 <div className="flex flex-col leading-tight">
-                  <span className="text-xs font-black uppercase tracking-wider text-ds-text sm:text-sm">Lecteur Code à Barre</span>
+                  <span className="text-xs font-black uppercase tracking-wider text-ds-text sm:text-sm">{t('barcodeReader')}</span>
                 </div>
               </div>
               <button
@@ -934,20 +937,20 @@ export default function POS({ userProfile }: POSProps) {
                     : "bg-ds-surface text-ds-text-muted border-ds-border"
                 )}
               >
-                {scannerActive ? "Actif" : "Inactif"}
+                {scannerActive ? t('active') : t('inactive')}
               </button>
             </div>
 
             {scannerActive && (
               <div className="mt-0.5 flex flex-col gap-1 rounded-lg border border-ds-success/20 bg-ds-success-soft p-1.5">
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                  <div className="absolute inset-y-0 start-0 ps-2 flex items-center pointer-events-none">
                     <Barcode className="h-3.5 w-3.5 text-ds-success" />
                   </div>
                   <input
                     type="text"
-                    aria-label="Scanner ou saisir un code-barres"
-                    placeholder="Scanner ou saisir code à barre..."
+                    aria-label={t('scanInputLabel')}
+                    placeholder={t('scanInputPlaceholder')}
                     value={manualCode}
                     onChange={(e) => setManualCode(decodeAzertyBarcode(e.target.value))}
                     onKeyDown={(e) => {
@@ -958,19 +961,19 @@ export default function POS({ userProfile }: POSProps) {
                           if (matchedProduct) {
                             if (matchedProduct.inventoryType !== 'service' && matchedProduct.stock <= 0) {
                               setScanNotification({
-                                message: `Rupture : ${matchedProduct.name}`,
+                                message: t('scanOut', { name: matchedProduct.name }),
                                 type: 'error'
                               });
                             } else {
                               addToCart(matchedProduct);
                               setScanNotification({
-                                message: `Flashé : ${matchedProduct.name}`,
+                                message: t('scanSuccess', { name: matchedProduct.name }),
                                 type: 'success'
                               });
                             }
                           } else {
                             setScanNotification({
-                              message: `Code inconnu : ${code}`,
+                              message: t('unknownCode', { code }),
                               type: 'error'
                             });
                           }
@@ -980,7 +983,7 @@ export default function POS({ userProfile }: POSProps) {
                         e.stopPropagation();
                       }
                     }}
-                    className="min-h-ds-touch-target block w-full rounded-lg border border-ds-border bg-ds-surface py-2 pl-7 pr-2 font-mono text-base font-bold tracking-wider text-ds-text placeholder:text-ds-text-muted focus:border-ds-brand focus:outline-none focus:ring-2 focus:ring-ds-brand/10 sm:text-xs"
+                    className="min-h-ds-touch-target block w-full rounded-lg border border-ds-border bg-ds-surface py-2 ps-7 pe-2 font-mono text-base font-bold tracking-wider text-ds-text placeholder:text-ds-text-muted focus:border-ds-brand focus:outline-none focus:ring-2 focus:ring-ds-brand/10 sm:text-xs"
                   />
                 </div>
               </div>
@@ -989,15 +992,15 @@ export default function POS({ userProfile }: POSProps) {
 
           {/* Search bar */}
           <div className="relative min-w-0">
-            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-text-muted" />
+            <Search className="absolute start-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-text-muted" />
             <Input
               type="text"
-              placeholder="Rechercher nom ou code barre..."
+              placeholder={t('searchPlaceholder')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={handleSearchKeyDown}
-              aria-label="Rechercher un produit ou un code-barres"
-              className="pl-8 text-base sm:text-sm"
+              aria-label={t('searchLabel')}
+              className="ps-8 text-base sm:text-sm"
             />
           </div>
 
@@ -1032,14 +1035,14 @@ export default function POS({ userProfile }: POSProps) {
         </Card>
 
         {/* Products Grid (Extremely Compact) */}
-        <div className="grid max-h-[40vh] min-h-0 min-w-0 flex-1 grid-cols-1 gap-3 overflow-y-auto pb-2 pr-1 scrollbar-thin min-[400px]:grid-cols-2 xl:max-h-none xl:grid-cols-3 2xl:grid-cols-4 min-[1920px]:grid-cols-5">
+        <div className="grid max-h-[40vh] min-h-0 min-w-0 flex-1 grid-cols-1 gap-3 overflow-y-auto pb-2 pe-1 scrollbar-thin min-[400px]:grid-cols-2 xl:max-h-none xl:grid-cols-3 2xl:grid-cols-4 min-[1920px]:grid-cols-5">
           {filteredProducts.map((product) => (
             <button
               key={product.id}
               onClick={() => addToCart(product)}
               disabled={product.inventoryType !== 'service' && product.stock <= 0}
               className={cn(
-                "group relative flex min-h-36 w-full min-w-0 cursor-pointer flex-col justify-between overflow-hidden rounded-ds-lg border border-ds-border bg-ds-surface p-1 text-left shadow-ds-sm transition-colors sm:min-h-40 sm:p-2",
+                "group relative flex min-h-36 w-full min-w-0 cursor-pointer flex-col justify-between overflow-hidden rounded-ds-lg border border-ds-border bg-ds-surface p-1 text-start shadow-ds-sm transition-colors sm:min-h-40 sm:p-2",
                 "hover:bg-ds-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand active:scale-[0.99]",
                 product.inventoryType !== 'service' && product.stock <= 0 && "opacity-60 grayscale cursor-not-allowed"
               )}
@@ -1081,8 +1084,8 @@ export default function POS({ userProfile }: POSProps) {
                   <span className="block truncate font-mono text-base font-bold leading-none text-ds-brand tabular-nums sm:text-lg">
                     {product.sellPrice.toFixed(3)} <span className="text-xs font-bold">{currency}</span>
                   </span>
-                  {product.inventoryType === 'service' ? <Badge variant="neutral">Service</Badge> : <Badge variant={product.stock <= 0 ? 'danger' : product.stock <= 5 ? 'warning' : 'success'}>
-                    {product.stock <= 0 ? 'Rupture' : product.stock <= 5 ? `Stock faible · ${product.stock}` : `En stock · ${product.stock}`}
+                  {product.inventoryType === 'service' ? <Badge variant="neutral">{t('service')}</Badge> : <Badge variant={product.stock <= 0 ? 'danger' : product.stock <= 5 ? 'warning' : 'success'}>
+                    {product.stock <= 0 ? t('outOfStock') : product.stock <= 5 ? t('lowStock', { count: product.stock }) : t('inStock', { count: product.stock })}
                   </Badge>}
                 </div>
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ds-brand-soft text-ds-brand transition-colors group-hover:bg-ds-brand group-hover:text-ds-brand-contrast">
@@ -1093,7 +1096,7 @@ export default function POS({ userProfile }: POSProps) {
               {product.inventoryType !== 'service' && product.stock <= 0 && (
                 <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-ds-surface/80 p-1 text-center backdrop-blur-[1px]">
                   <div className="rounded-full bg-ds-danger px-3 py-1.5 text-xs font-black uppercase tracking-wider text-ds-brand-contrast">
-                    Rupture
+                    {t('outOfStock')}
                   </div>
                 </div>
               )}
@@ -1110,7 +1113,7 @@ export default function POS({ userProfile }: POSProps) {
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-ds-border bg-ds-surface-2 p-3 sm:p-4">
             <h2 className="flex min-w-0 items-center gap-2 text-sm font-black uppercase tracking-wider text-ds-text sm:text-base">
               <ShoppingCart className="h-4 w-4 text-ds-brand" />
-              Ticket de caisse ({cart.length})
+              {t('ticket', { count: cart.length })}
             </h2>
             <div className="flex items-center gap-2">
             <Button
@@ -1120,7 +1123,7 @@ export default function POS({ userProfile }: POSProps) {
               onClick={() => setIsCartExpanded(value => !value)}
               aria-expanded={isCartExpanded}
             >
-              {isCartExpanded ? 'Réduire' : 'Détails'}
+              {isCartExpanded ? t('reduce') : t('details')}
             </Button>
             <button
               onClick={() => {
@@ -1131,7 +1134,7 @@ export default function POS({ userProfile }: POSProps) {
               disabled={cart.length === 0}
               className="min-h-11 cursor-pointer rounded-full px-3 text-xs font-black uppercase tracking-widest text-ds-danger transition-colors hover:bg-ds-danger-soft disabled:opacity-60"
             >
-              Vider le Panier
+              {t('clearCart')}
             </button>
             </div>
           </div>
@@ -1152,7 +1155,7 @@ export default function POS({ userProfile }: POSProps) {
             {canCreateClients && (
               <Button type="button" variant="secondary" onClick={() => setIsQuickClientModalOpen(true)} className="shrink-0">
                 <Plus className="h-4 w-4" />
-                Nouveau client
+                {t('newClient')}
               </Button>
             )}
           </div>
@@ -1163,18 +1166,18 @@ export default function POS({ userProfile }: POSProps) {
               <EmptyState
                 className="min-h-40 flex-1"
                 icon={<ShoppingCart className="h-10 w-10" />}
-                title="Panier vide"
-                description="Ajoutez des produits pour commencer la vente."
+                title={t('emptyCart')}
+                description={t('emptyCartDescription')}
               />
             ) : (
               <div className="w-full overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs min-w-[420px] sm:min-w-0">
+                <table className="w-full text-start border-collapse text-xs min-w-[420px] sm:min-w-0">
                   <thead>
                     <tr className="border-b border-ds-border bg-ds-surface-2 text-xs font-black uppercase tracking-wider text-ds-text-muted">
-                      <th className="py-2.5 px-3 text-left">Produit</th>
-                      <th className="py-2.5 px-2 text-center w-24">Qté</th>
-                      <th className="py-2.5 px-2 text-right w-20">Prix</th>
-                      <th className="py-2.5 px-2 text-right w-24">Total</th>
+                      <th className="py-2.5 px-3 text-start">{t('product')}</th>
+                      <th className="py-2.5 px-2 text-center w-24">{t('quantity')}</th>
+                      <th className="py-2.5 px-2 text-end w-20">{t('price')}</th>
+                      <th className="py-2.5 px-2 text-end w-24">{t('total')}</th>
                       <th className="py-2.5 px-3 text-center w-8"></th>
                     </tr>
                   </thead>
@@ -1190,7 +1193,7 @@ export default function POS({ userProfile }: POSProps) {
                             : "hover:bg-ds-surface-2"
                         )}
                       >
-                        <td className="py-3 px-3 text-left">
+                        <td className="py-3 px-3 text-start">
                           <p className="break-words text-xs font-bold leading-snug text-ds-text line-clamp-2 sm:text-[13px]" title={item.name}>
                             {item.name}
                           </p>
@@ -1198,7 +1201,7 @@ export default function POS({ userProfile }: POSProps) {
                             <p className="mt-1 text-[10px] leading-snug text-ds-text-muted">{formatProductDetails(item.attributes, item.serialNumber)}</p>
                           )}
                           {canViewMargin && (products.find(product => product.id === item.productId)?.buyPrice || 0) > item.price && (
-                            <Badge className="mt-1" variant="danger">Vendu à perte</Badge>
+                            <Badge className="mt-1" variant="danger">{t('soldAtLoss')}</Badge>
                           )}
                         </td>
                         <td className="py-3 px-2 text-center">
@@ -1207,7 +1210,7 @@ export default function POS({ userProfile }: POSProps) {
                               onClick={() => updateQuantity(item.productId, -1)}
                               disabled={item.quantity <= 1}
                               className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-full bg-ds-surface font-bold text-ds-text transition-colors hover:bg-ds-border disabled:cursor-not-allowed disabled:opacity-30"
-                              title="Diminuer la quantité"
+                              title={t('decreaseQuantity')}
                             >
                               <Minus className="w-3 h-3" />
                             </button>
@@ -1253,7 +1256,7 @@ export default function POS({ userProfile }: POSProps) {
                                   setEditingQtyValue(String(item.quantity));
                                 }}
                                 className="min-h-11 min-w-11 cursor-pointer select-none rounded px-1 py-2 text-center font-mono text-xs font-black text-ds-text transition-colors hover:bg-ds-surface sm:text-sm"
-                                title="Cliquer pour modifier la quantité"
+                                title={t('editQuantity')}
                               >
                                 {item.quantity}
                               </span>
@@ -1266,23 +1269,23 @@ export default function POS({ userProfile }: POSProps) {
                                 return p ? p.inventoryType !== 'service' && item.quantity >= p.stock : false;
                               })()}
                               className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-full bg-ds-surface font-bold text-ds-text transition-colors hover:bg-ds-border disabled:cursor-not-allowed disabled:opacity-30"
-                              title="Augmenter la quantité"
+                              title={t('increaseQuantity')}
                             >
                               <Plus className="w-3 h-3" />
                             </button>
                           </div>
                         </td>
-                        <td className="py-3 px-2 text-right font-semibold text-ds-text-muted font-mono text-xs sm:text-[13px]">
+                        <td className="py-3 px-2 text-end font-semibold text-ds-text-muted font-mono text-xs sm:text-[13px]">
                           {item.price.toFixed(3)} <span className="text-[9px] font-medium text-ds-text-muted">{currency}</span>
                         </td>
-                        <td className="py-3 px-2 text-right font-display text-xs font-bold text-ds-text tabular-nums sm:text-sm">
+                        <td className="py-3 px-2 text-end font-display text-xs font-bold text-ds-text tabular-nums sm:text-sm">
                           {item.total.toFixed(3)} <span className="text-[10px] font-bold text-ds-text-muted">{currency}</span>
                         </td>
                         <td className="py-3 px-3 text-center">
                           <button
                             onClick={() => removeFromCart(item.productId)}
                             className="flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-full border border-transparent text-ds-danger transition-colors hover:border-ds-danger/20 hover:bg-ds-danger-soft"
-                            title="Supprimer du panier"
+                            title={t('removeFromCart')}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -1300,12 +1303,12 @@ export default function POS({ userProfile }: POSProps) {
             {/* Card 1: Nombre d'articles */}
             <div className="flex items-center justify-between rounded-xl border border-ds-border bg-ds-surface p-2">
               <div className="min-w-0">
-                <span className="block text-[11px] font-black uppercase tracking-wider text-ds-text-muted sm:text-xs">Articles</span>
+                <span className="block text-[11px] font-black uppercase tracking-wider text-ds-text-muted sm:text-xs">{t('articles')}</span>
                 <span className="mt-1 block font-display text-sm font-bold leading-none text-ds-text tabular-nums">
-                  {cart.reduce((sum, item) => sum + item.quantity, 0)} <span className="text-[10px] font-bold uppercase text-ds-text-muted">pces</span>
+                  {cart.reduce((sum, item) => sum + item.quantity, 0)} <span className="text-[10px] font-bold uppercase text-ds-text-muted">{t('pieces')}</span>
                 </span>
               </div>
-              <div className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ds-surface-2 text-ds-text">
+              <div className="ms-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ds-surface-2 text-ds-text">
                 <ShoppingCart className="h-3 w-3" />
               </div>
             </div>
@@ -1313,12 +1316,12 @@ export default function POS({ userProfile }: POSProps) {
             {/* Card 2: Montant Brut */}
             <div className="flex items-center justify-between rounded-xl border border-ds-border bg-ds-surface p-2">
               <div className="min-w-0">
-                <span className="block text-[11px] font-black uppercase tracking-wider text-ds-text-muted sm:text-xs">Total Brut</span>
+                <span className="block text-[11px] font-black uppercase tracking-wider text-ds-text-muted sm:text-xs">{t('grossTotal')}</span>
                 <span className="mt-1 block truncate font-display text-xs font-bold leading-none text-ds-text tabular-nums sm:text-sm">
                   {(subtotal + tvaAmount).toFixed(3)} <span className="text-[10px] font-bold text-ds-text-muted">{currency}</span>
                 </span>
               </div>
-              <div className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ds-surface-2 text-ds-text-muted">
+              <div className="ms-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ds-surface-2 text-ds-text-muted">
                 <Coins className="h-3 w-3" />
               </div>
             </div>
@@ -1326,14 +1329,14 @@ export default function POS({ userProfile }: POSProps) {
             {/* Card 3: Remise Appliquée avec champ d'écriture directe (Sleek) */}
             <div className="flex flex-col justify-between rounded-xl border border-ds-border bg-ds-brand-soft p-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] font-black uppercase tracking-wider text-ds-brand sm:text-xs">Remise (DT)</span>
+                <span className="text-[11px] font-black uppercase tracking-wider text-ds-brand sm:text-xs">{t('discount')}</span>
                 <Percent className="h-3 w-3 shrink-0 text-ds-brand" />
               </div>
               <div className="mt-0.5 flex items-center gap-1 rounded-md border border-ds-border bg-ds-surface p-0.5">
                 <input
                   type="text"
                   inputMode="decimal"
-                  aria-label="Remise en dinars"
+                  aria-label={t('discountLabel')}
                   value={discountInput}
                   onFocus={(e) => {
                     setIsDiscountFocused(true);
@@ -1355,7 +1358,7 @@ export default function POS({ userProfile }: POSProps) {
                     }
                   }}
                   placeholder="0.000"
-                  className="min-h-ds-touch-target w-full bg-transparent px-1 text-right font-mono text-base font-black text-ds-text focus:outline-none sm:text-xs"
+                  className="min-h-ds-touch-target w-full bg-transparent px-1 text-end font-mono text-base font-black text-ds-text focus:outline-none sm:text-xs"
                 />
               </div>
               {/* Presets remise super compacts */}
@@ -1365,7 +1368,7 @@ export default function POS({ userProfile }: POSProps) {
                   onClick={() => { setDiscount(0); setDiscountInput('0'); }}
                   className="min-h-11 rounded-full border border-ds-border bg-ds-surface px-3 text-xs font-bold text-ds-text cursor-pointer hover:bg-ds-surface-2"
                 >
-                  Clear
+                  {t('clear')}
                 </button>
                 <button 
                   type="button"
@@ -1386,7 +1389,7 @@ export default function POS({ userProfile }: POSProps) {
 
             {canViewMargin && <div className="flex items-center justify-between rounded-xl border border-ds-success/20 bg-ds-success-soft p-2">
               <div className="min-w-0">
-                <span className="block text-[11px] font-black uppercase tracking-wider text-ds-text-muted sm:text-xs">Bénéfice estimé</span>
+                <span className="block text-[11px] font-black uppercase tracking-wider text-ds-text-muted sm:text-xs">{t('estimatedProfit')}</span>
                 <span className={cn(
                   "text-xs sm:text-sm font-black font-mono block leading-none mt-1 truncate",
                   estimatedBenefit < 0 ? "text-ds-danger" : "text-ds-success",
@@ -1397,7 +1400,7 @@ export default function POS({ userProfile }: POSProps) {
                   )}>{currency}</span>
                 </span>
               </div>
-              <div className="ml-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ds-success-soft text-ds-success">
+              <div className="ms-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ds-success-soft text-ds-success">
                 <TrendingUp className="h-3 w-3" />
               </div>
             </div>}
@@ -1412,7 +1415,7 @@ export default function POS({ userProfile }: POSProps) {
                 {/* GIANT DOCK FOR NET TOTAL */}
                 <div className="flex flex-col gap-1 text-center animate-in fade-in duration-200">
                   <div className="flex items-center justify-between border-b border-ds-border pb-1 text-xs font-black uppercase tracking-wide text-ds-text-muted">
-                    <span>Total Net à payer</span>
+                    <span>{t('netTotal')}</span>
                     <span className="rounded-full border border-ds-brand/20 bg-ds-brand-soft px-2 py-1 text-[10px] text-ds-brand">
                       {storeSettings?.tvaEnabled === true ? `TVA (${storeSettings.tva || 0}%)` : 'Hors taxe'}
                     </span>
@@ -1421,7 +1424,7 @@ export default function POS({ userProfile }: POSProps) {
                     <span className="select-all font-mono text-3xl font-bold leading-none tracking-tighter text-ds-brand tabular-nums sm:text-4xl">
                       {cartTotal.toFixed(3)}
                     </span>
-                    <span className="ml-1 text-sm font-black uppercase tracking-wider text-ds-text-muted">
+                    <span className="ms-1 text-sm font-black uppercase tracking-wider text-ds-text-muted">
                       {currency}
                     </span>
                   </div>
@@ -1441,10 +1444,10 @@ export default function POS({ userProfile }: POSProps) {
                       <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                       <span className="text-[10px] font-black uppercase tracking-wider sm:text-xs">
                         {receivedCash > cartTotal 
-                          ? "A Rendre" 
+                          ? t('amountToReturn')
                           : receivedCash < cartTotal 
-                            ? "Reste (Dette)" 
-                            : "Exact"}
+                            ? t('remainingDebt')
+                            : t('exact')}
                       </span>
                     </div>
                     <div className="font-mono text-xs font-black">
@@ -1463,7 +1466,7 @@ export default function POS({ userProfile }: POSProps) {
                 {/* HIGH CONTRAST RECEIVED AMOUNT INPUT */}
                 <div className="flex flex-col gap-1 rounded-ds-md border border-ds-border bg-ds-surface-2 p-2">
                   <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider text-ds-text-muted">
-                    <span>Montant Reçu</span>
+                    <span>{t('amountReceived')}</span>
                     <button 
                       type="button"
                       onClick={() => {
@@ -1472,15 +1475,15 @@ export default function POS({ userProfile }: POSProps) {
                       }}
                       className="min-h-11 rounded-full border border-ds-accent/20 bg-ds-accent-soft px-3 text-[10px] font-black uppercase tracking-widest text-ds-accent transition-colors cursor-pointer hover:bg-ds-accent/10"
                     >
-                      Tout Payer
+                      {t('payAll')}
                     </button>
                   </div>
                   <div className="flex items-center justify-between border-b border-ds-border pb-1">
-                    <CreditCard className="mr-1.5 h-4 w-4 shrink-0 text-ds-accent" />
+                    <CreditCard className="me-1.5 h-4 w-4 shrink-0 text-ds-accent" />
                     <input
                       type="text"
                       inputMode="decimal"
-                      aria-label="Montant reçu"
+                      aria-label={t('receivedLabel')}
                       value={receivedCashInput}
                       onFocus={(e) => {
                         setIsReceivedCashFocused(true);
@@ -1513,9 +1516,9 @@ export default function POS({ userProfile }: POSProps) {
                         }
                       }}
                       placeholder="0.000"
-                      className="min-h-ds-touch-target w-full select-all bg-transparent p-0 text-right font-mono text-base font-bold tabular-nums text-ds-text focus:outline-none focus:ring-0 sm:text-lg"
+                      className="min-h-ds-touch-target w-full select-all bg-transparent p-0 text-end font-mono text-base font-bold tabular-nums text-ds-text focus:outline-none focus:ring-0 sm:text-lg"
                     />
-                    <span className="ml-1 shrink-0 text-xs font-black text-ds-text-muted">{currency}</span>
+                    <span className="ms-1 shrink-0 text-xs font-black text-ds-text-muted">{currency}</span>
                   </div>
                   {/* Presets de paiement rapide */}
                   <div className="flex gap-1 overflow-x-auto no-scrollbar justify-end">
@@ -1546,10 +1549,10 @@ export default function POS({ userProfile }: POSProps) {
                     className="min-h-12 flex-1 rounded-full text-sm font-black uppercase tracking-wider disabled:border-ds-border disabled:bg-ds-surface-2 disabled:text-ds-text-muted disabled:opacity-100"
                     loading={isProcessing}
                   >
-                    {isProcessing ? 'Traitement...' : (
+                    {isProcessing ? t('process') : (
                       <>
                         <CheckCircle className="w-4 h-4 shrink-0 animate-pulse" />
-                        Encaisser & Valider
+                        {t('checkout')}
                       </>
                     )}
                   </Button>
@@ -1558,7 +1561,7 @@ export default function POS({ userProfile }: POSProps) {
                     onClick={() => {
                       if (cart.length === 0) return;
                       if (!selectedClient) {
-                        setError('Veuillez sélectionner un client. Un crédit ne peut pas être enregistré pour un client de passage.');
+                        setError(t('errors.selectClient'));
                         return;
                       }
                       setError(null);
@@ -1567,11 +1570,11 @@ export default function POS({ userProfile }: POSProps) {
                       setIsCreditModalOpen(true);
                     }}
                     disabled={cart.length === 0 || isProcessing}
-                    title="Enregistrer la vente en crédit (client requis)"
+                    title={t('creditAmountHelp')}
                     className="rounded-full border-ds-warning bg-ds-warning text-xs font-black uppercase tracking-wider text-ds-brand-contrast hover:brightness-90"
                   >
                     <CreditCard className="w-4 h-4 shrink-0" />
-                    Crédité
+                    {t('credit')}
                   </Button>
                 </div>
               </div>
@@ -1582,7 +1585,7 @@ export default function POS({ userProfile }: POSProps) {
             {!selectedClient && Math.abs(paidAmount - cartTotal) > 0.001 && (
               <div className="flex items-center gap-1.5 rounded-lg border border-ds-danger/20 bg-ds-danger-soft p-2 text-[9px] font-semibold text-ds-danger">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0 text-ds-danger" />
-                <span>Le montant reçu doit correspondre exactement au montant total pour un client passager.</span>
+                <span>{t('errors.walkInExact', { total: cartTotal.toFixed(3), currency })}</span>
               </div>
             )}
 
@@ -1590,7 +1593,7 @@ export default function POS({ userProfile }: POSProps) {
               <div className="flex items-center gap-1.5 rounded-lg border border-ds-danger/20 bg-ds-danger-soft p-2 text-[10px] font-semibold text-ds-danger">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0 text-ds-danger" />
                 <span className="leading-tight">{error}</span>
-                {!cashSession && !cashSessionLoading && <Button type="button" onClick={() => navigate('/cash-session')} className="ml-auto">Ouvrir</Button>}
+                {!cashSession && !cashSessionLoading && <Button type="button" onClick={() => navigate('/cash-session')} className="ms-auto">{t('openCash')}</Button>}
               </div>
             )}
           </div>
@@ -1621,7 +1624,7 @@ export default function POS({ userProfile }: POSProps) {
             </div>
 
             <div className="mb-4 flex items-center justify-between rounded-xl border border-ds-border bg-ds-surface-2 p-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-ds-text-muted">Total de la vente</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-ds-text-muted">{t('amountDue')}</span>
               <span className="font-display text-lg font-bold tabular-nums text-ds-text">{cartTotal.toFixed(3)} {currency}</span>
             </div>
 
@@ -1650,22 +1653,22 @@ export default function POS({ userProfile }: POSProps) {
               Le client paie une tranche maintenant
             </label>
             <div className="relative mb-2">
-              <Coins className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-text-muted" />
+              <Coins className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-text-muted" />
               <Input
                 type="number"
                 inputMode="decimal"
                 min="0"
                 step="0.001"
                 value={creditPartialInput}
-                aria-label="Montant payé maintenant"
+                aria-label={t('paidNow')}
                 onChange={(e) => {
                   setCreditPartialInput(e.target.value);
                   setCreditModalError(null);
                 }}
                 placeholder="0.000"
-                className="min-h-ds-touch-target bg-ds-surface-2 pl-9 pr-14 text-base font-bold sm:text-sm"
+                className="min-h-ds-touch-target bg-ds-surface-2 ps-9 pe-14 text-base font-bold sm:text-sm"
               />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-black text-ds-text-muted">{currency}</span>
+              <span className="absolute end-3 top-1/2 -translate-y-1/2 text-xs font-black text-ds-text-muted">{currency}</span>
             </div>
 
             {(() => {
@@ -1673,7 +1676,7 @@ export default function POS({ userProfile }: POSProps) {
               const reste = Math.max(0, Math.round((cartTotal - tranche) * 1000) / 1000);
               return tranche > 0 && tranche < cartTotal ? (
                 <p className="mb-3 text-[11px] font-bold text-ds-text-muted">
-                  Reste en crédit : <span className="font-black text-ds-warning">{reste.toFixed(3)} {currency}</span>
+                  {t('creditBalance')} <span className="font-black text-ds-warning">{reste.toFixed(3)} {currency}</span>
                 </p>
               ) : null;
             })()}
@@ -1690,11 +1693,11 @@ export default function POS({ userProfile }: POSProps) {
               onClick={() => {
                 const tranche = parseFloat(creditPartialInput) || 0;
                 if (tranche <= 0) {
-                  setCreditModalError('Saisissez le montant payé par le client, ou choisissez « Créditer tout le montant ».');
+                  setCreditModalError(t('creditAmountHelp'));
                   return;
                 }
                 if (tranche >= cartTotal) {
-                  setCreditModalError(`La tranche doit être inférieure au total (${cartTotal.toFixed(3)} ${currency}). Pour un paiement complet, utilisez « Encaisser & Valider ».`);
+                  setCreditModalError(t('errors.creditInstallment', { total: cartTotal.toFixed(3), currency }));
                   return;
                 }
                 setIsCreditModalOpen(false);
@@ -1704,7 +1707,7 @@ export default function POS({ userProfile }: POSProps) {
               className="w-full rounded-full border-ds-warning bg-ds-warning text-xs font-black uppercase tracking-wider text-ds-brand-contrast hover:brightness-90"
             >
               <CheckCircle className="w-4 h-4 shrink-0" />
-              Encaisser la tranche & créditer le reste
+              {t('partialCredit')}
             </Button>
           </Card>
         </div>
@@ -1717,7 +1720,7 @@ export default function POS({ userProfile }: POSProps) {
             <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-ds-success-soft text-ds-success">
               <CheckCircle className="h-12 w-12" />
             </div>
-            <h3 className="mb-2 font-display text-2xl font-bold text-ds-text">Succès !</h3>
+            <h3 className="mb-2 font-display text-2xl font-bold text-ds-text">{t('success')}</h3>
             <p className="mb-8 font-semibold text-ds-text-muted">{saleSuccess}</p>
             
             <div className="space-y-3">
@@ -1728,7 +1731,7 @@ export default function POS({ userProfile }: POSProps) {
                   className="w-full rounded-full py-3 font-bold"
                 >
                   <Printer className="w-5 h-5" />
-                  Imprimer Ticket
+                  {t('printTicket')}
                 </Button>
               )}
               {lastInvoice && (
@@ -1738,7 +1741,7 @@ export default function POS({ userProfile }: POSProps) {
                   className="w-full rounded-full py-3 font-bold"
                 >
                   <FileText className="w-5 h-5" />
-                  Télécharger Facture PDF
+                  {t('downloadInvoice')}
                 </Button>
               )}
               <Button
@@ -1748,7 +1751,7 @@ export default function POS({ userProfile }: POSProps) {
                 }}
                 className="w-full rounded-full py-3 font-bold"
               >
-                Nouvelle Vente
+                {t('newSale')}
               </Button>
             </div>
           </Card>
