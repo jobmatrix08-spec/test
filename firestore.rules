@@ -76,7 +76,7 @@ service cloud.firestore {
           )
       ));
     }
-   function isAdmin() {
+   function isAdminRole() {
       return isAuthenticated() && userExists() && userData().get('role', '') == 'admin';
     }
     function isStoreOwnerAdmin(ownerId) {
