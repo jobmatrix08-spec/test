@@ -21,6 +21,7 @@ import { slugifyAppName } from '../lib/brand';
 import { StartupPreferencesPanel } from './StartupPreferences';
 import ActivityLog from './ActivityLog';
 import { useTranslation } from 'react-i18next';
+import { getDateLocale } from '../i18n/format';
 
 interface SettingsProps {
   userProfile: UserProfile | null;
@@ -556,7 +557,7 @@ function SettingsContent({
         return;
       }
 
-      const fmtDateTime = (dt: Date) => `${dt.toLocaleDateString('fr-FR')} ${dt.toLocaleTimeString('fr-FR')}`;
+      const fmtDateTime = (dt: Date) => `${dt.toLocaleDateString(getDateLocale())} ${dt.toLocaleTimeString(getDateLocale())}`;
 
       const journalOperations = auditLogsInRange.map(l => {
         const dt = toJsDate(l.timestamp);
@@ -615,7 +616,7 @@ function SettingsContent({
 
       const resume = [
         { 'Indicateur': 'Magasin', 'Valeur': storeFormData.storeName || 'Magasin' },
-        { 'Indicateur': 'Période', 'Valeur': `Du ${start.toLocaleDateString('fr-FR')} au ${end.toLocaleDateString('fr-FR')}` },
+        { 'Indicateur': 'Période', 'Valeur': `Du ${start.toLocaleDateString(getDateLocale())} au ${end.toLocaleDateString(getDateLocale())}` },
         { 'Indicateur': 'Nombre de ventes', 'Valeur': salesInRange.length },
         { 'Indicateur': 'Nombre de factures', 'Valeur': invoicesInRange.length },
         { 'Indicateur': 'Nombre d\'opérations (produits, suppressions...)', 'Valeur': auditLogsInRange.length },
@@ -671,7 +672,7 @@ function SettingsContent({
         return;
       }
 
-      const fmtDateTime = (dt: Date) => `${dt.toLocaleDateString('fr-FR')} ${dt.toLocaleTimeString('fr-FR')}`;
+      const fmtDateTime = (dt: Date) => `${dt.toLocaleDateString(getDateLocale())} ${dt.toLocaleTimeString(getDateLocale())}`;
 
       type LogLine = { dt: Date; text: string };
       const lines: LogLine[] = [];
@@ -768,7 +769,7 @@ function SettingsContent({
         const d = doc.data();
         let formattedDate = '';
         if (d.date) {
-          if (d.date.toDate) formattedDate = d.date.toDate().toLocaleDateString('fr-FR') + ' ' + d.date.toDate().toLocaleTimeString('fr-FR');
+          if (d.date.toDate) formattedDate = d.date.toDate().toLocaleDateString(getDateLocale()) + ' ' + d.date.toDate().toLocaleTimeString(getDateLocale());
           else formattedDate = String(d.date);
         }
         const itemsString = d.items ? d.items.map((it: any) => `${it.name} (${it.quantity} x ${it.price} DT)`).join(', ') : '';
@@ -789,7 +790,7 @@ function SettingsContent({
         const d = doc.data();
         let formattedDate = '';
         if (d.date) {
-          if (d.date.toDate) formattedDate = d.date.toDate().toLocaleDateString('fr-FR') + ' ' + d.date.toDate().toLocaleTimeString('fr-FR');
+          if (d.date.toDate) formattedDate = d.date.toDate().toLocaleDateString(getDateLocale()) + ' ' + d.date.toDate().toLocaleTimeString(getDateLocale());
           else formattedDate = String(d.date);
         }
         const itemsString = d.items ? d.items.map((it: any) => `${it.name} (${it.quantity} x ${it.price} DT)`).join(', ') : '';
@@ -848,7 +849,7 @@ function SettingsContent({
     limitDate.setHours(23, 59, 59, 999);
 
     const checkConfirm = window.confirm(
-      `ATTENTION : Vous allez supprimer TOUTES les transactions antérieures au ${limitDate.toLocaleDateString('fr-FR')} incluse.\n\nCette action est irréversible et supprimera définitivement les données sélectionnées.\n\nÊtes-vous absolument sûr ?`
+      `ATTENTION : Vous allez supprimer TOUTES les transactions antérieures au ${limitDate.toLocaleDateString(getDateLocale())} incluse.\n\nCette action est irréversible et supprimera définitivement les données sélectionnées.\n\nÊtes-vous absolument sûr ?`
     );
 
     if (!checkConfirm) {
@@ -887,7 +888,7 @@ function SettingsContent({
         }
       }
 
-      setSuccess(`Purge complétée ! ${salesDeleted} ventes et ${invoicesDeleted} factures antérieures au ${limitDate.toLocaleDateString('fr-FR')} ont été définitivement nettoyées.`);
+      setSuccess(`Purge complétée ! ${salesDeleted} ventes et ${invoicesDeleted} factures antérieures au ${limitDate.toLocaleDateString(getDateLocale())} ont été définitivement nettoyées.`);
       setTimeout(() => setSuccess(null), 5000);
     } catch (error) {
       console.error('Erreur purge:', error);
@@ -1349,12 +1350,12 @@ function SettingsContent({
               <div className="space-y-1.5">
                 <label className="block text-sm font-bold text-ds-text">Transactions antérieures ou égales au :</label>
                 <div className="relative">
-                  <Calendar className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-muted" />
+                  <Calendar className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-muted" />
                   <Input
                     type="date"
                     value={purgeDate}
                     onChange={(e) => setPurgeDate(e.target.value)}
-                    className="pl-10"
+                    className="ps-10"
                   />
                 </div>
               </div>
@@ -1387,7 +1388,7 @@ function SettingsContent({
                   <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
                   <div>
                     <span className="block text-xs font-extrabold uppercase tracking-wide">Alerte : Suppression définitive !</span>
-                    Toutes les transactions correspondantes datées d'avant le <span className="font-bold underline">{new Date(purgeDate).toLocaleDateString('fr-FR')}</span> incluse seront définitivement supprimées afin d'alléger la base de données de caisse.
+                    Toutes les transactions correspondantes datées d'avant le <span className="font-bold underline">{new Date(purgeDate).toLocaleDateString(getDateLocale())}</span> incluse seront définitivement supprimées afin d'alléger la base de données de caisse.
                   </div>
                 </div>
               )}
@@ -1422,26 +1423,26 @@ function SettingsContent({
                 <div className="space-y-1.5">
                   <label className="block text-sm font-bold text-ds-text">{t('activity.dateStart')}</label>
                   <div className="relative">
-                    <Calendar className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-muted" />
+                    <Calendar className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-muted" />
                     <Input
                       type="date"
                       value={activityStartDate}
                       max={todayStr}
                       onChange={(e) => { setActivityStartDate(e.target.value); setActivityError(''); }}
-                      className="pl-10"
+                      className="ps-10"
                     />
                   </div>
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-sm font-bold text-ds-text">{t('activity.dateEnd')}</label>
                   <div className="relative">
-                    <Calendar className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-muted" />
+                    <Calendar className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-muted" />
                     <Input
                       type="date"
                       value={activityEndDate}
                       max={todayStr}
                       onChange={(e) => { setActivityEndDate(e.target.value); setActivityError(''); }}
-                      className="pl-10"
+                      className="ps-10"
                     />
                   </div>
                 </div>
@@ -1502,7 +1503,7 @@ function SettingsContent({
               <h2 className="text-sm font-bold text-ds-text">Coran &amp; Adhkar</h2>
               <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">Écran d’accueil et récitation audio</p>
             </div>
-            <label className="ml-auto flex min-h-ds-touch-target items-center gap-2 text-sm font-bold text-ds-text">
+            <label className="ms-auto flex min-h-ds-touch-target items-center gap-2 text-sm font-bold text-ds-text">
               <input
                 type="checkbox"
                 checked={startupEnabled}
@@ -1547,7 +1548,7 @@ function SettingsContent({
               dir="rtl"
               lang="ar"
               rows={3}
-              className="w-full min-w-0 rounded-ds-md border border-ds-border bg-ds-surface px-3 py-2.5 text-right text-base font-arabic font-medium text-ds-text"
+              className="w-full min-w-0 rounded-ds-md border border-ds-border bg-ds-surface px-3 py-2.5 text-end text-base font-arabic font-medium text-ds-text"
             />
           </label>
           <label className="block space-y-1 text-sm font-medium text-ds-text">
@@ -1646,9 +1647,9 @@ function SettingsContent({
 
       {/* Success Toast */}
       {success && (
-        <div className="fixed bottom-8 right-8 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-8 end-8 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-300">
           <Badge variant="success" role="status" className="rounded-ds-md bg-ds-success p-4 text-ds-brand-contrast shadow-ds-md">
-            <CheckCircle2 className="mr-2 h-5 w-5 shrink-0" />
+            <CheckCircle2 className="me-2 h-5 w-5 shrink-0" />
             {success}
           </Badge>
         </div>

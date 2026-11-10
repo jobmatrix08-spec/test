@@ -10,6 +10,7 @@ import { cn, decodeAzertyBarcode, isSparePart } from '../lib/utils';
 import { can } from '../lib/permissions';
 import { slugifyAppName } from '../lib/brand';
 import { useBrand } from './BrandProvider';
+import { getDateLocale } from '../i18n/format';
 
 interface SparePart {
   id: string;
@@ -700,8 +701,8 @@ export default function Parts({ userProfile }: PartsProps) {
 
       <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_220px_220px]">
         <label className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Rechercher une pièce..." className="w-full rounded-xl border border-slate-200 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-indigo-400" />
+          <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Rechercher une pièce..." className="w-full rounded-xl border border-slate-200 py-2.5 ps-10 pe-3 text-sm outline-none focus:border-indigo-400" />
         </label>
         <select value={categoryFilter} onChange={event => setCategoryFilter(event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
           <option value="">Toutes les catégories</option>{availableCategories.map(category => <option key={category}>{category}</option>)}
@@ -716,9 +717,9 @@ export default function Parts({ userProfile }: PartsProps) {
           <h2 className="font-black text-slate-800">Stock des pièces</h2><span className="text-xs font-bold text-slate-400">{visibleParts.length} référence(s)</span>
         </div>
         <div className="overflow-x-auto">
-          <table className="responsive-card-table w-full text-left text-sm">
+          <table className="responsive-card-table w-full text-start text-sm">
             <thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500"><tr>
-              <th className="px-5 py-3">PIÈCE</th><th className="px-4 py-3">CATÉGORIE</th>{canViewBuyPrice && <th className="px-4 py-3 text-right">PRIX ACHAT</th>}<th className="px-4 py-3 text-right">PRIX VENTE</th><th className="px-4 py-3 text-center">STOCK</th>{canManage && <th className="px-5 py-3 text-right">ACTIONS</th>}
+              <th className="px-5 py-3">PIÈCE</th><th className="px-4 py-3">CATÉGORIE</th>{canViewBuyPrice && <th className="px-4 py-3 text-end">PRIX ACHAT</th>}<th className="px-4 py-3 text-end">PRIX VENTE</th><th className="px-4 py-3 text-center">STOCK</th>{canManage && <th className="px-5 py-3 text-end">ACTIONS</th>}
             </tr></thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? <tr><td colSpan={4 + (canViewBuyPrice ? 1 : 0) + (canManage ? 1 : 0)} className="px-5 py-12 text-center text-slate-400">Chargement...</td></tr>
@@ -726,8 +727,8 @@ export default function Parts({ userProfile }: PartsProps) {
                 : visibleParts.map(part => <tr key={part.id} className="hover:bg-slate-50/70">
                   <td data-label="Pièce" className="px-5 py-4"><p className="font-bold text-slate-800">{part.description || part.name}</p><p className="mt-1 text-xs text-slate-400">{part.reference || part.barcode ? `REF: ${part.reference || part.barcode}` : ''}</p><p className="mt-1 text-xs text-slate-500">{part.compatibleModels.join(', ') || '—'}</p></td>
                   <td data-label="Catégorie" className="px-4 py-4"><span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">{part.category}</span></td>
-                  {canViewBuyPrice && <td data-label="Prix achat" className="px-4 py-4 text-right font-mono text-xs">{money(costs[part.id] || 0)}</td>}
-                  <td data-label="Prix vente" className="px-4 py-4 text-right font-mono font-bold">{money(part.sellPrice)}</td>
+                  {canViewBuyPrice && <td data-label="Prix achat" className="px-4 py-4 text-end font-mono text-xs">{money(costs[part.id] || 0)}</td>}
+                  <td data-label="Prix vente" className="px-4 py-4 text-end font-mono font-bold">{money(part.sellPrice)}</td>
                   <td data-label="Stock" className="px-4 py-4 text-center"><span className={cn('rounded-lg px-2.5 py-1 font-black tabular-nums', part.stock <= 0 ? 'bg-ds-danger-soft text-ds-danger' : part.stock <= part.lowStockAlert ? 'bg-ds-warning-soft text-ds-warning' : 'bg-ds-success-soft text-ds-success')}>{part.stock}</span>{part.stock <= part.lowStockAlert && <p className="mt-1 text-[10px] font-bold text-ds-warning">Stock bas</p>}
                     {canAdjustStock && <div className="mt-2 flex items-center justify-center gap-1.5">
                     <button title="Retirer une unité" aria-label="Retirer une unité" onClick={() => void adjustStock(part, -1)} disabled={part.stock <= 0} className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-100 disabled:opacity-40"><Minus size={14} /></button>
@@ -759,8 +760,8 @@ export default function Parts({ userProfile }: PartsProps) {
                 <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">Scanner Douchette Prêt</span>
               </div>
               <div className="relative flex gap-2">
-                <Barcode className="absolute left-3 top-3 h-4 w-4 text-indigo-500" />
-                <input value={form.barcode} onChange={event => setForm({ ...form, barcode: event.target.value })} placeholder="Pointez votre douchette et flashez" className="min-w-0 flex-1 rounded-xl border border-slate-200 py-2.5 pl-10 pr-3 font-mono text-sm" />
+                <Barcode className="absolute start-3 top-3 h-4 w-4 text-indigo-500" />
+                <input value={form.barcode} onChange={event => setForm({ ...form, barcode: event.target.value })} placeholder="Pointez votre douchette et flashez" className="min-w-0 flex-1 rounded-xl border border-slate-200 py-2.5 ps-10 pe-3 font-mono text-sm" />
                 <button type="button" onClick={() => setForm(current => ({ ...current, barcode: makeEan13() }))} className="rounded-lg bg-slate-100 px-3 text-xs font-black uppercase text-slate-700">GÉNÉRER</button>
                 <button type="button" onClick={printBarcode} className="rounded-lg bg-indigo-600 px-3 text-xs font-black uppercase text-white">IMPRIMER</button>
               </div>
@@ -808,7 +809,7 @@ export default function Parts({ userProfile }: PartsProps) {
             {historyLoading ? <p className="py-8 text-center text-sm text-slate-400">Chargement de l’historique…</p>
               : historyRows.length === 0 ? <p className="py-8 text-center text-sm text-slate-400">Aucun mouvement enregistré.</p>
               : <ul className="space-y-2">{historyRows.map(row => <li key={row.id} className="flex items-center justify-between gap-4 rounded-xl border border-slate-100 px-4 py-3">
-                <div><p className="text-sm font-bold text-slate-700">{row.type.replaceAll('_', ' ')}</p><p className="text-xs text-slate-400">{row.createdAt?.toDate?.().toLocaleString('fr-FR') || 'Date inconnue'}</p></div>
+                <div><p className="text-sm font-bold text-slate-700">{row.type.replaceAll('_', ' ')}</p><p className="text-xs text-slate-400">{row.createdAt?.toDate?.().toLocaleString(getDateLocale()) || 'Date inconnue'}</p></div>
                 <span className={cn('font-mono font-black', row.delta > 0 ? 'text-emerald-600' : 'text-rose-600')}>{row.delta > 0 ? '+' : ''}{row.delta}</span>
               </li>)}</ul>}
           </div>

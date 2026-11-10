@@ -60,7 +60,7 @@ export function StartupDailyOverlay({
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-5 top-5 z-10 rounded-full border border-ds-border bg-ds-surface-2 p-3 text-ds-text hover:bg-ds-border"
+        className="absolute end-5 top-5 z-10 rounded-full border border-ds-border bg-ds-surface-2 p-3 text-ds-text hover:bg-ds-border"
         aria-label="Fermer"
       >
         <X className="h-5 w-5" />

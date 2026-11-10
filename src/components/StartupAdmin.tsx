@@ -266,7 +266,7 @@ export default function StartupAdmin({ userProfile }: { userProfile: UserProfile
                   <h3 className="truncate font-bold text-slate-800">{item.title}</h3>
                   <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${item.active ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>{item.active ? 'Actif' : 'Désactivé'}</span>
                 </div>
-                {item.type === 'text' && <p className="font-arabic mt-2 line-clamp-2 text-right text-lg text-slate-600" dir="rtl">{item.text}</p>}
+                {item.type === 'text' && <p className="font-arabic mt-2 line-clamp-2 text-end text-lg text-slate-600" dir="rtl">{item.text}</p>}
                 {item.source && <p className="mt-2 text-xs text-slate-400">{item.source}</p>}
                 {item.type === 'audio' && <p className="mt-2 truncate text-xs text-slate-500">{item.audioUrl}</p>}
                 {item.type === 'image' && (item.imageUrl || item.imageData) && (

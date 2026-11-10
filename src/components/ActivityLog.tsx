@@ -154,7 +154,7 @@ export default function ActivityLog({ userProfile }: ActivityLogProps) {
                   <p className="text-sm font-bold text-ds-text">{action} · {entity} · {record.actor?.name || t('audit.unknownUser')}</p>
                   <p className="break-words text-xs text-ds-muted">{record.entityId}{detailText ? ` · ${detailText}` : ''}</p>
                 </div>
-                <time className="text-xs text-ds-muted sm:text-right">{auditDate(record.date, getDateLocale())}</time>
+                <time className="text-xs text-ds-muted sm:text-end">{auditDate(record.date, getDateLocale())}</time>
               </article>
             );
           })}

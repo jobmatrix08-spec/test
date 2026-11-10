@@ -82,7 +82,7 @@ export const PrintableTicket = forwardRef<HTMLDivElement, Props>(({ invoice, own
             {formatProductDetails(item.attributes, item.serialNumber) && (
               <div className="text-[10px] leading-tight">{formatProductDetails(item.attributes, item.serialNumber)}</div>
             )}
-            <div className="text-right">{item.total.toFixed(3)} {currency}</div>
+            <div className="text-end">{item.total.toFixed(3)} {currency}</div>
           </div>
         ))}
       </div>

@@ -5,6 +5,8 @@ import { auth, db } from '../firebase';
 import { cashSessionOwnerId, closeCashSession, openCashSession, useCashSession } from '../lib/cashSessions';
 import { computeExpectedCash } from '../lib/cashSessionMath';
 import type { CashSession as CashSessionRecord, UserProfile } from '../types';
+import { useTranslation } from 'react-i18next';
+import { formatDateTime, formatNumber } from '../i18n/format';
 
 function asDate(value: any): Date {
   if (value?.toDate) return value.toDate();
@@ -13,10 +15,15 @@ function asDate(value: any): Date {
 }
 
 function formatDate(value: any): string {
-  return asDate(value).toLocaleString('fr-FR');
+  return formatDateTime(asDate(value));
+}
+
+function formatAmount(value: number): string {
+  return formatNumber(value, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 }
 
 export default function CashSession({ userProfile }: { userProfile: UserProfile | null }) {
+  const { t } = useTranslation('cashSession');
   const ownerId = cashSessionOwnerId(userProfile);
   const userId = userProfile?.uid || auth.currentUser?.uid;
   const isAdmin = userProfile?.role === 'admin';
@@ -42,9 +49,9 @@ export default function CashSession({ userProfile }: { userProfile: UserProfile 
       setHistory(records);
       setHistoryError('');
     }, cause => {
-      setHistoryError(cause instanceof Error ? cause.message : 'Impossible de charger l’historique des caisses.');
+      setHistoryError(cause instanceof Error ? cause.message : t('historyError'));
     });
-  }, [ownerId, userId, isAdmin]);
+  }, [ownerId, userId, isAdmin, t]);
 
   const filteredHistory = useMemo(() => history.filter(record => {
     const cashierMatch = !isAdmin || !cashierFilter.trim() ||
@@ -59,15 +66,16 @@ export default function CashSession({ userProfile }: { userProfile: UserProfile 
     setMessage('');
     const openingFloat = Number(openingInput.replace(',', '.'));
     if (!userId || !ownerId || !Number.isFinite(openingFloat) || openingFloat < 0) {
-      setFormError('Indiquez un fond de caisse valide, égal ou supérieur à zéro.');
+      setFormError(t('invalidOpening'));
       return;
     }
     setSaving(true);
     try {
       await openCashSession(userId, ownerId, openingFloat);
-      setMessage('Session de caisse ouverte.');
+      setMessage(t('openSuccess'));
     } catch (cause) {
-      setFormError(cause instanceof Error ? cause.message : 'Impossible d’ouvrir la session.');
+      console.error('Unable to open the cash session.', cause);
+      setFormError(cause instanceof Error ? cause.message : t('openError'));
     } finally {
       setSaving(false);
     }
@@ -79,17 +87,18 @@ export default function CashSession({ userProfile }: { userProfile: UserProfile 
     setMessage('');
     const countedCash = Number(countedInput.replace(',', '.'));
     if (!userId || !session || !Number.isFinite(countedCash) || countedCash < 0) {
-      setFormError('Indiquez un montant compté valide, égal ou supérieur à zéro.');
+      setFormError(t('invalidCounted'));
       return;
     }
-    if (!window.confirm('Confirmer la clôture ? Une session clôturée ne pourra plus être modifiée.')) return;
+    if (!window.confirm(t('confirmClose'))) return;
     setSaving(true);
     try {
       const result = await closeCashSession(userId, session.id, countedCash);
-      setMessage(`Session clôturée. Écart : ${result.difference.toFixed(3)} DT.`);
+      setMessage(t('closeSuccess', { amount: formatAmount(result.difference) }));
       setCountedInput('');
     } catch (cause) {
-      setFormError(cause instanceof Error ? cause.message : 'Impossible de clôturer la session.');
+      console.error('Unable to close the cash session.', cause);
+      setFormError(cause instanceof Error ? cause.message : t('closeError'));
     } finally {
       setSaving(false);
     }
@@ -101,62 +110,62 @@ export default function CashSession({ userProfile }: { userProfile: UserProfile 
     <div className="mx-auto max-w-6xl space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-indigo-500">Gestion financière</p>
-          <h1 className="mt-1 text-3xl font-black text-slate-900">Clôture de caisse</h1>
-          <p className="mt-1 text-sm text-slate-500">Une session ouverte est nécessaire pour vendre et encaisser.</p>
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-indigo-500">{t('section')}</p>
+          <h1 className="mt-1 text-3xl font-black text-slate-900">{t('title')}</h1>
+          <p className="mt-1 text-sm text-slate-500">{t('description')}</p>
         </div>
         {session && <button type="button" onClick={() => window.print()} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-sm font-bold text-slate-700">
-          <Printer className="h-4 w-4" /> Imprimer / PDF
+          <Printer className="h-4 w-4" /> {t('print')}
         </button>}
       </header>
 
       {activeSessionError && <p role="alert" className="rounded-xl bg-rose-50 p-3 text-sm font-semibold text-rose-700">{activeSessionError}</p>}
-      {loading ? <p className="text-sm text-slate-500">Chargement de la session…</p> : session ? (
+      {loading ? <p className="text-sm text-slate-500">{t('loading')}</p> : session ? (
         <section className="space-y-5 rounded-2xl border border-emerald-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div>
-              <h2 className="text-lg font-black text-emerald-800">Session ouverte</h2>
-              <p className="text-xs text-slate-500">Ouverte le {formatDate(session.openedAt)} · Caissier {session.openedBy}</p>
+              <h2 className="text-lg font-black text-emerald-800">{t('opened')}</h2>
+              <p className="text-xs text-slate-500">{t('openedAt', { date: formatDate(session.openedAt), cashier: session.openedBy })}</p>
             </div>
-            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black uppercase text-emerald-800">Ouverte</span>
+            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black uppercase text-emerald-800">{t('openStatus')}</span>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
             {[
-              ['Fond initial', session.openingFloat],
-              ['Ventes', session.totals?.sales || 0],
-              ['Espèces ventes', session.totals?.cash || 0],
-              ['Dettes encaissées', session.totals?.debtsCollected || 0],
-              ['Réparations encaissées', session.totals?.repairsCollected || 0],
-              ['Dépenses', session.totals?.expenses || 0],
-              ['Espèces attendues', currentExpected],
+              ['opening', session.openingFloat],
+              ['sales', session.totals?.sales || 0],
+              ['cashSales', session.totals?.cash || 0],
+              ['debtsCollected', session.totals?.debtsCollected || 0],
+              ['repairsCollected', session.totals?.repairsCollected || 0],
+              ['expenses', session.totals?.expenses || 0],
+              ['expected', currentExpected],
             ].map(([label, amount]) => (
               <div key={label} className="rounded-xl bg-slate-50 p-3">
-                <p className="text-[10px] font-bold uppercase text-slate-400">{label}</p>
-                <p className="mt-1 font-mono text-sm font-black text-slate-800">{Number(amount).toFixed(3)} DT</p>
+                <p className="text-[10px] font-bold uppercase text-slate-400">{t(`metrics.${label}`)}</p>
+                <p className="mt-1 font-mono text-sm font-black text-slate-800">{formatAmount(Number(amount))} DT</p>
               </div>
             ))}
           </div>
           <form onSubmit={closeSession} className="flex flex-wrap items-end gap-3 border-t border-slate-100 pt-4">
             <label className="min-w-56 flex-1">
-              <span className="mb-1 block text-xs font-bold text-slate-600">Espèces comptées (DT)</span>
+              <span className="mb-1 block text-xs font-bold text-slate-600">{t('counted')}</span>
               <input type="number" min="0" step="0.001" value={countedInput} onChange={event => setCountedInput(event.target.value)} className="w-full rounded-xl border border-slate-200 px-3 py-2.5" required />
             </label>
-            <p className="pb-2 text-sm font-bold text-slate-600">Écart indicatif : {(Number(countedInput || 0) - currentExpected).toFixed(3)} DT</p>
-            <button disabled={saving} className="min-h-11 rounded-xl bg-ds-brand px-5 font-bold text-ds-brand-contrast hover:bg-ds-brand-hover disabled:opacity-50">{saving ? 'Clôture…' : 'Clôturer la session'}</button>
+            <p className="pb-2 text-sm font-bold text-slate-600">{t('difference', { amount: formatAmount(Number(countedInput || 0) - currentExpected) })}</p>
+            <button disabled={saving} className="min-h-11 rounded-xl bg-ds-brand px-5 font-bold text-ds-brand-contrast hover:bg-ds-brand-hover disabled:opacity-50">{saving ? t('closing') : t('close')}</button>
           </form>
         </section>
       ) : (
         <form onSubmit={openSession} className="flex flex-wrap items-end gap-3 rounded-2xl border border-amber-200 bg-white p-5 shadow-sm">
-          <div className="mr-auto">
-            <h2 className="text-lg font-black text-slate-900">Aucune session ouverte</h2>
-            <p className="mt-1 text-sm text-slate-500">Ouvrez la caisse avant toute vente ou encaissement.</p>
+          <div className="me-auto">
+            <h2 className="text-lg font-black text-slate-900">{t('noneOpen')}</h2>
+            <p className="mt-1 text-sm text-slate-500">{t('openDescription')}</p>
           </div>
           <label>
-            <span className="mb-1 block text-xs font-bold text-slate-600">Fond de caisse (DT)</span>
+            <span className="mb-1 block text-xs font-bold text-slate-600">{t('openingFloat')}</span>
             <input type="number" min="0" step="0.001" value={openingInput} onChange={event => setOpeningInput(event.target.value)} className="rounded-xl border border-slate-200 px-3 py-2.5" required />
           </label>
           <button disabled={saving} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-indigo-600 px-5 font-bold text-white disabled:opacity-50">
-            <CircleDollarSign className="h-4 w-4" /> {saving ? 'Ouverture…' : 'Ouvrir la caisse'}
+            <CircleDollarSign className="h-4 w-4" /> {saving ? t('opening') : t('open')}
           </button>
         </form>
       )}
@@ -165,32 +174,32 @@ export default function CashSession({ userProfile }: { userProfile: UserProfile 
 
       <section className="space-y-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-lg font-black text-slate-900">Historique des sessions</h2>
+          <h2 className="text-lg font-black text-slate-900">{t('history')}</h2>
           {isAdmin && <div className="flex flex-wrap gap-2">
-            <input aria-label="Filtrer par caissier" placeholder="UID du caissier" value={cashierFilter} onChange={event => setCashierFilter(event.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-            <input aria-label="Filtrer par date" type="date" value={dateFilter} onChange={event => setDateFilter(event.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+            <input aria-label={t('cashierFilter')} placeholder={t('cashierPlaceholder')} value={cashierFilter} onChange={event => setCashierFilter(event.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+            <input aria-label={t('dateFilter')} type="date" value={dateFilter} onChange={event => setDateFilter(event.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
           </div>}
         </div>
         {historyError && <p role="alert" className="text-sm text-rose-700">{historyError}</p>}
         <div className="overflow-x-auto">
-          <table className="responsive-card-table w-full text-left text-sm">
+          <table className="responsive-card-table w-full text-start text-sm">
             <thead><tr className="border-b text-xs uppercase text-slate-400">
-              <th className="py-2">Ouverture</th><th>Caissier</th><th>Ventes</th><th>Espèces</th><th>Dépenses</th><th>Attendu</th><th>Compté</th><th>Écart</th><th>Statut</th>
+              <th className="py-2">{t('columns.opened')}</th><th>{t('columns.cashier')}</th><th>{t('columns.sales')}</th><th>{t('columns.cash')}</th><th>{t('columns.expenses')}</th><th>{t('columns.expected')}</th><th>{t('columns.counted')}</th><th>{t('columns.difference')}</th><th>{t('columns.status')}</th>
             </tr></thead>
             <tbody>{filteredHistory.map(record => (
               <tr key={record.id} className="border-b border-slate-100">
-                <td data-label="Ouverture" className="py-3">{formatDate(record.openedAt)}</td><td data-label="Caissier">{record.openedBy}</td>
-                <td data-label="Ventes">{Number(record.totals?.sales || 0).toFixed(3)} DT</td>
-                <td data-label="Espèces">{Number(record.totals?.cash || 0).toFixed(3)} DT</td>
-                <td data-label="Dépenses">{Number(record.totals?.expenses || 0).toFixed(3)} DT</td>
-                <td data-label="Attendu">{record.status === 'closed' ? Number(record.expectedCash || 0).toFixed(3) : computeExpectedCash(record).toFixed(3)} DT</td>
-                <td data-label="Compté">{record.countedCash === undefined ? '—' : `${record.countedCash.toFixed(3)} DT`}</td>
-                <td data-label="Écart">{record.difference === undefined ? '—' : `${record.difference.toFixed(3)} DT`}</td>
-                <td data-label="Statut" className={record.status === 'open' ? 'font-bold text-emerald-700' : 'font-semibold text-slate-500'}>{record.status === 'open' ? 'Ouverte' : 'Fermée'}</td>
+                <td data-label={t('columns.opened')} className="py-3">{formatDate(record.openedAt)}</td><td data-label={t('columns.cashier')}>{record.openedBy}</td>
+                <td data-label={t('columns.sales')}>{formatAmount(Number(record.totals?.sales || 0))} DT</td>
+                <td data-label={t('columns.cash')}>{formatAmount(Number(record.totals?.cash || 0))} DT</td>
+                <td data-label={t('columns.expenses')}>{formatAmount(Number(record.totals?.expenses || 0))} DT</td>
+                <td data-label={t('columns.expected')}>{formatAmount(record.status === 'closed' ? Number(record.expectedCash || 0) : computeExpectedCash(record))} DT</td>
+                <td data-label={t('columns.counted')}>{record.countedCash === undefined ? '—' : `${formatAmount(record.countedCash)} DT`}</td>
+                <td data-label={t('columns.difference')}>{record.difference === undefined ? '—' : `${formatAmount(record.difference)} DT`}</td>
+                <td data-label={t('columns.status')} className={record.status === 'open' ? 'font-bold text-emerald-700' : 'font-semibold text-slate-500'}>{record.status === 'open' ? t('openStatus') : t('closedStatus')}</td>
               </tr>
             ))}</tbody>
           </table>
-          {filteredHistory.length === 0 && <p className="py-6 text-center text-sm text-slate-400">Aucune session correspondante.</p>}
+          {filteredHistory.length === 0 && <p className="py-6 text-center text-sm text-slate-400">{t('noHistory')}</p>}
         </div>
       </section>
     </div>

@@ -5,12 +5,15 @@ import { Note, UserProfile } from '../types';
 import { handleFirestoreError, OperationType } from '../App';
 import { Plus, Search, Edit2, Trash2, X, Calendar, StickyNote, Clock, Bell, AlertCircle, CheckCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { useTranslation } from 'react-i18next';
+import { formatDateTime } from '../i18n/format';
 
 interface NotesProps {
   userProfile: UserProfile | null;
 }
 
 export default function Notes({ userProfile }: NotesProps) {
+  const { t } = useTranslation('notes');
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,11 +54,11 @@ export default function Notes({ userProfile }: NotesProps) {
   const getNoteStatus = (noteDateStr: string) => {
     const todayStr = new Date().toISOString().split('T')[0];
     if (noteDateStr === todayStr) {
-      return { label: "Aujourd'hui", color: "bg-amber-50 text-amber-700 border-amber-200/60" };
+      return { label: 'status.today', color: "bg-amber-50 text-amber-700 border-amber-200/60" };
     } else if (noteDateStr > todayStr) {
-      return { label: "À venir", color: "bg-emerald-50 text-emerald-700 border-emerald-200/60" };
+      return { label: 'status.upcoming', color: "bg-emerald-50 text-emerald-700 border-emerald-200/60" };
     } else {
-      return { label: "Passé", color: "bg-slate-50 text-slate-500 border-slate-200/60" };
+      return { label: 'status.past', color: "bg-slate-50 text-slate-500 border-slate-200/60" };
     }
   };
 
@@ -131,7 +134,7 @@ export default function Notes({ userProfile }: NotesProps) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce mémo ?')) return;
+    if (!confirm(t('confirmDelete'))) return;
     try {
       await deleteDoc(doc(db, 'notes', id));
     } catch (error) {
@@ -146,10 +149,10 @@ export default function Notes({ userProfile }: NotesProps) {
         <div className="space-y-1">
           <h1 className="text-3xl font-black font-display tracking-tight text-slate-900 flex items-center gap-2">
             <StickyNote className="w-8 h-8 text-indigo-600 animate-pulse" />
-            Mémos & Notes
+            {t('title')}
           </h1>
           <p className="text-sm text-slate-500 font-semibold">
-            Ajoutez, planifiez et organisez vos tâches, rappels ou notes de magasin importantes.
+            {t('description')}
           </p>
         </div>
         <button
@@ -157,7 +160,7 @@ export default function Notes({ userProfile }: NotesProps) {
           className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-500 hover:from-indigo-700 hover:to-indigo-600 text-white font-extrabold text-xs uppercase tracking-wider px-5 py-3 rounded-2xl transition-all duration-300 shadow-md shadow-indigo-600/10 cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          Ajouter un mémo
+          {t('add')}
         </button>
       </div>
 
@@ -165,20 +168,20 @@ export default function Notes({ userProfile }: NotesProps) {
       <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
         {/* Search */}
         <div className="relative w-full md:w-80">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
-            placeholder="Rechercher mémos..."
+            placeholder={t('search')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-50/50 border border-slate-100 rounded-xl text-xs font-semibold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-sans"
+            className="w-full ps-10 pe-4 py-2 bg-slate-50/50 border border-slate-100 rounded-xl text-xs font-semibold placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-sans"
           />
         </div>
 
         {/* Date category filter */}
         <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
           {(['all', 'today', 'upcoming', 'past'] as const).map((filter) => {
-            const label = filter === 'all' ? 'Tous' : filter === 'today' ? "Aujourd'hui" : filter === 'upcoming' ? 'À venir' : 'Passés';
+            const label = t(`filter.${filter}`);
             const isActive = dateFilter === filter;
             return (
               <button
@@ -208,8 +211,8 @@ export default function Notes({ userProfile }: NotesProps) {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-slate-50 border border-slate-100 text-slate-400 mb-4">
             <Calendar className="w-6 h-6 text-slate-400" />
           </div>
-          <p className="text-slate-500 font-extrabold text-sm uppercase tracking-wide">Aucun mémo trouvé</p>
-          <p className="text-slate-400 text-xs mt-1">Commencez par ajouter un mémo ou une note planifiée.</p>
+          <p className="text-slate-500 font-extrabold text-sm uppercase tracking-wide">{t('emptyTitle')}</p>
+          <p className="text-slate-400 text-xs mt-1">{t('emptyDescription')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -221,17 +224,17 @@ export default function Notes({ userProfile }: NotesProps) {
                 className="group relative bg-white border border-slate-100 p-6 rounded-3xl hover:shadow-lg hover:shadow-slate-100/40 hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between"
               >
                 {/* Actions header hover */}
-                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5">
+                <div className="absolute top-4 end-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5">
                   <button
                     onClick={() => openModal(note)}
-                    title="Modifier"
+                    title={t('edit')}
                     className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-indigo-600 transition-colors"
                   >
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                   <button
                     onClick={() => handleDelete(note.id)}
-                    title="Supprimer"
+                    title={t('delete')}
                     className="p-1.5 hover:bg-rose-50 rounded-lg text-slate-500 hover:text-rose-600 transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -245,11 +248,11 @@ export default function Notes({ userProfile }: NotesProps) {
                       "px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border",
                       status.color
                     )}>
-                      {status.label}
+                      {t(status.label)}
                     </span>
                     <span className="text-[11px] text-slate-400 font-mono flex items-center gap-1 font-bold">
                       <Calendar className="w-3 h-3 text-slate-400" />
-                      {note.date}
+                      {formatDateTime(new Date(`${note.date}T00:00:00`), { dateStyle: 'medium' })}
                     </span>
                   </div>
 
@@ -268,7 +271,7 @@ export default function Notes({ userProfile }: NotesProps) {
                 <div className="border-t border-slate-50 mt-4 pt-3 flex justify-between items-center text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                   <span className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    Rappel planifié
+                    {t('status.planned')}
                   </span>
                   
                   {/* Shortcut action in mobile when hover controls are hidden */}
@@ -290,7 +293,7 @@ export default function Notes({ userProfile }: NotesProps) {
             <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
               <h2 className="text-lg font-black font-display text-slate-900 flex items-center gap-2">
                 <StickyNote className="w-5 h-5 text-indigo-600" />
-                {editingNote ? "Modifier le mémo" : "Nouveau mémo / Note"}
+                {editingNote ? t('modalEdit') : t('modalNew')}
               </h2>
               <button
                 onClick={closeModal}
@@ -303,11 +306,11 @@ export default function Notes({ userProfile }: NotesProps) {
             {/* Modal Body / Form */}
             <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto">
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Titre du mémo</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">{t('fieldTitle')}</label>
                 <input
                   type="text"
                   required
-                  placeholder="Ex: Penser à approvisionner les boissons, Réunion..."
+                  placeholder={t('titlePlaceholder')}
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200/60 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder-slate-400 font-sans"
@@ -315,11 +318,11 @@ export default function Notes({ userProfile }: NotesProps) {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Description / Note</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">{t('fieldContent')}</label>
                 <textarea
                   required
                   rows={4}
-                  placeholder="Écrivez les détails de votre mémorandum..."
+                  placeholder={t('contentPlaceholder')}
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200/60 rounded-xl text-xs font-medium outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all placeholder-slate-400 leading-relaxed font-sans"
@@ -327,15 +330,15 @@ export default function Notes({ userProfile }: NotesProps) {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Date d'échéance / Rappel</label>
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">{t('fieldDate')}</label>
                 <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                  <Calendar className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                   <input
                     type="date"
                     required
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200/60 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-mono"
+                    className="w-full ps-10 pe-4 py-3 bg-slate-50 border border-slate-200/60 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-mono"
                   />
                 </div>
               </div>
@@ -347,13 +350,13 @@ export default function Notes({ userProfile }: NotesProps) {
                   onClick={closeModal}
                   className="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-colors"
                 >
-                  Annuler
+                  {t('cancel')}
                 </button>
                 <button
                   type="submit"
                   className="px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-ds-brand text-ds-brand-contrast hover:bg-ds-brand-hover transition-all shadow-md shadow-slate-900/10"
                 >
-                  {editingNote ? "Mettre à jour" : "Ajouter mémo"}
+                  {editingNote ? t('update') : t('submit')}
                 </button>
               </div>
             </form>

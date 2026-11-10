@@ -677,12 +677,12 @@ export default function Repairs({ userProfile }: RepairsProps) {
         </Button>
       <div className={cn("flex min-w-0 flex-col gap-3 sm:flex-row", !filtersOpen && "hidden sm:flex")}>
         <div className="relative flex-1">
-          <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-muted" />
+          <Search className="absolute start-4 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-muted" />
           <Input
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={t('filters.searchPlaceholder')}
-            className="pl-11"
+            className="ps-11"
           />
         </div>
         <div className="relative min-w-0 sm:w-56">
@@ -820,22 +820,22 @@ export default function Repairs({ userProfile }: RepairsProps) {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-ds-border text-[11px] font-black uppercase tracking-wider text-ds-text-muted">
-                        <th className="text-left py-2">{t('ticket.date')}</th>
-                        <th className="text-right py-2">{t('stats.repairs')}</th>
+                        <th className="text-start py-2">{t('ticket.date')}</th>
+                        <th className="text-end py-2">{t('stats.repairs')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {dailyRepairCounts.map(d => (
                         <tr key={d.dateStr} className="border-b border-ds-border last:border-0">
                           <td className="py-2 font-semibold text-ds-text">{format(new Date(d.dateStr), 'dd/MM/yyyy')}</td>
-                          <td className="py-2 text-right font-bold text-ds-text">{d.count}</td>
+                          <td className="py-2 text-end font-bold text-ds-text">{d.count}</td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
                       <tr className="border-t border-ds-border">
                         <td className="py-2 text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('ticket.total')}</td>
-                        <td className="py-2 text-right font-bold text-ds-text">{stats.total}</td>
+                        <td className="py-2 text-end font-bold text-ds-text">{stats.total}</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -847,28 +847,28 @@ export default function Repairs({ userProfile }: RepairsProps) {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-ds-border text-[11px] font-black uppercase tracking-wider text-ds-text-muted">
-                        <th className="text-left py-2">{t('ticket.date')}</th>
-                        <th className="text-right py-2">{t('stats.delivered')}</th>
-                        <th className="text-right py-2">{t('stats.invoiced')}</th>
-                        <th className="text-right py-2">{t('stats.partsCost')}</th>
-                        <th className="text-right py-2">{t('stats.profit')}</th>
+                        <th className="text-start py-2">{t('ticket.date')}</th>
+                        <th className="text-end py-2">{t('stats.delivered')}</th>
+                        <th className="text-end py-2">{t('stats.invoiced')}</th>
+                        <th className="text-end py-2">{t('stats.partsCost')}</th>
+                        <th className="text-end py-2">{t('stats.profit')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {dailyNetProfit.map(d => (
                         <tr key={d.dateStr} className="border-b border-ds-border last:border-0">
                           <td className="py-2 font-semibold text-ds-text">{format(new Date(d.dateStr), 'dd/MM/yyyy')}</td>
-                          <td className="py-2 text-right text-ds-text-muted">{d.count}</td>
-                          <td className="py-2 text-right text-ds-text-muted">{d.revenue.toFixed(3)}</td>
-                          <td className="py-2 text-right text-ds-text-muted">{d.complete ? d.partsCost.toFixed(3) : '—'}</td>
-                          <td className={cn("py-2 text-right font-bold", !d.complete ? 'text-ds-text-muted' : d.profit < 0 ? 'text-ds-danger' : 'text-ds-success')}>{d.complete ? d.profit.toFixed(3) : t('stats.costsMissing')}</td>
+                          <td className="py-2 text-end text-ds-text-muted">{d.count}</td>
+                          <td className="py-2 text-end text-ds-text-muted">{d.revenue.toFixed(3)}</td>
+                          <td className="py-2 text-end text-ds-text-muted">{d.complete ? d.partsCost.toFixed(3) : '—'}</td>
+                          <td className={cn("py-2 text-end font-bold", !d.complete ? 'text-ds-text-muted' : d.profit < 0 ? 'text-ds-danger' : 'text-ds-success')}>{d.complete ? d.profit.toFixed(3) : t('stats.costsMissing')}</td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
                       <tr className="border-t border-ds-border">
                         <td className="py-2 text-xs font-black uppercase tracking-wider text-ds-text-muted" colSpan={4}>{t('ticket.total')}</td>
-                        <td className="py-2 text-right font-bold text-ds-text">
+                        <td className="py-2 text-end font-bold text-ds-text">
                           {dailyNetProfit.every(d => d.complete)
                             ? `${dailyNetProfit.reduce((s, d) => s + d.profit, 0).toFixed(3)} ${currency}`
                             : t('stats.historicalCostsMissing')}
@@ -1336,9 +1336,9 @@ export function RepairForm({
                   <div className="absolute z-20 mt-1 w-full overflow-hidden rounded-xl border border-ds-border bg-ds-surface shadow-lg">
                     {filteredClients.map(c => (
                       <button key={c.id} onClick={() => { setClientId(c.id); setClientSearch(''); }}
-                        className="min-h-11 w-full border-b border-ds-border px-4 py-2.5 text-left text-sm last:border-0 hover:bg-ds-surface-2">
+                        className="min-h-11 w-full border-b border-ds-border px-4 py-2.5 text-start text-sm last:border-0 hover:bg-ds-surface-2">
                         <span className="font-bold text-ds-text">{c.name}</span>
-                        {c.phone && <span className="ml-2 text-xs text-ds-text-muted">{c.phone}</span>}
+                        {c.phone && <span className="ms-2 text-xs text-ds-text-muted">{c.phone}</span>}
                       </button>
                     ))}
                   </div>
@@ -1428,7 +1428,7 @@ export function RepairForm({
                     const outOfStock = ((p.stock || 0) + (isEdit ? reserved : 0)) <= reserved;
                     return (
                       <button key={p.id} onClick={() => addPart(p)} disabled={outOfStock}
-                        className={`flex min-h-11 w-full justify-between border-b border-ds-border px-4 py-2.5 text-left text-sm last:border-0 ${
+                        className={`flex min-h-11 w-full justify-between border-b border-ds-border px-4 py-2.5 text-start text-sm last:border-0 ${
                           outOfStock
                             ? 'bg-ds-danger-soft cursor-not-allowed opacity-70'
                             : 'hover:bg-ds-surface-2'
@@ -1455,8 +1455,8 @@ export function RepairForm({
                     <input type="number" value={p.unitPrice} step="0.01"
                       onChange={(e) => updatePartPrice(p.productId, parseFloat(e.target.value) || 0)}
                       disabled={p.inventoryCollection === 'parts' ? !canEditPartSellPrice : !canEditProductSellPrice}
-                      className="min-h-11 w-20 rounded-lg border border-ds-border bg-ds-surface px-2 py-1 text-right text-base" />
-                    <span className="w-20 text-right text-sm font-black tabular-nums text-ds-text">{p.total.toFixed(3)}</span>
+                      className="min-h-11 w-20 rounded-lg border border-ds-border bg-ds-surface px-2 py-1 text-end text-base" />
+                    <span className="w-20 text-end text-sm font-black tabular-nums text-ds-text">{p.total.toFixed(3)}</span>
                     <button onClick={() => updatePartQty(p.productId, 0)} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ds-danger hover:bg-ds-danger-soft"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 ))}

@@ -45,6 +45,7 @@ import { computeExpectedCash } from '../lib/cashSessionMath';
 import type { CashSession } from '../types';
 import { slugifyAppName } from '../lib/brand';
 import { useBrand } from './BrandProvider';
+import { getDateLocale } from '../i18n/format';
 
 // Helper component for printing high-quality A4 reports
 interface PrintableReportProps {
@@ -65,7 +66,7 @@ function PrintableReport({ activeModal, records, storeSettings, currency, canVie
     : activeModal === 'stock' ? "RAPPORT D'INVENTAIRE : VALORISATION DE STOCK"
     : "RAPPORT D'ACTIVITÉ : CRÉATIONS DE BILLETS / TRANSACTIONS";
 
-  const printedDate = new Date().toLocaleDateString('fr-FR', {
+  const printedDate = new Date().toLocaleDateString(getDateLocale(), {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -81,7 +82,7 @@ function PrintableReport({ activeModal, records, storeSettings, currency, canVie
           {storeSettings?.address && <p className="text-[10px] text-ds-muted">{storeSettings.address}</p>}
           {storeSettings?.phone && <p className="text-[10px] text-ds-muted">Tél: {storeSettings.phone}</p>}
         </div>
-        <div className="text-right">
+        <div className="text-end">
           <h2 className="text-xs font-bold uppercase tracking-wider text-ds-text">Synthèse Historique de Caisse</h2>
           <p className="text-[10px] text-ds-muted mt-1">Imprimé le {printedDate}</p>
         </div>
@@ -91,18 +92,18 @@ function PrintableReport({ activeModal, records, storeSettings, currency, canVie
         {title}
       </div>
 
-      <table className="w-full border-collapse text-left border border-ds-border mt-4 text-[11px]">
+      <table className="w-full border-collapse text-start border border-ds-border mt-4 text-[11px]">
         <thead>
           <tr className="bg-ds-surface-2 uppercase font-black text-ds-text border-b border-ds-border">
             {activeModal === 'stock' ? (
               <>
                 <th className="py-2 px-3 border border-ds-border">Désignation</th>
                 <th className="py-2 px-3 text-center border border-ds-border">Stock Dispo</th>
-                {canViewBuyPrice && <th className="py-2 px-3 text-right border border-ds-border">P.A. Unit</th>}
-                <th className="py-2 px-3 text-right border border-ds-border">P.V. Unit</th>
-                {canViewBuyPrice && <th className="py-2 px-3 text-right border border-ds-border">Total Achat</th>}
-                <th className="py-2 px-3 text-right border border-ds-border bg-ds-surface-2 font-bold">Total Vente (Revenus)</th>
-                {canViewCosts && <th className="py-2 px-3 text-right border border-ds-border font-bold">Marge Théorique</th>}
+                {canViewBuyPrice && <th className="py-2 px-3 text-end border border-ds-border">P.A. Unit</th>}
+                <th className="py-2 px-3 text-end border border-ds-border">P.V. Unit</th>
+                {canViewBuyPrice && <th className="py-2 px-3 text-end border border-ds-border">Total Achat</th>}
+                <th className="py-2 px-3 text-end border border-ds-border bg-ds-surface-2 font-bold">Total Vente (Revenus)</th>
+                {canViewCosts && <th className="py-2 px-3 text-end border border-ds-border font-bold">Marge Théorique</th>}
               </>
             ) : (
               <th className="py-2 px-3 border border-ds-border">Date de l'Activité</th>
@@ -110,31 +111,31 @@ function PrintableReport({ activeModal, records, storeSettings, currency, canVie
             {activeModal === 'revenue' && (
               <>
                 <th className="py-2 px-3 text-center border border-ds-border">Nb de Ventes</th>
-                <th className="py-2 px-3 text-right border border-ds-border">Total Encaissé</th>
-                <th className="py-2 px-3 text-right border border-ds-border">Dettes Générées</th>
-                <th className="py-2 px-3 text-right border border-ds-border bg-ds-surface-2 font-bold">Chiffre d'Affaires</th>
+                <th className="py-2 px-3 text-end border border-ds-border">Total Encaissé</th>
+                <th className="py-2 px-3 text-end border border-ds-border">Dettes Générées</th>
+                <th className="py-2 px-3 text-end border border-ds-border bg-ds-surface-2 font-bold">Chiffre d'Affaires</th>
               </>
             )}
             {activeModal === 'profit' && (
               <>
-                <th className="py-2 px-3 text-right border border-ds-border">Chiffre d'Affaires</th>
-                <th className="py-2 px-3 text-right border border-ds-border">Coûts et dépenses</th>
+                <th className="py-2 px-3 text-end border border-ds-border">Chiffre d'Affaires</th>
+                <th className="py-2 px-3 text-end border border-ds-border">Coûts et dépenses</th>
                 <th className="py-2 px-3 text-center border border-ds-border">Marge Ratio (%)</th>
-                <th className="py-2 px-3 text-right border border-ds-border bg-ds-surface-2 font-bold">Bénéfice Net</th>
+                <th className="py-2 px-3 text-end border border-ds-border bg-ds-surface-2 font-bold">Bénéfice Net</th>
               </>
             )}
             {activeModal === 'debt' && (
               <>
-                <th className="py-2 px-3 text-right border border-ds-border">Chiffre d'Affaires</th>
-                <th className="py-2 px-3 text-right border border-ds-border">Revenus Perçus</th>
+                <th className="py-2 px-3 text-end border border-ds-border">Chiffre d'Affaires</th>
+                <th className="py-2 px-3 text-end border border-ds-border">Revenus Perçus</th>
                 <th className="py-2 px-3 text-center border border-ds-border">Ventes Totales</th>
-                <th className="py-2 px-3 text-right border border-ds-border bg-ds-surface-2 font-bold text-ds-danger">Impayés Restants</th>
+                <th className="py-2 px-3 text-end border border-ds-border bg-ds-surface-2 font-bold text-ds-danger">Impayés Restants</th>
               </>
             )}
             {activeModal === 'sales' && (
               <>
                 <th className="py-2 px-3 text-center border border-ds-border">Tickets encaissés</th>
-                <th className="py-2 px-3 text-right border border-ds-border">Panier Moyen journalier</th>
+                <th className="py-2 px-3 text-end border border-ds-border">Panier Moyen journalier</th>
                 <th className="py-2 px-3 text-center border border-ds-border bg-ds-surface-2 font-bold">Total Transactions</th>
               </>
             )}
@@ -151,16 +152,16 @@ function PrintableReport({ activeModal, records, storeSettings, currency, canVie
                 <tr key={rec.id || idx} className="hover:bg-ds-surface-2/20">
                   <td className="py-2 px-3 font-semibold border border-ds-border">{rec.name}</td>
                   <td className="py-2 px-3 text-center border border-ds-border">{stock}</td>
-                  {canViewBuyPrice && <td className="py-2 px-3 text-right border border-ds-border font-mono">{(rec.buyPrice || 0).toFixed(3)} {currency}</td>}
-                  <td className="py-2 px-3 text-right border border-ds-border font-mono">{(rec.sellPrice || 0).toFixed(3)} {currency}</td>
-                  {canViewBuyPrice && <td className="py-2 px-3 text-right border border-ds-border font-mono">{buyVal.toFixed(3)} {currency}</td>}
-                  <td className="py-2 px-3 text-right border border-ds-border bg-ds-surface-2 font-mono font-bold">{sellVal.toFixed(3)} {currency}</td>
-                  {canViewCosts && <td className="py-2 px-3 text-right border border-ds-border font-mono font-bold">{margin.toFixed(3)} {currency}</td>}
+                  {canViewBuyPrice && <td className="py-2 px-3 text-end border border-ds-border font-mono">{(rec.buyPrice || 0).toFixed(3)} {currency}</td>}
+                  <td className="py-2 px-3 text-end border border-ds-border font-mono">{(rec.sellPrice || 0).toFixed(3)} {currency}</td>
+                  {canViewBuyPrice && <td className="py-2 px-3 text-end border border-ds-border font-mono">{buyVal.toFixed(3)} {currency}</td>}
+                  <td className="py-2 px-3 text-end border border-ds-border bg-ds-surface-2 font-mono font-bold">{sellVal.toFixed(3)} {currency}</td>
+                  {canViewCosts && <td className="py-2 px-3 text-end border border-ds-border font-mono font-bold">{margin.toFixed(3)} {currency}</td>}
                 </tr>
               );
             }
 
-            const dateLabel = rec.dateObj.toLocaleDateString('fr-FR', {
+            const dateLabel = rec.dateObj.toLocaleDateString(getDateLocale(), {
               weekday: 'short',
               day: '2-digit',
               month: 'short',
@@ -172,33 +173,33 @@ function PrintableReport({ activeModal, records, storeSettings, currency, canVie
                 {activeModal === 'revenue' && (
                   <>
                     <td className="py-2 px-3 text-center border border-ds-border">{rec.salesCount}</td>
-                    <td className="py-2 px-3 text-right border border-ds-border font-mono">{rec.cashAmount.toFixed(3)} {currency}</td>
-                    <td className="py-2 px-3 text-right border border-ds-border font-mono">{rec.debt.toFixed(3)} {currency}</td>
-                    <td className="py-2 px-3 text-right border border-ds-border bg-ds-surface-2 font-mono font-bold">{rec.revenue.toFixed(3)} {currency}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border font-mono">{rec.cashAmount.toFixed(3)} {currency}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border font-mono">{rec.debt.toFixed(3)} {currency}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border bg-ds-surface-2 font-mono font-bold">{rec.revenue.toFixed(3)} {currency}</td>
                   </>
                 )}
                 {activeModal === 'profit' && (
                   <>
-                    <td className="py-2 px-3 text-right border border-ds-border font-mono">{rec.revenue.toFixed(3)} {currency}</td>
-                    <td className="py-2 px-3 text-right border border-ds-border font-mono">{rec.profitComplete ? `${(rec.revenue - rec.profit).toFixed(3)} ${currency}` : 'Coûts manquants'}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border font-mono">{rec.revenue.toFixed(3)} {currency}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border font-mono">{rec.profitComplete ? `${(rec.revenue - rec.profit).toFixed(3)} ${currency}` : 'Coûts manquants'}</td>
                     <td className="py-2 px-3 text-center border border-ds-border font-mono font-bold">
                       {rec.profitComplete && rec.revenue > 0 ? ((rec.profit / rec.revenue) * 100).toFixed(1) + '%' : '—'}
                     </td>
-                    <td className="py-2 px-3 text-right border border-ds-border bg-ds-surface-2 font-mono font-bold">{rec.profitComplete ? `${rec.profit.toFixed(3)} ${currency}` : '—'}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border bg-ds-surface-2 font-mono font-bold">{rec.profitComplete ? `${rec.profit.toFixed(3)} ${currency}` : '—'}</td>
                   </>
                 )}
                 {activeModal === 'debt' && (
                   <>
-                    <td className="py-2 px-3 text-right border border-ds-border font-mono">{rec.revenue.toFixed(3)} {currency}</td>
-                    <td className="py-2 px-3 text-right border border-ds-border font-mono">{rec.cashAmount.toFixed(3)} {currency}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border font-mono">{rec.revenue.toFixed(3)} {currency}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border font-mono">{rec.cashAmount.toFixed(3)} {currency}</td>
                     <td className="py-2 px-3 text-center border border-ds-border">{rec.salesCount}</td>
-                    <td className="py-2 px-3 text-right border border-ds-border bg-ds-surface-2 font-mono font-bold text-ds-danger">{rec.debt.toFixed(3)} {currency}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border bg-ds-surface-2 font-mono font-bold text-ds-danger">{rec.debt.toFixed(3)} {currency}</td>
                   </>
                 )}
                 {activeModal === 'sales' && (
                   <>
                     <td className="py-2 px-3 text-center border border-ds-border">{rec.salesCount}</td>
-                    <td className="py-2 px-3 text-right border border-ds-border font-mono">
+                    <td className="py-2 px-3 text-end border border-ds-border font-mono">
                       {rec.salesCount > 0 ? (rec.revenue / rec.salesCount).toFixed(3) : '0.000'} {currency}
                     </td>
                     <td className="py-2 px-3 text-center border border-ds-border bg-ds-surface-2 font-mono font-bold">{rec.salesCount}</td>
@@ -731,7 +732,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
       result = result.filter(rec => {
-        const formatted = rec.dateObj.toLocaleDateString('fr-FR'); // ex: "22/06/2026"
+        const formatted = rec.dateObj.toLocaleDateString(getDateLocale()); // ex: "22/06/2026"
         return formatted.toLowerCase().includes(q) || rec.dateStr.includes(q);
       });
     }
@@ -914,7 +915,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
         // Feuille de synthèse : état instantané du stock
         const now = new Date();
         const summaryRows = [
-          { 'Indicateur': 'Date et heure du calcul', 'Valeur': `${now.toLocaleDateString('fr-FR')} ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` },
+          { 'Indicateur': 'Date et heure du calcul', 'Valeur': `${now.toLocaleDateString(getDateLocale())} ${now.toLocaleTimeString(getDateLocale(), { hour: '2-digit', minute: '2-digit' })}` },
           { 'Indicateur': 'Produits existants en stock (quantité > 0)', 'Valeur': stockValuation.inStockItemsCount },
           { 'Indicateur': 'Références totales répertoriées', 'Valeur': stockValuation.totalItemsCount },
           { 'Indicateur': 'Produits en rupture de stock', 'Valeur': stockValuation.outOfStockCount },
@@ -943,7 +944,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
       }
 
       const rows = filteredAndSortedRecords.map(rec => {
-        const fmtDate = rec.dateObj.toLocaleDateString('fr-FR');
+        const fmtDate = rec.dateObj.toLocaleDateString(getDateLocale());
         if (activeModal === 'revenue') {
           return {
             'Date': fmtDate,
@@ -1016,7 +1017,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
       const q = expensesSearch.toLowerCase();
       result = result.filter(sup => 
         (sup.productName || '').toLowerCase().includes(q) ||
-        (sup.date && typeof sup.date.toDate === 'function' && sup.date.toDate().toLocaleDateString('fr-FR').includes(q))
+        (sup.date && typeof sup.date.toDate === 'function' && sup.date.toDate().toLocaleDateString(getDateLocale()).includes(q))
       );
     }
     return result;
@@ -1035,7 +1036,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
       let filename = '';
       if (expensesTab === 'daily') {
         rows = dailySuppliesRecords.map(rec => ({
-          'Date': rec.dateObj.toLocaleDateString('fr-FR'),
+          'Date': rec.dateObj.toLocaleDateString(getDateLocale()),
           'Nombre de produits ajoutés': rec.productsCount,
           'Quantité totale ajoutée': rec.totalQty,
           'Dépenses totales (DT)': rec.totalExpenses.toFixed(3)
@@ -1043,7 +1044,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
         filename = `Depenses_Journalieres`;
       } else {
         rows = supplies.map(sup => {
-          const timestampStr = !sup.date ? '' : (typeof sup.date.toDate === 'function' ? sup.date.toDate().toLocaleString('fr-FR') : new Date(sup.date).toLocaleString('fr-FR'));
+          const timestampStr = !sup.date ? '' : (typeof sup.date.toDate === 'function' ? sup.date.toDate().toLocaleString(getDateLocale()) : new Date(sup.date).toLocaleString(getDateLocale()));
           return {
             'Date et Heure': timestampStr,
             'Produit': sup.productName || '',
@@ -1166,7 +1167,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
           )}
           <div className="flex min-h-11 items-center gap-2 rounded-ds-md border border-ds-border bg-ds-surface px-4 py-2 text-xs font-semibold text-ds-muted">
             <Calendar className="h-4 w-4 text-ds-brand" />
-            <span>Aujourd'hui, {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+            <span>Aujourd'hui, {new Date().toLocaleDateString(getDateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</span>
           </div>
         </div>}
       />
@@ -1185,10 +1186,10 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
           {canShowMargin && (
             <div className="mt-6 flex flex-wrap gap-2">
               <span className="rounded-full border border-ds-brand-contrast/25 bg-ds-surface/10 px-4 py-2 text-xs font-semibold text-ds-brand-contrast">
-                Bénéfice brut <span className="ml-1 font-display tabular-nums">{todaySummary.grossProfit === null ? '—' : `${todaySummary.grossProfit.toFixed(3)} ${currency}`}</span>
+                Bénéfice brut <span className="ms-1 font-display tabular-nums">{todaySummary.grossProfit === null ? '—' : `${todaySummary.grossProfit.toFixed(3)} ${currency}`}</span>
               </span>
               <span className="rounded-full border border-ds-brand-contrast/25 bg-ds-surface/10 px-4 py-2 text-xs font-semibold text-ds-brand-contrast">
-                Dépenses <span className="ml-1 font-display tabular-nums">{todaySummary.expenses.toFixed(3)} {currency}</span>
+                Dépenses <span className="ms-1 font-display tabular-nums">{todaySummary.expenses.toFixed(3)} {currency}</span>
               </span>
             </div>
           )}
@@ -1216,10 +1217,10 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                         netProfit < 0 ? 'bg-ds-danger' : 'bg-ds-surface',
                     )}
                     style={{ height: `${height}%` }}
-                    title={`${date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} : ${netProfit === null ? 'indisponible' : `${netProfit.toFixed(3)} ${currency}`}`}
+                    title={`${date.toLocaleDateString(getDateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })} : ${netProfit === null ? 'indisponible' : `${netProfit.toFixed(3)} ${currency}`}`}
                   />
                   <span className="text-[10px] font-semibold capitalize text-ds-brand-contrast/80">
-                    {date.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}
+                    {date.toLocaleDateString(getDateLocale(), { weekday: 'short' }).replace('.', '')}
                   </span>
                 </div>
               );
@@ -1268,7 +1269,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                 <p className="stat-label">{label}</p>
                 <p className="stat-value mt-2 break-words text-ds-text">
                   {value === null ? '—' : count ? value : value.toFixed(3)}
-                  {value !== null && <span className="ml-1 text-xs font-semibold text-ds-muted">{unit}</span>}
+                  {value !== null && <span className="ms-1 text-xs font-semibold text-ds-muted">{unit}</span>}
                 </p>
               </div>
               <span className="stat-icon shrink-0" style={{ '--stat-accent': accent } as React.CSSProperties}>
@@ -1393,7 +1394,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                 <div className="flex h-10 w-10 items-center justify-center rounded-ds-md bg-ds-warning text-ds-brand-contrast">
                   <AlertTriangle className="w-5 h-5 animate-pulse" />
                 </div>
-                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="absolute -top-1 -end-1 flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ds-danger-soft opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-ds-danger"></span>
                 </span>
@@ -1443,7 +1444,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                     <button
                       type="button"
                       onClick={() => openHistoryModal('stock')}
-                      className="ml-1 cursor-pointer text-[11px] font-bold text-ds-danger underline underline-offset-2 transition-colors hover:text-ds-danger"
+                      className="ms-1 cursor-pointer text-[11px] font-bold text-ds-danger underline underline-offset-2 transition-colors hover:text-ds-danger"
                     >
                       +{dashboardData.lowStockAlerts.length - 6} autres produits...
                     </button>
@@ -1716,23 +1717,23 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                   title="Aucune vente récente dans le système"
                 />
               ) : (
-                <table className="responsive-card-table w-full border-collapse text-left">
+                <table className="responsive-card-table w-full border-collapse text-start">
                   <thead>
                     <tr className="border-b border-ds-border bg-ds-surface-2 text-[10px] font-extrabold uppercase tracking-wider text-ds-muted">
                       <th className="px-4 py-4">Vente</th>
-                      {canShowMargin && <th className="px-4 py-4 text-right">Achat</th>}
-                      {canShowMargin && <th className="px-4 py-4 text-right">Bénéfice</th>}
-                      <th className="px-4 py-4 text-right">Total</th>
-                      <th className="px-4 py-4 text-right">Montant payé</th>
-                      <th className="px-4 py-4 text-right">Reste à payer</th>
+                      {canShowMargin && <th className="px-4 py-4 text-end">Achat</th>}
+                      {canShowMargin && <th className="px-4 py-4 text-end">Bénéfice</th>}
+                      <th className="px-4 py-4 text-end">Total</th>
+                      <th className="px-4 py-4 text-end">Montant payé</th>
+                      <th className="px-4 py-4 text-end">Reste à payer</th>
                       <th className="px-4 py-4 text-center">Statut</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-ds-border">
                     {sales.slice(0, 10).map((sale) => {
                       const sDate = getSaleDate(sale);
-                      const formattedDate = sDate.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                      const formattedTime = sDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                      const formattedDate = sDate.toLocaleDateString(getDateLocale(), { day: '2-digit', month: '2-digit', year: 'numeric' });
+                      const formattedTime = sDate.toLocaleTimeString(getDateLocale(), { hour: '2-digit', minute: '2-digit' });
                       const margin = canShowMargin ? computeSaleProfit(sale, saleCostSnapshots[sale.id]) : null;
                       return (
                         <tr key={sale.id} className="transition-colors hover:bg-ds-surface-2">
@@ -1744,12 +1745,12 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                           </td>
                           {canShowMargin && (
                             <>
-                              <td data-label="Achat" className="whitespace-nowrap px-4 py-4 text-right">
+                              <td data-label="Achat" className="whitespace-nowrap px-4 py-4 text-end">
                                 <span className="font-mono text-xs font-semibold tabular-nums text-ds-text">
                                   {margin?.complete ? `${margin.cost.toFixed(3)} ${currency}` : '—'}
                                 </span>
                               </td>
-                              <td data-label="Bénéfice" className="whitespace-nowrap px-4 py-4 text-right">
+                              <td data-label="Bénéfice" className="whitespace-nowrap px-4 py-4 text-end">
                                 {margin?.complete && margin.profit !== null ? (
                                   <span className="inline-flex items-center gap-2">
                                     <span className={cn('font-mono text-xs font-bold tabular-nums', margin.profit < 0 ? 'text-ds-danger' : 'text-ds-success')}>
@@ -1761,13 +1762,13 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                               </td>
                             </>
                           )}
-                          <td data-label="Total" className="whitespace-nowrap px-4 py-4 text-right">
+                          <td data-label="Total" className="whitespace-nowrap px-4 py-4 text-end">
                             <span className="font-mono text-xs font-bold tabular-nums text-ds-text">{sale.total.toFixed(3)} {currency}</span>
                           </td>
-                          <td data-label="Montant payé" className="whitespace-nowrap px-4 py-4 text-right">
+                          <td data-label="Montant payé" className="whitespace-nowrap px-4 py-4 text-end">
                             <span className="font-mono text-xs font-semibold tabular-nums text-ds-text">{sale.paid.toFixed(3)} {currency}</span>
                           </td>
-                          <td data-label="Reste à payer" className="whitespace-nowrap px-4 py-4 text-right">
+                          <td data-label="Reste à payer" className="whitespace-nowrap px-4 py-4 text-end">
                             {sale.debt > 0 ? (
                               <span className="font-mono text-xs font-bold tabular-nums text-ds-danger">-{sale.debt.toFixed(3)} {currency}</span>
                             ) : (
@@ -1871,7 +1872,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                       onClick={() => openHistoryModal('stock')}
                       className="group -mx-2 flex cursor-pointer items-center justify-between rounded-xl px-2 py-3 transition-colors first:pt-1 last:pb-1 hover:bg-ds-surface-2"
                     >
-                      <div className="min-w-0 flex-1 pr-2">
+                      <div className="min-w-0 flex-1 pe-2">
                         <h4 className="truncate text-xs font-bold text-ds-text transition-colors" title={product.name}>
                           {product.name}
                         </h4>
@@ -1879,7 +1880,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                           Seuil minimal : {effectiveThreshold} unités
                         </p>
                       </div>
-                      <div className="text-right shrink-0">
+                      <div className="text-end shrink-0">
                         <Badge variant={product.stock <= 0 ? 'danger' : 'warning'} className="min-h-7 rounded-ds-sm px-2 py-1 font-mono text-xs font-black">
                           {product.stock <= 0 ? 'Rupture (0)' : `${product.stock} dispo`}
                         </Badge>
@@ -1958,13 +1959,13 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                 
                 {/* Search bar */}
                 <div className="md:col-span-4 relative">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ds-muted" />
+                  <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ds-muted" />
                   <input 
                     type="text"
                     value={searchQuery}
                     onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
                     placeholder={activeModal === 'stock' ? "Rechercher un produit, code barre..." : "Rechercher une date (ex: 22/06)..."}
-                    className="w-full pl-10 pr-4 py-2 bg-ds-surface border border-ds-border rounded-xl text-base font-semibold placeholder:text-ds-muted outline-none focus:ring-2 focus:ring-ds-brand/10 focus:border-ds-brand transition-all sm:text-xs"
+                    className="w-full ps-10 pe-4 py-2 bg-ds-surface border border-ds-border rounded-xl text-base font-semibold placeholder:text-ds-muted outline-none focus:ring-2 focus:ring-ds-brand/10 focus:border-ds-brand transition-all sm:text-xs"
                   />
                 </div>
 
@@ -2000,7 +2001,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                   </div>
                 ) : (
                   <div className="md:col-span-8 flex flex-wrap items-center gap-2 md:justify-end">
-                    <span className="text-[10px] font-black uppercase text-ds-muted tracking-wider mr-1">Filtre Période :</span>
+                    <span className="text-[10px] font-black uppercase text-ds-muted tracking-wider me-1">Filtre Période :</span>
                     {(['today', '7', '30', '90', 'year', 'all', 'custom'] as const).map(p => {
                       const label = p === 'today' ? "Aujourd'hui" :
                                     p === '7' ? '7 jours' :
@@ -2031,22 +2032,22 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
               {activeModal !== 'stock' && periodFilter === 'custom' && (
                 <div className="flex items-center gap-3 p-3 bg-ds-surface rounded-2xl border border-ds-border shadow-xs max-w-lg animate-in slide-in-from-top-2 duration-200">
                   <div className="relative flex-1">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ds-muted pointer-events-none" />
+                    <Calendar className="absolute start-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ds-muted pointer-events-none" />
                     <input 
                       type="date"
                       value={startDate}
                       onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }}
-                      className="w-full pl-9 pr-3 py-1.5 border border-ds-border rounded-xl text-base font-medium outline-none sm:text-xs"
+                      className="w-full ps-9 pe-3 py-1.5 border border-ds-border rounded-xl text-base font-medium outline-none sm:text-xs"
                     />
                   </div>
                   <span className="text-ds-muted font-bold text-xs">à</span>
                   <div className="relative flex-1">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ds-muted pointer-events-none" />
+                    <Calendar className="absolute start-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ds-muted pointer-events-none" />
                     <input 
                       type="date"
                       value={endDate}
                       onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }}
-                      className="w-full pl-9 pr-3 py-1.5 border border-ds-border rounded-xl text-base font-medium outline-none sm:text-xs"
+                      className="w-full ps-9 pe-3 py-1.5 border border-ds-border rounded-xl text-base font-medium outline-none sm:text-xs"
                     />
                   </div>
                 </div>
@@ -2083,9 +2084,9 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                       <span className="text-[9px] font-bold uppercase text-ds-brand/70 block mt-0.5">Soit {stockValuation.totalSellValue.toFixed(3)} {currency} en valeur de vente potentielle</span>
                     </div>
                     <div className="hidden md:block w-px h-12 bg-ds-surface/15"></div>
-                    <div className="text-right md:text-left">
+                    <div className="text-end md:text-start">
                       <span className="text-[10px] font-black uppercase tracking-widest text-ds-brand/80 block">Calculé le</span>
-                      <span className="text-xs font-black font-mono block mt-1">{new Date().toLocaleDateString('fr-FR')} à {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-xs font-black font-mono block mt-1">{new Date().toLocaleDateString(getDateLocale())} à {new Date().toLocaleTimeString(getDateLocale(), { hour: '2-digit', minute: '2-digit' })}</span>
                       <span className="text-[9px] font-bold uppercase text-ds-brand/70 block mt-0.5">Temps réel · inventaire actuel</span>
                     </div>
                   </div>
@@ -2104,7 +2105,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                 />
               ) : (
                 <div className="overflow-x-auto p-3 sm:p-6">
-                  <table className="w-full border-collapse text-left text-xs">
+                  <table className="w-full border-collapse text-start text-xs">
                     <thead>
                       <tr className="border-b border-ds-border text-[10px] font-black uppercase tracking-wider text-ds-muted bg-ds-surface-2/70">
                         {activeModal === 'stock' ? (
@@ -2119,13 +2120,13 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                               </div>
                             </th>
                             <th className="px-6 py-3 text-center">Quantité en Stock</th>
-                            {canShowBuyPrice && <th className="px-6 py-3 text-right">Prix d'Achat Unit.</th>}
-                            <th className="px-6 py-3 text-right">Prix de Vente Unit.</th>
-                            {canShowBuyPrice && <th className="px-6 py-3 text-right">Valeur d'Achat Totale</th>}
-                            <th className="px-6 py-3 text-right">Valeur de Vente Totale (Revenus Est.)</th>
+                            {canShowBuyPrice && <th className="px-6 py-3 text-end">Prix d'Achat Unit.</th>}
+                            <th className="px-6 py-3 text-end">Prix de Vente Unit.</th>
+                            {canShowBuyPrice && <th className="px-6 py-3 text-end">Valeur d'Achat Totale</th>}
+                            <th className="px-6 py-3 text-end">Valeur de Vente Totale (Revenus Est.)</th>
                             {canShowMargin && <th
                               onClick={() => { setSortField('value'); setSortAsc(!sortAsc); }}
-                              className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors text-right select-none"
+                              className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors text-end select-none"
                             >
                               <div className="flex items-center gap-1.5 justify-end">
                                 Marge Bénéficiaire Théorique
@@ -2148,11 +2149,11 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                         {activeModal === 'revenue' && (
                           <>
                             <th className="px-6 py-3 text-center">Nbre Ventes</th>
-                            <th className="px-6 py-3 text-right">Montant Encaissé (Liquide)</th>
-                            <th className="px-6 py-3 text-right">Dettes Créées</th>
+                            <th className="px-6 py-3 text-end">Montant Encaissé (Liquide)</th>
+                            <th className="px-6 py-3 text-end">Dettes Créées</th>
                             <th 
                               onClick={() => { setSortField('value'); setSortAsc(!sortAsc); }}
-                              className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors text-right select-none"
+                              className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors text-end select-none"
                             >
                               <div className="flex items-center gap-1.5 justify-end">
                                 Chiffre d'Affaires Brut
@@ -2164,12 +2165,12 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
 
                         {activeModal === 'profit' && (
                           <>
-                            <th className="px-6 py-3 text-right">Chiffre d'Affaires</th>
-                            <th className="px-6 py-3 text-right">Coût estimé des articles</th>
-                            <th className="px-6 py-3 text-right">Ratio Marge (%)</th>
+                            <th className="px-6 py-3 text-end">Chiffre d'Affaires</th>
+                            <th className="px-6 py-3 text-end">Coût estimé des articles</th>
+                            <th className="px-6 py-3 text-end">Ratio Marge (%)</th>
                             <th 
                               onClick={() => { setSortField('value'); setSortAsc(!sortAsc); }}
-                              className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors text-right select-none"
+                              className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors text-end select-none"
                             >
                               <div className="flex items-center gap-1.5 justify-end">
                                 Bénéfice Net
@@ -2181,12 +2182,12 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
 
                         {activeModal === 'debt' && (
                           <>
-                            <th className="px-6 py-3 text-right">Total CA du Jour</th>
-                            <th className="px-6 py-3 text-right">Total Crédit Accordé</th>
+                            <th className="px-6 py-3 text-end">Total CA du Jour</th>
+                            <th className="px-6 py-3 text-end">Total Crédit Accordé</th>
                             <th className="px-6 py-3 text-center">Nbre Tickets à Crédit</th>
                             <th 
                               onClick={() => { setSortField('value'); setSortAsc(!sortAsc); }}
-                              className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors text-right select-none"
+                              className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors text-end select-none"
                             >
                               <div className="flex items-center gap-1.5 justify-end">
                                 Somme des Impayés
@@ -2199,7 +2200,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                         {activeModal === 'sales' && (
                           <>
                             <th className="px-6 py-3 text-center font-bold text-ds-muted">Panier Moyen journalier</th>
-                            <th className="px-6 py-3 text-right">Ventes encaissées</th>
+                            <th className="px-6 py-3 text-end">Ventes encaissées</th>
                             <th 
                               onClick={() => { setSortField('value'); setSortAsc(!sortAsc); }}
                               className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors text-center select-none bg-ds-brand-soft/30"
@@ -2239,19 +2240,19 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                                   {stock} unités
                                 </span>
                               </td>
-                              {canShowBuyPrice && <td className="px-6 py-3.5 text-right font-semibold text-ds-muted font-mono">
+                              {canShowBuyPrice && <td className="px-6 py-3.5 text-end font-semibold text-ds-muted font-mono">
                                 {(product.buyPrice || 0).toFixed(3)} {currency}
                               </td>}
-                              <td className="px-6 py-3.5 text-right font-bold text-ds-text font-mono">
+                              <td className="px-6 py-3.5 text-end font-bold text-ds-text font-mono">
                                 {(product.sellPrice || 0).toFixed(3)} {currency}
                               </td>
-                              {canShowBuyPrice && <td className="px-6 py-3.5 text-right text-ds-muted font-mono">
+                              {canShowBuyPrice && <td className="px-6 py-3.5 text-end text-ds-muted font-mono">
                                 {buyVal.toFixed(3)} {currency}
                               </td>}
-                              <td className="px-6 py-3.5 text-right font-black text-ds-text font-mono">
+                              <td className="px-6 py-3.5 text-end font-black text-ds-text font-mono">
                                 {sellVal.toFixed(3)} {currency}
                               </td>
-                              {canShowMargin && <td className="px-6 py-3.5 text-right whitespace-nowrap">
+                              {canShowMargin && <td className="px-6 py-3.5 text-end whitespace-nowrap">
                                 <span className="px-3 py-1 bg-ds-brand-soft text-ds-brand font-black font-mono rounded-lg border border-ds-border text-xs">
                                   {profitVal.toFixed(3)} {currency}
                                 </span>
@@ -2261,7 +2262,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                         }
 
                         const dayRec = rec as any;
-                        const formattedDate = dayRec.dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+                        const formattedDate = dayRec.dateObj.toLocaleDateString(getDateLocale(), { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
                         return (
                           <tr key={dayRec.dateStr} className="hover:bg-ds-surface-2/50 transition-colors">
                             <td className="px-6 py-3.5 whitespace-nowrap">
@@ -2274,9 +2275,9 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                             {activeModal === 'revenue' && (
                               <>
                                 <td className="px-6 py-3.5 text-center font-bold text-ds-text font-mono">{dayRec.salesCount}</td>
-                                <td className="px-6 py-3.5 text-right font-bold text-ds-success font-mono">{dayRec.cashAmount.toFixed(3)} {currency}</td>
-                                <td className="px-6 py-3.5 text-right font-semibold text-ds-danger font-mono">{dayRec.debt.toFixed(3)} {currency}</td>
-                                <td className="px-6 py-3.5 text-right whitespace-nowrap">
+                                <td className="px-6 py-3.5 text-end font-bold text-ds-success font-mono">{dayRec.cashAmount.toFixed(3)} {currency}</td>
+                                <td className="px-6 py-3.5 text-end font-semibold text-ds-danger font-mono">{dayRec.debt.toFixed(3)} {currency}</td>
+                                <td className="px-6 py-3.5 text-end whitespace-nowrap">
                                   <span className="px-3 py-1 bg-ds-accent-soft text-ds-accent font-black font-mono rounded-lg border border-ds-border text-xs">
                                     {dayRec.revenue.toFixed(3)} {currency}
                                   </span>
@@ -2286,14 +2287,14 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
 
                             {activeModal === 'profit' && (
                               <>
-                                <td className="px-6 py-3.5 text-right font-semibold text-ds-muted font-mono">{dayRec.revenue.toFixed(3)} {currency}</td>
-                                <td className="px-6 py-3.5 text-right text-ds-muted font-mono">{(dayRec.revenue - dayRec.profit).toFixed(3)} {currency}</td>
-                                <td className="px-6 py-3.5 text-right whitespace-nowrap">
+                                <td className="px-6 py-3.5 text-end font-semibold text-ds-muted font-mono">{dayRec.revenue.toFixed(3)} {currency}</td>
+                                <td className="px-6 py-3.5 text-end text-ds-muted font-mono">{(dayRec.revenue - dayRec.profit).toFixed(3)} {currency}</td>
+                                <td className="px-6 py-3.5 text-end whitespace-nowrap">
                                   <span className="text-[10px] font-black text-ds-success bg-ds-success-soft px-2 py-0.5 rounded-md border border-ds-success">
                                     {dayRec.revenue > 0 ? ((dayRec.profit / dayRec.revenue) * 100).toFixed(1) + '%' : '0.0%'}
                                   </span>
                                 </td>
-                                <td className="px-6 py-3.5 text-right whitespace-nowrap">
+                                <td className="px-6 py-3.5 text-end whitespace-nowrap">
                                   <span className="px-3 py-1 bg-ds-success-soft text-ds-success font-black font-mono rounded-lg border border-ds-success text-xs">
                                     {dayRec.profit.toFixed(3)} {currency}
                                   </span>
@@ -2303,10 +2304,10 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
 
                             {activeModal === 'debt' && (
                               <>
-                                <td className="px-6 py-3.5 text-right text-ds-muted font-mono">{dayRec.revenue.toFixed(3)} {currency}</td>
-                                <td className="px-6 py-3.5 text-right text-ds-muted font-mono">{dayRec.cashAmount.toFixed(3)} {currency}</td>
+                                <td className="px-6 py-3.5 text-end text-ds-muted font-mono">{dayRec.revenue.toFixed(3)} {currency}</td>
+                                <td className="px-6 py-3.5 text-end text-ds-muted font-mono">{dayRec.cashAmount.toFixed(3)} {currency}</td>
                                 <td className="px-6 py-3.5 text-center font-bold text-ds-text font-mono">{dayRec.salesCount}</td>
-                                <td className="px-6 py-3.5 text-right whitespace-nowrap">
+                                <td className="px-6 py-3.5 text-end whitespace-nowrap">
                                   <span className="px-3 py-1 bg-ds-danger-soft text-ds-danger font-black font-mono rounded-lg border border-ds-danger text-xs">
                                     {dayRec.debt.toFixed(3)} {currency}
                                   </span>
@@ -2319,7 +2320,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                                 <td className="px-6 py-3.5 text-center font-semibold text-ds-muted font-mono">
                                   {dayRec.salesCount > 0 ? (dayRec.revenue / dayRec.salesCount).toFixed(3) : '0.000'} {currency}
                                 </td>
-                                <td className="px-6 py-3.5 text-right text-ds-muted font-mono">{dayRec.salesCount}</td>
+                                <td className="px-6 py-3.5 text-end text-ds-muted font-mono">{dayRec.salesCount}</td>
                                 <td className="px-6 py-3.5 text-center whitespace-nowrap bg-ds-brand-soft/10">
                                   <span className="px-3 py-1 bg-ds-brand-soft text-ds-brand font-black font-mono rounded-lg border border-ds-border text-xs">
                                     {dayRec.salesCount} transactions
@@ -2472,13 +2473,13 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
 
               {/* Search input dynamically scoped to active tab search */}
               <div className="relative w-full sm:w-72">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ds-muted" />
+                <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ds-muted" />
                 <input 
                   type="text"
                   value={expensesSearch}
                   onChange={(e) => { setExpensesSearch(e.target.value); setExpensesPage(1); }}
                   placeholder={expensesTab === 'daily' ? "Rechercher une date (ex: 22/06)..." : "Rechercher un produit ou date..."}
-                  className="w-full pl-10 pr-4 py-2 bg-ds-surface border border-ds-border rounded-xl text-base font-semibold placeholder:text-ds-muted outline-none focus:ring-2 focus:ring-ds-brand/10 focus:border-ds-brand transition-all sm:text-xs"
+                  className="w-full ps-10 pe-4 py-2 bg-ds-surface border border-ds-border rounded-xl text-base font-semibold placeholder:text-ds-muted outline-none focus:ring-2 focus:ring-ds-brand/10 focus:border-ds-brand transition-all sm:text-xs"
                 />
               </div>
             </div>
@@ -2495,18 +2496,18 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                     description="Ajoutez du stock aux articles pour suivre vos dépenses."
                   />
                 ) : (
-                  <table className="w-full border-collapse text-left text-xs">
+                  <table className="w-full border-collapse text-start text-xs">
                     <thead>
                       <tr className="border-b border-ds-border text-[10px] font-black uppercase tracking-wider text-ds-muted bg-ds-surface-2/70">
                         <th className="px-6 py-3">Date</th>
                         <th className="px-6 py-3 text-center">Nbre de Produits Ajoutés</th>
                         <th className="px-6 py-3 text-center">Quantité Totale Ajoutée</th>
-                        <th className="px-6 py-3 text-right">Dépenses Totales</th>
+                        <th className="px-6 py-3 text-end">Dépenses Totales</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-ds-border">
                       {dailySuppliesRecords.map((rec) => {
-                        const formattedDate = rec.dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+                        const formattedDate = rec.dateObj.toLocaleDateString(getDateLocale(), { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
                         return (
                           <tr key={rec.dateStr} className="hover:bg-ds-surface-2/50 transition-colors">
                             <td className="px-6 py-3.5 whitespace-nowrap font-bold text-ds-text capitalize">
@@ -2518,7 +2519,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                             <td className="px-6 py-3.5 text-center font-bold text-ds-muted font-mono">
                               {rec.totalQty}
                             </td>
-                            <td className="px-6 py-3.5 text-right whitespace-nowrap">
+                            <td className="px-6 py-3.5 text-end whitespace-nowrap">
                               <span className="px-3 py-1 bg-ds-brand-soft text-ds-brand font-black font-mono rounded-lg border border-ds-brand text-xs">
                                 {rec.totalExpenses.toFixed(3)} {currency}
                               </span>
@@ -2539,20 +2540,20 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                     description="Ajustez les termes de votre recherche."
                   />
                 ) : (
-                  <table className="w-full border-collapse text-left text-xs">
+                  <table className="w-full border-collapse text-start text-xs">
                     <thead>
                       <tr className="border-b border-ds-border text-[10px] font-black uppercase tracking-wider text-ds-muted bg-ds-surface-2/70">
                         <th className="px-6 py-3">Date et Heure</th>
                         <th className="px-6 py-3">Produit</th>
                         <th className="px-6 py-3 text-center">Quantité Ajoutée</th>
-                        <th className="px-6 py-3 text-right">Prix d'Achat unitaire</th>
-                        <th className="px-6 py-3 text-right">Coût Total</th>
+                        <th className="px-6 py-3 text-end">Prix d'Achat unitaire</th>
+                        <th className="px-6 py-3 text-end">Coût Total</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-ds-border">
                       {paginatedSupplies.map((sup: any) => {
                         const dateObj = !sup.date ? new Date() : (typeof sup.date.toDate === 'function' ? sup.date.toDate() : new Date(sup.date));
-                        const formattedDateTime = dateObj.toLocaleString('fr-FR', { 
+                        const formattedDateTime = dateObj.toLocaleString(getDateLocale(), {
                           day: '2-digit', 
                           month: 'short', 
                           year: 'numeric',
@@ -2570,10 +2571,10 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                             <td className="px-6 py-3.5 text-center font-extrabold text-ds-text font-mono">
                               {sup.quantity || 0}
                             </td>
-                            <td className="px-6 py-3.5 text-right font-semibold text-ds-muted font-mono">
+                            <td className="px-6 py-3.5 text-end font-semibold text-ds-muted font-mono">
                               {(sup.buyPrice || 0).toFixed(3)} {currency}
                             </td>
-                            <td className="px-6 py-3.5 text-right font-black text-ds-brand font-mono">
+                            <td className="px-6 py-3.5 text-end font-black text-ds-brand font-mono">
                               {(sup.totalCost || 0).toFixed(3)} {currency}
                             </td>
                           </tr>

@@ -46,7 +46,7 @@ function ean13Svg(value: string): string {
 }
 
 export default function Products({ userProfile }: ProductsProps) {
-  const { t } = useTranslation('products');
+  const { t, i18n } = useTranslation('products');
   const brand = useBrand();
   const ownerId = (userProfile?.role === 'admin' ? userProfile?.uid : userProfile?.ownerId) || userProfile?.uid || auth.currentUser?.uid;
   const isAdmin = userProfile?.role === 'admin';
@@ -1438,7 +1438,9 @@ export default function Products({ userProfile }: ProductsProps) {
                     onSerialNumberChange={serialNumber => setFormData(current => ({ ...current, serialNumber }))}
                     onProductTypesChange={(productTypes: ProductAttributeType[]) => {
                       if (!ownerId) {
-                        setErrorMsg(t('ui.storeIdMissing'));
+                        setErrorMsg(t('ui.storeIdMissing', {
+                          shopName: brand.storeName || (i18n.resolvedLanguage?.startsWith('ar') ? 'بوتيك' : 'Boutique'),
+                        }));
                         return;
                       }
                       setStoreSettings(current => current ? { ...current, productAttributeTypes: productTypes } : current);
@@ -2013,7 +2015,7 @@ export default function Products({ userProfile }: ProductsProps) {
                               </div>
                               <div className="flex items-center gap-3">
                                 <span className="text-ds-text-muted">
-                                  {m.date ? m.date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
+                                  {m.date ? m.date.toLocaleDateString(getDateLocale(), { numberingSystem: 'latn', day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'}
                                 </span>
                                 <span className={cn(
                                   "font-black tabular-nums",

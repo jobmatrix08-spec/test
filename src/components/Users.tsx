@@ -111,7 +111,7 @@ export default function Users({ userProfile }: UsersProps) {
     permissions: PermissionMap,
     setPermissions: (next: PermissionMap) => void,
   ) => (
-    <div className="ml-3 space-y-3 border-l-2 border-ds-border pl-3">
+    <div className="ms-3 space-y-3 border-s-2 border-ds-border ps-3">
       {(['pieces', 'products', 'reparation', 'clients'] as const)
         .filter(menuId => menus.includes(menuId))
         .map(menuId => (
@@ -730,7 +730,7 @@ export default function Users({ userProfile }: UsersProps) {
 
       {success && (
         <Badge variant="success" role="status" className="min-h-0 rounded-ds-md p-4 text-sm">
-          <CheckCircle2 className="mr-2 h-4 w-4 shrink-0" />
+          <CheckCircle2 className="me-2 h-4 w-4 shrink-0" />
           {success}
         </Badge>
       )}
@@ -750,7 +750,7 @@ export default function Users({ userProfile }: UsersProps) {
           <EmptyState icon={<UsersIcon className="h-12 w-12" />} title={t('table.empty')} />
         ) : (
           <div className="overflow-x-auto">
-            <table className="responsive-card-table w-full text-left border-collapse">
+            <table className="responsive-card-table w-full text-start border-collapse">
               <thead className="bg-ds-surface-2">
                 <tr className="border-b border-ds-border">
                   <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-ds-muted">{t('table.userId')}</th>
@@ -759,7 +759,7 @@ export default function Users({ userProfile }: UsersProps) {
                   <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-ds-muted">{t('roles.label')}</th>
                   <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-ds-muted">{t('table.visibleMenus')}</th>
                   <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-ds-muted">{t('table.status')}</th>
-                  <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-ds-muted">{t('table.actions')}</th>
+                  <th className="px-6 py-4 text-end text-xs font-bold uppercase tracking-wider text-ds-muted">{t('table.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ds-border">
@@ -774,7 +774,7 @@ export default function Users({ userProfile }: UsersProps) {
                   return (
                     <tr key={profile.uid} className={cn(
                       "group transition-colors hover:bg-ds-surface-2",
-                      isSelf && "border-l-2 border-ds-brand bg-ds-brand-soft/50"
+                      isSelf && "border-s-2 border-ds-brand bg-ds-brand-soft/50"
                     )}>
                       {/* Left Block: Avatar and Email/UID info */}
                       <td data-label={t('table.userId')} className="py-4 px-6">
@@ -904,7 +904,7 @@ export default function Users({ userProfile }: UsersProps) {
                       </td>
 
                       {/* Combined Actions: Edit, Toggle Status, Delete */}
-                      <td data-label={t('table.actions')} className="py-4 px-6 text-right">
+                      <td data-label={t('table.actions')} className="py-4 px-6 text-end">
                         {isSelf ? (
                           <Badge variant="info" className="min-h-0 gap-1.5 rounded-ds-md px-3 py-1.5 uppercase tracking-wider">
                             <Shield className="h-4 w-4" />
@@ -1097,7 +1097,7 @@ export default function Users({ userProfile }: UsersProps) {
                         key={menu.id}
                         onClick={() => { if (roleInput !== 'technician' || TECHNICIAN_MENUS.includes(menu.id)) handleToggleMenuSelection(menu.id); }}
                         className={cn(
-                          "flex min-w-0 items-start gap-2.5 rounded-ds-md border p-3 text-left transition-colors hover:bg-ds-surface-2",
+                          "flex min-w-0 items-start gap-2.5 rounded-ds-md border p-3 text-start transition-colors hover:bg-ds-surface-2",
                           isChecked 
                             ? "border-ds-brand/30 bg-ds-brand-soft text-ds-brand"
                             : "border-ds-border bg-ds-surface text-ds-text"
@@ -1272,7 +1272,7 @@ export default function Users({ userProfile }: UsersProps) {
                         key={menu.id}
                         onClick={() => { if (editRole !== 'technician' || TECHNICIAN_MENUS.includes(menu.id)) handleToggleEditMenuSelection(menu.id); }}
                         className={cn(
-                          "flex min-w-0 items-start gap-2.5 rounded-ds-md border p-3 text-left transition-colors hover:bg-ds-surface-2",
+                          "flex min-w-0 items-start gap-2.5 rounded-ds-md border p-3 text-start transition-colors hover:bg-ds-surface-2",
                           isChecked 
                             ? "border-ds-brand/30 bg-ds-brand-soft text-ds-brand"
                             : "border-ds-border bg-ds-surface text-ds-text"

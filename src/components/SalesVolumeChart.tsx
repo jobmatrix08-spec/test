@@ -23,6 +23,7 @@ import {
   Activity
 } from 'lucide-react';
 import { Card } from './ui';
+import { getDateLocale } from '../i18n/format';
 
 interface SalesVolumeChartProps {
   sales: Sale[];
@@ -65,8 +66,8 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
       const dateKey = `${year}-${month}-${day}`;
 
       const isToday = i === 0;
-      const dayName = d.toLocaleDateString('fr-FR', { weekday: 'short' });
-      const dayFormatted = d.toLocaleDateString('fr-FR', { 
+      const dayName = d.toLocaleDateString(getDateLocale(), { weekday: 'short' });
+      const dayFormatted = d.toLocaleDateString(getDateLocale(), {
         weekday: 'short', 
         day: 'numeric', 
         month: 'short' 
@@ -75,7 +76,7 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
       days.push({
         dateKey,
         dayLabel: isToday ? "Aujourd'hui" : dayName.charAt(0).toUpperCase() + dayName.slice(1),
-        fullDateLabel: isToday ? `Aujourd'hui (${d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })})` : dayFormatted,
+        fullDateLabel: isToday ? `Aujourd'hui (${d.toLocaleDateString(getDateLocale(), { day: 'numeric', month: 'short' })})` : dayFormatted,
         volume: 0,
         revenue: 0,
         profit: 0,

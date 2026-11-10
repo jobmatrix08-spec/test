@@ -323,7 +323,7 @@ export function StartupMiniPlayer() {
   const { config, audioAllowed, audioPlaying, muted, toggleAudio, toggleMute } = useStartup();
   if (!config.enabled || !audioAllowed || !isDirectAudioUrl(config.audioUrl || '')) return null;
   return (
-    <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full border border-ds-border bg-ds-surface px-2 py-1 shadow-ds-md backdrop-blur">
+    <div className="fixed bottom-4 end-4 z-40 flex items-center gap-2 rounded-full border border-ds-border bg-ds-surface px-2 py-1 shadow-ds-md backdrop-blur">
       <button className="rounded-full p-2 text-ds-brand hover:bg-ds-brand-soft" onClick={toggleAudio} aria-label={audioPlaying ? 'إيقاف الصوت' : 'تشغيل الصوت'}>
         {audioPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </button>

@@ -168,7 +168,7 @@ export default function Expenses({ userProfile }: { userProfile: UserProfile | n
         title={t('title')}
         description={t('description')}
         actions={<div className="flex min-w-0 flex-wrap items-center gap-3">
-          <Card className="px-5 py-3 text-right">
+          <Card className="px-5 py-3 text-end">
             <p className="text-xs font-bold uppercase tracking-wider text-ds-text-muted">
               {period === 'all' ? t('allExpensesTotal') : t('monthExpensesTotal')}
             </p>
@@ -221,7 +221,7 @@ export default function Expenses({ userProfile }: { userProfile: UserProfile | n
       <Card className="min-w-0 overflow-hidden p-0">
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-b border-ds-border p-4">
           <div className="relative min-w-0 flex-1 sm:min-w-52">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-muted" />
+            <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-muted" />
             <Input value={search} onChange={event => setSearch(event.target.value)} placeholder={t('search')} className="ps-9" />
           </div>
           <label className="flex min-h-ds-touch-target items-center gap-2 rounded-ds-md border border-ds-border px-3 text-sm font-semibold text-ds-text">
@@ -237,7 +237,7 @@ export default function Expenses({ userProfile }: { userProfile: UserProfile | n
               <EmptyState icon={<CircleDollarSign className="h-9 w-9" />} title={t('empty')} />
           ) : (
             <div className="overflow-x-auto">
-              <table className="responsive-card-table w-full text-left text-sm">
+              <table className="responsive-card-table w-full text-start text-sm">
                 <thead className="bg-ds-surface-2 text-xs uppercase tracking-wider text-ds-muted">
                   <tr><th className="px-4 py-3">{t('descriptionDate')}</th><th className="px-4 py-3">{t('descriptionLabel')}</th><th className="px-4 py-3">{t('descriptionCategory')}</th><th className="px-4 py-3">{t('descriptionMode')}</th><th className="px-4 py-3 text-end">{t('amountColumn')}</th></tr>
                 </thead>
