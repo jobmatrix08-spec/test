@@ -122,7 +122,7 @@
     "restoreCategoriesConfirm": "تحب ترجع الأصناف الأصلية؟",
     "createCategory": "⚠️ اعمل صنف قبل",
     "chooseCategory": "-- اختار صنف --",
-    "storeIdMissing": "ما نجّمش نسجّل النماذج من غير معرّف الحانوت.",
+    "storeIdMissing": "ما نجّمش نسجّل النماذج من غير معرّف {{shopName}}.",
     "attributesSaveFailed": "ما نجّمش نسجّل نماذج الخصائص.",
     "restockFailed": "ما نجّمش نزوّد الستوك. عاود جرّب."
   },

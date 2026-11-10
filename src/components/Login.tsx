@@ -11,8 +11,9 @@ import { useTranslation } from 'react-i18next';
 import LanguageSelector from '../i18n/LanguageSelector';
 
 export default function Login({ initialMessage = '' }: { initialMessage?: string }) {
-  const { t } = useTranslation('auth');
+  const { t, i18n } = useTranslation('auth');
   const { storeName } = useBrand();
+  const shopName = storeName.trim() || (i18n.resolvedLanguage?.startsWith('ar') ? 'بوتيك' : 'Boutique');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
@@ -141,7 +142,7 @@ export default function Login({ initialMessage = '' }: { initialMessage?: string
           <BrandLogo variant="full" className="mb-5 justify-center" />
           <h1 className="sr-only">{storeName}</h1>
           <p className="mt-2 text-xs font-medium text-ds-muted sm:text-sm">
-            {t('subtitle')}
+            {t('subtitle', { shopName })}
           </p>
         </div>
 

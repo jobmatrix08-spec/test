@@ -2,7 +2,7 @@
   "language": {
     "label": "اللغة",
     "french": "Français",
-    "arabic": "العربية التونسية",
+    "arabic": "العربية",
     "saveError": "ما نجّمتش نسجّل اللغة في حسابك."
   },
   "cashOpen": "الكاسة محلولة",
@@ -70,5 +70,8 @@
   "entries_one": "{{count}} مدخل",
   "entries_other": "{{count}} مداخل",
   "empty": "ما فما حتى نتيجة.",
-  "error": "صار خطأ."
+  "error": "صار خطأ.",
+  "unexpectedTitle": "صار مشكل!",
+  "refreshPage": "عاود حمّل الصفحة",
+  "updateAvailable": "فما نسخة جديدة."
 }

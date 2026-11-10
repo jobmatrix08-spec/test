@@ -42,6 +42,7 @@ import { useTranslation } from 'react-i18next';
 import LanguageSelector from './i18n/LanguageSelector';
 import { setAppLanguage, type AppLanguage } from './i18n/language';
 import { formatDateTime, getDateLocale } from './i18n/format';
+import i18n from './i18n';
 export { hasMenuAccess } from './lib/permissions';
 
 const NAV_SECTIONS = [
@@ -176,11 +177,12 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 
   render() {
     if (this.state.hasError) {
-      let displayError = "Une erreur inattendue est survenue.";
+      const errorT = i18n.getFixedT(i18n.resolvedLanguage || 'fr', 'common');
+      let displayError = errorT('error');
       try {
         const parsed = JSON.parse(this.state.error.message);
         if (parsed.error) displayError = parsed.error;
-      } catch (e) {
+      } catch {
         displayError = this.state.error?.message || displayError;
       }
 
@@ -190,14 +192,14 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
               <AlertTriangle className="w-8 h-8" />
             </div>
-            <h1 className="text-2xl font-black text-gray-900 mb-2">Oups !</h1>
+            <h1 className="text-2xl font-black text-gray-900 mb-2">{errorT('unexpectedTitle')}</h1>
             <p className="text-gray-600 mb-8">{displayError}</p>
             <button
               onClick={() => window.location.reload()}
               className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-600/10"
             >
               <RefreshCcw className="w-5 h-5" />
-              Actualiser la page
+              {errorT('refreshPage')}
             </button>
           </div>
         </div>
@@ -755,8 +757,12 @@ export default function App() {
             setLoading(false);
           } else {
             const repairedProfile = { ...profileData };
-            if (repairedProfile.preferredLanguage === 'fr' || repairedProfile.preferredLanguage === 'ar') {
-              void setAppLanguage(repairedProfile.preferredLanguage);
+            if (typeof repairedProfile.preferredLanguage === 'string') {
+              void setAppLanguage(
+                repairedProfile.preferredLanguage === 'ar' || repairedProfile.preferredLanguage === 'fr'
+                  ? repairedProfile.preferredLanguage
+                  : 'fr',
+              );
             }
             if (repairedProfile.role === 'admin' && repairedProfile.ownerId !== repairedProfile.uid) {
               repairedProfile.ownerId = repairedProfile.uid;
@@ -807,8 +813,12 @@ export default function App() {
           }
         }
 
-        if (profileData.preferredLanguage === 'fr' || profileData.preferredLanguage === 'ar') {
-          void setAppLanguage(profileData.preferredLanguage);
+        if (typeof profileData.preferredLanguage === 'string') {
+          void setAppLanguage(
+            profileData.preferredLanguage === 'ar' || profileData.preferredLanguage === 'fr'
+              ? profileData.preferredLanguage
+              : 'fr',
+          );
         }
         setAuthMessage('');
         setUser(firebaseUser);
@@ -912,7 +922,7 @@ export default function App() {
                 <Menu className="h-5 w-5" />
               </button>
               <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                <BrandLogo variant="icon" className="h-9 w-9 shrink-0 rounded-xl p-2" />
+                <BrandLogo variant="full" className="max-w-[min(9rem,32vw)] shrink-0" />
                 <div className="min-w-0">
                   <CurrentPageTitle userProfile={userProfile} />
                   {canAccessCashSession && <p className="flex items-center gap-1.5 truncate text-[10px] font-semibold text-ds-muted lg:hidden">
@@ -1100,9 +1110,9 @@ export default function App() {
           </main>
 
           {updateAvailable && (
-            <div role="status" className="fixed bottom-4 left-1/2 z-[120] flex w-[min(94vw,34rem)] -translate-x-1/2 items-center justify-between gap-3 rounded-ds-lg border border-ds-border bg-ds-surface p-3 shadow-ds-md">
-              <p className="text-sm font-semibold text-ds-text">Nouvelle version disponible, actualiser</p>
-              <button type="button" onClick={() => window.location.reload()} className="min-h-11 shrink-0 rounded-ds-md bg-ds-brand px-4 text-xs font-bold text-ds-brand-contrast hover:bg-ds-brand-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand">Actualiser</button>
+            <div role="status" className="fixed bottom-4 start-1/2 z-[120] flex w-[min(94vw,34rem)] -translate-x-1/2 items-center justify-between gap-3 rounded-ds-lg border border-ds-border bg-ds-surface p-3 shadow-ds-md">
+              <p className="text-sm font-semibold text-ds-text">{commonT('updateAvailable')}</p>
+              <button type="button" onClick={() => window.location.reload()} className="min-h-11 shrink-0 rounded-ds-md bg-ds-brand px-4 text-xs font-bold text-ds-brand-contrast hover:bg-ds-brand-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand">{commonT('refreshPage')}</button>
             </div>
           )}
           {!isOnline && <OfflineBlocker />}

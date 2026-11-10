@@ -22,6 +22,6 @@ export async function setAppLanguage(language: AppLanguage): Promise<void> {
 
 export function applyDocumentLanguage(language: string): void {
   const isArabic = language.startsWith('ar');
-  document.documentElement.lang = isArabic ? 'ar-TN' : 'fr-TN';
+  document.documentElement.lang = isArabic ? 'ar' : 'fr';
   document.documentElement.dir = isArabic ? 'rtl' : 'ltr';
 }

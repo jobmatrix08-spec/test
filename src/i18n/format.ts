@@ -2,8 +2,8 @@ import i18n from 'i18next';
 
 export type DocumentLanguage = 'fr' | 'ar' | 'both';
 
-export function getDateLocale(): 'fr-TN' | 'ar-TN' {
-  return i18n.resolvedLanguage?.startsWith('ar') ? 'ar-TN' : 'fr-TN';
+export function getDateLocale(): 'fr-TN-u-nu-latn' | 'ar-TN-u-nu-latn' {
+  return i18n.resolvedLanguage?.startsWith('ar') ? 'ar-TN-u-nu-latn' : 'fr-TN-u-nu-latn';
 }
 
 export function formatDateTime(date: Date, options: Intl.DateTimeFormatOptions = {}): string {
@@ -25,4 +25,11 @@ export function formatDocumentDate(date: Date, language: DocumentLanguage = 'fr'
 
   if (language === 'both') return `${formatForLocale('fr-TN')} / ${formatForLocale('ar-TN')}`;
   return formatForLocale(language === 'ar' ? 'ar-TN' : 'fr-TN');
+}
+
+export function formatNumber(value: number, options: Intl.NumberFormatOptions = {}): string {
+  return new Intl.NumberFormat(getDateLocale(), {
+    numberingSystem: 'latn',
+    ...options,
+  }).format(value);
 }

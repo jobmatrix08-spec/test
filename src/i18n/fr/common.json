@@ -2,7 +2,7 @@
   "language": {
     "label": "Langue",
     "french": "Français",
-    "arabic": "العربية التونسية",
+    "arabic": "العربية",
     "saveError": "La langue n’a pas pu être enregistrée dans votre compte."
   },
   "cashOpen": "Caisse ouverte",
@@ -70,5 +70,8 @@
   "entries_one": "{{count}} entrée",
   "entries_other": "{{count}} entrées",
   "empty": "Aucun résultat.",
-  "error": "Une erreur est survenue."
+  "error": "Une erreur est survenue.",
+  "unexpectedTitle": "Oups !",
+  "refreshPage": "Actualiser la page",
+  "updateAvailable": "Nouvelle version disponible."
 }

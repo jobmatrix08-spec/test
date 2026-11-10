@@ -123,7 +123,7 @@
     "restoreCategoriesConfirm": "Voulez-vous restaurer les catégories de base par défaut ?",
     "createCategory": "⚠️ Veuillez créer une catégorie",
     "chooseCategory": "-- Choisir une catégorie --",
-    "storeIdMissing": "Impossible d’enregistrer les modèles sans identifiant de boutique.",
+    "storeIdMissing": "Impossible d’enregistrer les modèles sans identifiant de {{shopName}}.",
     "attributesSaveFailed": "Impossible d’enregistrer les modèles de caractéristiques.",
     "restockFailed": "Échec de l'approvisionnement. Réessayez."
   },
