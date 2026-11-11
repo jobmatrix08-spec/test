@@ -3,8 +3,11 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { DARK_THEME_COLOR, ThemeProvider } from './components/ThemeProvider';
 import { BrandProvider } from './components/BrandProvider';
+import './i18n';
 import './index.css';
 import '@fontsource-variable/inter';
+import '@fontsource/noto-sans-arabic/400.css';
+import '@fontsource/noto-sans-arabic/700.css';
 import { APP_BRAND_COLORS } from './config/brand';
 
 // Purge any stale custom_session from obsolete runs
@@ -17,7 +20,11 @@ try {
     }
   }
 } catch {
-  localStorage.removeItem('custom_session');
+  try {
+    localStorage.removeItem('custom_session');
+  } catch (error) {
+    console.warn('Unable to remove the obsolete session from local storage.', error);
+  }
 }
 
 const rootEl = document.getElementById('root');

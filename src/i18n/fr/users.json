@@ -1,0 +1,180 @@
+{
+  "page": {
+    "title": "Gestion des utilisateurs",
+    "description": "Gérez les accès détaillés et modifiez les profils de l’équipe en temps réel."
+  },
+  "checking": "Vérification…",
+  "testServer": "Tester le serveur",
+  "createUser": "Créer un utilisateur",
+  "cancel": "Annuler",
+  "confirm": "Confirmer",
+  "editing": "Modification…",
+  "deleting": "Suppression…",
+  "loadingUsers": "Chargement des utilisateurs",
+  "roles": {
+    "label": "Rôle",
+    "custom": "Compte à menus personnalisés",
+    "cashierRepair": "Caissier + Réparation",
+    "technician": "Technicien (Réparation et pièces)",
+    "admin": "Administrateur (Accès intégral)",
+    "adminShort": "Administrateur",
+    "technicianShort": "Technicien",
+    "cashierShort": "Caissier"
+  },
+  "createModal": {
+    "title": "Ajouter un utilisateur",
+    "fullName": "Nom complet",
+    "nameExample": "Ex. : Jean Dupont",
+    "loginEmail": "Adresse e-mail de connexion",
+    "emailExample": "nom@exemple.com",
+    "password": "Mot de passe (minimum 6 caractères)",
+    "passwordPlaceholder": "Mot de passe à définir dans Firebase Auth",
+    "allowedMenus": "Menus latéraux autorisés",
+    "technicianHelp": "Le technicien gère réparations, pièces, articles/services et clients, sans prix d’achat ni encaissement.",
+    "menuHelp": "Configurez les sections auxquelles cet utilisateur aura accès :",
+    "creating": "Création en cours...",
+    "submit": "Créer le compte"
+  },
+  "editModal": {
+    "title": "Modifier l'utilisateur",
+    "accountStatus": "Statut du compte",
+    "save": "Enregistrer",
+    "passwordResetHelp": "Le changement de mot de passe se fait via le lien sécurisé envoyé à cette adresse.",
+    "statusActive": "Actif (accès autorisé)",
+    "statusBanned": "Bloqué / banni (accès refusé)",
+    "allowedMenus": "Modifier les menus autorisés",
+    "allowedMenusHelp": "Cochez les sections visibles dans la barre latérale pour cet utilisateur :"
+  },
+  "changePassword": {
+    "title": "Changer le mot de passe",
+    "newPassword": "Nouveau mot de passe",
+    "confirmPassword": "Confirmer le nouveau mot de passe"
+  },
+  "securityCode": {
+    "label": "Code de sécurité (4 chiffres)",
+    "placeholder": "Ex. : 1234 (laisser vide pour aucun code)",
+    "help": "Ce code sera demandé à cet utilisateur avant toute modification ou suppression. Laissez vide pour ne définir aucun code."
+  },
+  "delete": {
+    "title": "Supprimer définitivement",
+    "confirmation": "Êtes-vous sûr ? Cette action est définitive : le compte et l'accès de l'utilisateur seront supprimés.",
+    "typeEmail": "Saisissez l’e-mail",
+    "confirmLabel": "Confirmation de suppression",
+    "lastAdmin": "Impossible de supprimer le dernier administrateur du magasin."
+  },
+  "table": {
+    "empty": "Aucun utilisateur trouvé",
+    "userId": "Utilisateur & identifiant",
+    "login": "Coordonnées de connexion",
+    "securityCode": "Code sécurité",
+    "visibleMenus": "Menus visibles",
+    "status": "Statut",
+    "actions": "Actions",
+    "noName": "Sans nom",
+    "you": "Vous",
+    "ownerId": "Propriétaire ID",
+    "undefined": "Non défini",
+    "creator": "Créateur",
+    "email": "E-mail",
+    "copyEmail": "Copier l'adresse e-mail",
+    "hideCode": "Masquer le code de sécurité",
+    "showCode": "Afficher le code de sécurité",
+    "hide": "Masquer",
+    "show": "Afficher"
+  },
+  "status": {
+    "inactive": "Inactif",
+    "active": "Actif",
+    "primaryAccount": "Compte principal"
+  },
+  "permissions": {
+    "flags": {
+      "viewBuyPrice": "Voir le prix d’achat",
+      "editSellPrice": "Modifier le prix de vente",
+      "addEdit": "Ajouter / modifier (nom, catégorie, marque, modèles…)",
+      "adjustStock": "Ajuster le stock (−/+, + À STOCK)",
+      "delete": "Supprimer",
+      "viewCosts": "Voir les coûts et le bénéfice",
+      "showScreen": "Afficher l’écran d’ouverture (Coran & Adhkar)",
+      "playAudio": "Lecture audio à l’ouverture"
+    }
+  },
+  "actions": {
+    "editProfile": "Modifier ce profil",
+    "edit": "Modifier",
+    "changePassword": "Changer le mot de passe",
+    "sendResetLink": "Envoyer un lien de réinitialisation",
+    "unblockUser": "Débloquer cet utilisateur",
+    "blockUser": "Bloquer cet utilisateur",
+    "unblock": "Débloquer",
+    "block": "Bloquer",
+    "deleteUser": "Supprimer définitivement l'utilisateur",
+    "deletePermanently": "Supprimer définitivement"
+  },
+  "permissionMigration": {
+    "preview": "Prévisualiser la migration des permissions",
+    "previewReady": "Nombre de comptes à migrer : {{count}}. Aucun document n’a été modifié.",
+    "success": "Migration des permissions terminée.",
+    "confirmTitle": "Confirmer la migration",
+    "confirmDescription": "Les permissions des comptes prévisualisés seront mises à jour. Une sauvegarde JSON a été téléchargée.",
+    "accountsWithoutPermissions_one": "{{count}} compte sans permissions explicites.",
+    "accountsWithoutPermissions_other": "{{count}} comptes sans permissions explicites.",
+    "downloadBackup": "Télécharger la sauvegarde JSON",
+    "running": "Migration…",
+    "confirm": "Confirmer la migration"
+  },
+  "messages": {
+    "resetLinkSent": "Lien de réinitialisation envoyé à {{email}}.",
+    "passwordChanged": "Mot de passe modifié pour {{email}}.",
+    "userCreatedResetSent": "Utilisateur créé. Son lien de définition du mot de passe a été envoyé.",
+    "userCreatedResetFailed": "Utilisateur créé, mais le lien de réinitialisation n’a pas pu être envoyé. Renvoyez-le depuis sa ligne.",
+    "userUpdated": "Utilisateur {{email}} mis à jour avec succès.",
+    "userBlocked": "L’utilisateur {{email}} est désormais bloqué.",
+    "userUnblocked": "L’utilisateur {{email}} est désormais actif.",
+    "userDeleted": "Utilisateur {{email}} supprimé."
+  },
+  "errors": {
+    "permissionMigration": "Échec de la migration des permissions : {{details}}",
+    "copyFailed": "Impossible de copier les informations de l’utilisateur. {{details}}",
+    "resetLinkFailed": "Impossible d’envoyer le lien de réinitialisation. {{details}}",
+    "passwordMinLength": "Le mot de passe doit contenir au moins 8 caractères.",
+    "passwordMismatch": "La confirmation ne correspond pas au nouveau mot de passe.",
+    "passwordChangeFailed": "Impossible de modifier le mot de passe. {{details}}",
+    "nameRequired": "Le nom est obligatoire (2 caractères minimum).",
+    "invalidEmail": "Veuillez saisir une adresse e-mail valide.",
+    "createPasswordMinLength": "Le mot de passe doit contenir au moins 6 caractères.",
+    "menuRequired": "Veuillez sélectionner au moins un droit d’accès.",
+    "emailAlreadyExists": "Cette adresse e-mail est déjà utilisée.",
+    "userCheckFailed": "Erreur de connexion lors de la vérification de l’utilisateur.",
+    "authCreateFailed": "La création du compte d’authentification a échoué.",
+    "authCreateFailedWithDetails": "La création du compte d’authentification a échoué. Détails : {{details}}",
+    "authEmailInUse": "Cette adresse e-mail est déjà utilisée dans Firebase Authentication.",
+    "authInvalidEmail": "L’adresse e-mail saisie est invalide pour Firebase Authentication.",
+    "userSaveFailed": "Impossible d’enregistrer l’utilisateur en base : {{details}}",
+    "permissionDenied": "Permission refusée",
+    "loginEmailImmutable": "L’adresse de connexion ne peut pas être modifiée depuis ce formulaire. Envoyez un lien de réinitialisation à l’utilisateur.",
+    "securityCodeInvalid": "Le code de sécurité doit contenir exactement 4 chiffres ou être laissé vide.",
+    "userUpdateFailed": "Impossible de mettre à jour l’utilisateur. {{details}}",
+    "deleteOwnAccount": "Vous ne pouvez pas supprimer votre propre compte administrateur.",
+    "userDeleteFailed": "Impossible de supprimer cet utilisateur. {{details}}"
+  },
+  "apiHealth": {
+    "available": "Serveur API accessible.",
+    "failed": "Vérification du serveur impossible.",
+    "failedWithDetails": "Vérification du serveur impossible : {{details}}"
+  },
+  "menus": {
+    "dashboard": { "name": "Tableau de bord", "shortName": "Tableau", "description": "Statistiques et graphiques généraux" },
+    "reparation": { "name": "Partie Réparation", "shortName": "Réparation", "description": "Suivi et gestion des réparations" },
+    "pieces": { "name": "Pièces détachées", "shortName": "Pièces", "description": "Stock visible par le caissier ; gestion complète pour le technicien" },
+    "pos": { "name": "Vente (POS / Caisse)", "shortName": "Vente", "description": "Caisse, vente directe et paniers" },
+    "products": { "name": "Articles / Services", "shortName": "Articles", "description": "Lecture pour le caissier ; création et gestion pour le technicien" },
+    "clients": { "name": "Gestion des clients", "shortName": "Clients", "description": "Liste des clients et suivi des dettes" },
+    "sales": { "name": "Historique des ventes", "shortName": "Ventes", "description": "Suivi et recherche des ventes" },
+    "invoices": { "name": "Facture", "shortName": "Facture", "description": "Édition et gestion des factures" },
+    "notes": { "name": "Mémos & Notes", "shortName": "Mémos", "description": "Ajouter et planifier des mémos" },
+    "settings": { "name": "Paramètres du magasin", "shortName": "Paramètres", "description": "Configurations de base" },
+    "users": { "name": "Gestion des utilisateurs", "shortName": "Utilisateurs", "description": "Accès restreint pour gérer l'équipe" },
+    "startup": { "name": "Coran & Adhkar", "shortName": "Coran", "description": "Écran d’accueil et récitation audio" }
+  }
+}

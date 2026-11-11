@@ -7,19 +7,12 @@ export type MessageTemplateKey =
 export type MessageTemplateSet = Record<MessageTemplateKey, string>;
 export type MessageChannel = 'WhatsApp' | 'SMS';
 
-export const MESSAGE_TEMPLATE_OPTIONS: Array<{ key: MessageTemplateKey; label: string }> = [
-  { key: 'appareil_recu', label: 'Appareil reçu' },
-  { key: 'en_attente_piece', label: 'En attente de pièce' },
-  { key: 'repare_pret', label: 'Réparé / prêt' },
-  { key: 'rappel_paiement', label: 'Rappel de paiement' },
+export const MESSAGE_TEMPLATE_KEYS: MessageTemplateKey[] = [
+  'appareil_recu',
+  'en_attente_piece',
+  'repare_pret',
+  'rappel_paiement',
 ];
-
-export const DEFAULT_MESSAGE_TEMPLATES: MessageTemplateSet = {
-  appareil_recu: 'Bonjour {client}, nous avons reçu votre appareil {appareil} (réparation n° {numero}) chez {nom_magasin}.',
-  en_attente_piece: 'Bonjour {client}, la réparation de votre appareil {appareil} (n° {numero}) est en attente de pièce chez {nom_magasin}.',
-  repare_pret: 'Bonjour {client}, votre appareil {appareil} (réparation n° {numero}) est réparé et prêt chez {nom_magasin}. Reste à payer : {montant_restant}.',
-  rappel_paiement: 'Bonjour {client}, il reste {montant_restant} à régler chez {nom_magasin}. Merci.',
-};
 
 export function normalizeMessagePhone(value: string, countryCode = '216'): string {
   const raw = value.trim();

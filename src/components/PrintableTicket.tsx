@@ -1,5 +1,4 @@
 import React, { forwardRef, useEffect, useState } from 'react';
-import { format } from 'date-fns';
 import { Invoice, StoreSettings } from '../types';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db, auth } from '../firebase';
@@ -7,6 +6,7 @@ import { getInvoiceTotals } from '../lib/financial';
 import { formatProductDetails } from '../config/productAttributes';
 import { auditName } from '../lib/audit';
 import { useBrand } from './BrandProvider';
+import { formatDocumentDate, formatNumber } from '../i18n/format';
 
 interface Props {
   invoice: Invoice;
@@ -30,20 +30,17 @@ export const PrintableTicket = forwardRef<HTMLDivElement, Props>(({ invoice, own
     return unsubscribe;
   }, [ownerId, invoice.ownerId]);
 
-  let dateStr = '';
-  try {
-    if (invoice.date && typeof invoice.date.toDate === 'function') {
-      dateStr = format(invoice.date.toDate(), 'dd/MM/yyyy HH:mm');
-    } else if (invoice.date instanceof Date) {
-      dateStr = format(invoice.date, 'dd/MM/yyyy HH:mm');
-    } else if (typeof invoice.date === 'string') {
-      dateStr = format(new Date(invoice.date), 'dd/MM/yyyy HH:mm');
-    } else {
-      dateStr = format(new Date(), 'dd/MM/yyyy HH:mm');
-    }
-  } catch (e) {
-    dateStr = format(new Date(), 'dd/MM/yyyy HH:mm');
-  }
+  const invoiceDate = invoice.date && typeof invoice.date.toDate === 'function'
+    ? invoice.date.toDate()
+    : invoice.date instanceof Date || typeof invoice.date === 'string'
+      ? new Date(invoice.date)
+      : new Date();
+  const documentLanguage = storeSettings?.documentLanguage || 'fr';
+  const date = Number.isNaN(invoiceDate.getTime()) ? new Date() : invoiceDate;
+  const dateStr = formatDocumentDate(date, documentLanguage);
+  const text = (french: string, arabic: string) => documentLanguage === 'both'
+    ? `${french} / ${arabic}`
+    : documentLanguage === 'ar' ? arabic : french;
 
   const storeName = storeSettings?.storeName || brand.storeName;
   const storeAddress = storeSettings?.address || '';
@@ -61,31 +58,31 @@ export const PrintableTicket = forwardRef<HTMLDivElement, Props>(({ invoice, own
       : '';
 
   return (
-    <div ref={ref} className="p-5 w-[80mm] mx-auto bg-white text-black font-mono text-[12px] leading-tight">
+    <div ref={ref} lang={documentLanguage === 'ar' ? 'ar' : 'fr'} dir={documentLanguage === 'ar' ? 'rtl' : 'ltr'} className="p-5 w-[80mm] mx-auto bg-white text-black font-mono text-[12px] leading-tight">
       <div className="text-center font-bold text-[16px] uppercase">{storeName}</div>
       {storeAddress && <div className="text-center">{storeAddress}</div>}
-      {storePhone && <div className="text-center">Tél: {storePhone}</div>}
+      {storePhone && <div className="text-center">{text('Tél:', 'الهاتف:')} {storePhone}</div>}
       <div className="border-t border-dashed border-black my-1"></div>
-      <div className="text-center font-bold">TICKET DE CAISSE</div>
+      <div className="text-center font-bold">{text('TICKET DE CAISSE', 'وصل خلاص')}</div>
       <div className="border-t border-dashed border-black my-1"></div>
-      <div>Date: {dateStr}</div>
-      <div>Ticket: {invoice.number}</div>
-      <div>Client: {invoice.clientName}</div>
-      {invoice.clientCode && <div>Code client: {invoice.clientCode}</div>}
-      {invoice.clientPhone && <div>Tél: {invoice.clientPhone}</div>}
-      {sellerLabel && sellerMode !== 'none' && <div style={{ color: '#000000' }}>Servi par : {sellerLabel}</div>}
+      <div>{text('Date :', 'التاريخ:')} {dateStr}</div>
+      <div>{text('Ticket :', 'الوصل:')} {invoice.number}</div>
+      <div>{text('Client :', 'الحريف:')} {invoice.clientName}</div>
+      {invoice.clientCode && <div>{text('Code client :', 'كود الحريف:')} {invoice.clientCode}</div>}
+      {invoice.clientPhone && <div>{text('Tél :', 'الهاتف:')} {invoice.clientPhone}</div>}
+      {sellerLabel && sellerMode !== 'none' && <div style={{ color: '#000000' }}>{text('Servi par :', 'باعلك:')} {sellerLabel}</div>}
       <div className="border-t border-dashed border-black my-1"></div>
       <div className="my-2 space-y-1">
         {invoice.items.map((item, index) => (
           <div key={index}>
             <div className="flex justify-between">
-              <span className="max-w-[40mm] overflow-hidden text-ellipsis whitespace-nowrap">{item.name}</span>
-              <span>{item.quantity} x {item.price.toFixed(3)}</span>
+              <span dir="auto" className="max-w-[40mm] overflow-hidden text-ellipsis whitespace-nowrap">{item.name}</span>
+              <span>{formatNumber(item.quantity)} x {formatNumber(item.price, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</span>
             </div>
             {formatProductDetails(item.attributes, item.serialNumber) && (
               <div className="text-[10px] leading-tight">{formatProductDetails(item.attributes, item.serialNumber)}</div>
             )}
-            <div className="text-right">{item.total.toFixed(3)} {currency}</div>
+            <div className="text-end">{formatNumber(item.total, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</div>
           </div>
         ))}
       </div>
@@ -93,37 +90,37 @@ export const PrintableTicket = forwardRef<HTMLDivElement, Props>(({ invoice, own
       {totals.tvaVisible && (
         <>
           <div className="flex justify-between">
-            <span>Sous-total</span>
-            <span>{totals.subtotal.toFixed(3)} {currency}</span>
+            <span>{text('Sous-total', 'المجموع قبل التخفيض')}</span>
+            <span>{formatNumber(totals.subtotal, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
           </div>
           {totals.discount > 0 && (
             <div className="flex justify-between">
-              <span>Remise</span>
-              <span>-{totals.discount.toFixed(3)} {currency}</span>
+              <span>{text('Remise', 'تخفيض')}</span>
+              <span>-{formatNumber(totals.discount, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
             </div>
           )}
           <div className="flex justify-between">
-            <span>TVA</span>
-            <span>{totals.tva.toFixed(3)} {currency}</span>
+            <span>{text('TVA', 'الأداء على القيمة المضافة')}</span>
+            <span>{formatNumber(totals.tva, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
           </div>
         </>
       )}
       <div className="flex justify-between font-bold">
-        <span>TOTAL</span>
-        <span>{totals.total.toFixed(3)} {currency}</span>
+        <span>{text('TOTAL', 'المجموع')}</span>
+        <span>{formatNumber(totals.total, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
       </div>
       <div className="flex justify-between">
-        <span>Payé</span>
-        <span>{invoice.paid.toFixed(3)} {currency}</span>
+        <span>{text('Payé', 'تخلّص')}</span>
+        <span>{formatNumber(invoice.paid, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
       </div>
       <div className="flex justify-between">
-        <span>Reste</span>
-        <span>{invoice.debt.toFixed(3)} {currency}</span>
+        <span>{text('Reste', 'الباقي')}</span>
+        <span>{formatNumber(invoice.debt, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
       </div>
       <div className="border-t border-dashed border-black my-1"></div>
       <div className="text-center mt-5 text-[10px]">
-        Merci de votre visite !<br />
-        À bientôt chez {storeName}
+        {text('Merci de votre visite !', 'يعطيك الصحة على زيارتك!')}<br />
+        {text(`À bientôt chez ${storeName}`, `مرحبا بيك ديما عند ${storeName}`)}
       </div>
     </div>
   );

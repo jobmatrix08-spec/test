@@ -45,6 +45,12 @@ import { computeExpectedCash } from '../lib/cashSessionMath';
 import type { CashSession } from '../types';
 import { slugifyAppName } from '../lib/brand';
 import { useBrand } from './BrandProvider';
+import { formatNumber, getDateLocale } from '../i18n/format';
+import { useTranslation } from 'react-i18next';
+
+const formatAmount = (value: number) => formatNumber(value, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+const formatPercent = (value: number) => formatNumber(value, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const formatCount = (value: number) => formatNumber(value, { maximumFractionDigits: 0 });
 
 // Helper component for printing high-quality A4 reports
 interface PrintableReportProps {
@@ -57,15 +63,12 @@ interface PrintableReportProps {
 }
 
 function PrintableReport({ activeModal, records, storeSettings, currency, canViewBuyPrice, canViewCosts }: PrintableReportProps) {
+  const { t } = useTranslation('dashboard');
   const brand = useBrand();
   const canViewMargin = canViewBuyPrice && canViewCosts;
-  const title = activeModal === 'revenue' ? "RAPPORT D'ACTIVITÉ : CHIFFRE D'AFFAIRES"
-    : activeModal === 'profit' ? "RAPPORT D'ACTIVITÉ : BÉNÉFICE NET (PERFORMANCE)"
-    : activeModal === 'debt' ? "RAPPORT DE TRÉSORERIE : DETTES CLIENTS"
-    : activeModal === 'stock' ? "RAPPORT D'INVENTAIRE : VALORISATION DE STOCK"
-    : "RAPPORT D'ACTIVITÉ : CRÉATIONS DE BILLETS / TRANSACTIONS";
+  const title = t(`print.title.${activeModal}`);
 
-  const printedDate = new Date().toLocaleDateString('fr-FR', {
+  const printedDate = new Date().toLocaleDateString(getDateLocale(), {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -79,11 +82,11 @@ function PrintableReport({ activeModal, records, storeSettings, currency, canVie
         <div>
           <h1 className="text-base font-bold uppercase tracking-tight text-ds-text">{storeSettings?.storeName || brand.storeName}</h1>
           {storeSettings?.address && <p className="text-[10px] text-ds-muted">{storeSettings.address}</p>}
-          {storeSettings?.phone && <p className="text-[10px] text-ds-muted">Tél: {storeSettings.phone}</p>}
+          {storeSettings?.phone && <p className="text-[10px] text-ds-muted">{t('print.phone')}: {storeSettings.phone}</p>}
         </div>
-        <div className="text-right">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-ds-text">Synthèse Historique de Caisse</h2>
-          <p className="text-[10px] text-ds-muted mt-1">Imprimé le {printedDate}</p>
+        <div className="text-end">
+          <h2 className="text-xs font-bold uppercase tracking-wider text-ds-text">{t('print.summary')}</h2>
+          <p className="text-[10px] text-ds-muted mt-1">{t('print.printedAt', { date: printedDate })}</p>
         </div>
       </div>
 
@@ -91,51 +94,51 @@ function PrintableReport({ activeModal, records, storeSettings, currency, canVie
         {title}
       </div>
 
-      <table className="w-full border-collapse text-left border border-ds-border mt-4 text-[11px]">
+      <table className="w-full border-collapse text-start border border-ds-border mt-4 text-[11px]">
         <thead>
           <tr className="bg-ds-surface-2 uppercase font-black text-ds-text border-b border-ds-border">
             {activeModal === 'stock' ? (
               <>
-                <th className="py-2 px-3 border border-ds-border">Désignation</th>
-                <th className="py-2 px-3 text-center border border-ds-border">Stock Dispo</th>
-                {canViewBuyPrice && <th className="py-2 px-3 text-right border border-ds-border">P.A. Unit</th>}
-                <th className="py-2 px-3 text-right border border-ds-border">P.V. Unit</th>
-                {canViewBuyPrice && <th className="py-2 px-3 text-right border border-ds-border">Total Achat</th>}
-                <th className="py-2 px-3 text-right border border-ds-border bg-ds-surface-2 font-bold">Total Vente (Revenus)</th>
-                {canViewCosts && <th className="py-2 px-3 text-right border border-ds-border font-bold">Marge Théorique</th>}
+                <th className="py-2 px-3 border border-ds-border">{t('print.columns.designation')}</th>
+                <th className="py-2 px-3 text-center border border-ds-border">{t('print.columns.stockAvailable')}</th>
+                {canViewBuyPrice && <th className="py-2 px-3 text-end border border-ds-border">{t('print.columns.unitPurchasePrice')}</th>}
+                <th className="py-2 px-3 text-end border border-ds-border">{t('print.columns.unitSalePrice')}</th>
+                {canViewBuyPrice && <th className="py-2 px-3 text-end border border-ds-border">{t('print.columns.totalPurchase')}</th>}
+                <th className="py-2 px-3 text-end border border-ds-border bg-ds-surface-2 font-bold">{t('print.columns.totalSalesRevenue')}</th>
+                {canViewCosts && <th className="py-2 px-3 text-end border border-ds-border font-bold">{t('print.columns.theoreticalMargin')}</th>}
               </>
             ) : (
-              <th className="py-2 px-3 border border-ds-border">Date de l'Activité</th>
+              <th className="py-2 px-3 border border-ds-border">{t('print.columns.activityDate')}</th>
             )}
             {activeModal === 'revenue' && (
               <>
-                <th className="py-2 px-3 text-center border border-ds-border">Nb de Ventes</th>
-                <th className="py-2 px-3 text-right border border-ds-border">Total Encaissé</th>
-                <th className="py-2 px-3 text-right border border-ds-border">Dettes Générées</th>
-                <th className="py-2 px-3 text-right border border-ds-border bg-ds-surface-2 font-bold">Chiffre d'Affaires</th>
+                <th className="py-2 px-3 text-center border border-ds-border">{t('print.columns.salesCount')}</th>
+                <th className="py-2 px-3 text-end border border-ds-border">{t('print.columns.cashCollected')}</th>
+                <th className="py-2 px-3 text-end border border-ds-border">{t('print.columns.generatedDebts')}</th>
+                <th className="py-2 px-3 text-end border border-ds-border bg-ds-surface-2 font-bold">{t('print.columns.revenue')}</th>
               </>
             )}
             {activeModal === 'profit' && (
               <>
-                <th className="py-2 px-3 text-right border border-ds-border">Chiffre d'Affaires</th>
-                <th className="py-2 px-3 text-right border border-ds-border">Coûts et dépenses</th>
-                <th className="py-2 px-3 text-center border border-ds-border">Marge Ratio (%)</th>
-                <th className="py-2 px-3 text-right border border-ds-border bg-ds-surface-2 font-bold">Bénéfice Net</th>
+                <th className="py-2 px-3 text-end border border-ds-border">{t('print.columns.revenue')}</th>
+                <th className="py-2 px-3 text-end border border-ds-border">{t('print.columns.costsExpenses')}</th>
+                <th className="py-2 px-3 text-center border border-ds-border">{t('print.columns.marginRatio')}</th>
+                <th className="py-2 px-3 text-end border border-ds-border bg-ds-surface-2 font-bold">{t('print.columns.netProfit')}</th>
               </>
             )}
             {activeModal === 'debt' && (
               <>
-                <th className="py-2 px-3 text-right border border-ds-border">Chiffre d'Affaires</th>
-                <th className="py-2 px-3 text-right border border-ds-border">Revenus Perçus</th>
-                <th className="py-2 px-3 text-center border border-ds-border">Ventes Totales</th>
-                <th className="py-2 px-3 text-right border border-ds-border bg-ds-surface-2 font-bold text-ds-danger">Impayés Restants</th>
+                <th className="py-2 px-3 text-end border border-ds-border">{t('print.columns.revenue')}</th>
+                <th className="py-2 px-3 text-end border border-ds-border">{t('print.columns.receivedIncome')}</th>
+                <th className="py-2 px-3 text-center border border-ds-border">{t('print.columns.totalSales')}</th>
+                <th className="py-2 px-3 text-end border border-ds-border bg-ds-surface-2 font-bold text-ds-danger">{t('print.columns.remainingUnpaid')}</th>
               </>
             )}
             {activeModal === 'sales' && (
               <>
-                <th className="py-2 px-3 text-center border border-ds-border">Tickets encaissés</th>
-                <th className="py-2 px-3 text-right border border-ds-border">Panier Moyen journalier</th>
-                <th className="py-2 px-3 text-center border border-ds-border bg-ds-surface-2 font-bold">Total Transactions</th>
+                <th className="py-2 px-3 text-center border border-ds-border">{t('print.columns.ticketsCollected')}</th>
+                <th className="py-2 px-3 text-end border border-ds-border">{t('print.columns.dailyAverageBasket')}</th>
+                <th className="py-2 px-3 text-center border border-ds-border bg-ds-surface-2 font-bold">{t('print.columns.transactions')}</th>
               </>
             )}
           </tr>
@@ -150,17 +153,17 @@ function PrintableReport({ activeModal, records, storeSettings, currency, canVie
               return (
                 <tr key={rec.id || idx} className="hover:bg-ds-surface-2/20">
                   <td className="py-2 px-3 font-semibold border border-ds-border">{rec.name}</td>
-                  <td className="py-2 px-3 text-center border border-ds-border">{stock}</td>
-                  {canViewBuyPrice && <td className="py-2 px-3 text-right border border-ds-border font-mono">{(rec.buyPrice || 0).toFixed(3)} {currency}</td>}
-                  <td className="py-2 px-3 text-right border border-ds-border font-mono">{(rec.sellPrice || 0).toFixed(3)} {currency}</td>
-                  {canViewBuyPrice && <td className="py-2 px-3 text-right border border-ds-border font-mono">{buyVal.toFixed(3)} {currency}</td>}
-                  <td className="py-2 px-3 text-right border border-ds-border bg-ds-surface-2 font-mono font-bold">{sellVal.toFixed(3)} {currency}</td>
-                  {canViewCosts && <td className="py-2 px-3 text-right border border-ds-border font-mono font-bold">{margin.toFixed(3)} {currency}</td>}
+                  <td className="py-2 px-3 text-center border border-ds-border">{formatCount(stock)}</td>
+                  {canViewBuyPrice && <td className="py-2 px-3 text-end border border-ds-border font-mono">{formatAmount(rec.buyPrice || 0)} {currency}</td>}
+                  <td className="py-2 px-3 text-end border border-ds-border font-mono">{formatAmount(rec.sellPrice || 0)} {currency}</td>
+                  {canViewBuyPrice && <td className="py-2 px-3 text-end border border-ds-border font-mono">{formatAmount(buyVal)} {currency}</td>}
+                  <td className="py-2 px-3 text-end border border-ds-border bg-ds-surface-2 font-mono font-bold">{formatAmount(sellVal)} {currency}</td>
+                  {canViewCosts && <td className="py-2 px-3 text-end border border-ds-border font-mono font-bold">{formatAmount(margin)} {currency}</td>}
                 </tr>
               );
             }
 
-            const dateLabel = rec.dateObj.toLocaleDateString('fr-FR', {
+            const dateLabel = rec.dateObj.toLocaleDateString(getDateLocale(), {
               weekday: 'short',
               day: '2-digit',
               month: 'short',
@@ -171,37 +174,37 @@ function PrintableReport({ activeModal, records, storeSettings, currency, canVie
                 <td className="py-2 px-3 font-semibold border border-ds-border capitalize">{dateLabel}</td>
                 {activeModal === 'revenue' && (
                   <>
-                    <td className="py-2 px-3 text-center border border-ds-border">{rec.salesCount}</td>
-                    <td className="py-2 px-3 text-right border border-ds-border font-mono">{rec.cashAmount.toFixed(3)} {currency}</td>
-                    <td className="py-2 px-3 text-right border border-ds-border font-mono">{rec.debt.toFixed(3)} {currency}</td>
-                    <td className="py-2 px-3 text-right border border-ds-border bg-ds-surface-2 font-mono font-bold">{rec.revenue.toFixed(3)} {currency}</td>
+                    <td className="py-2 px-3 text-center border border-ds-border">{formatCount(rec.salesCount)}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border font-mono">{formatAmount(rec.cashAmount)} {currency}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border font-mono">{formatAmount(rec.debt)} {currency}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border bg-ds-surface-2 font-mono font-bold">{formatAmount(rec.revenue)} {currency}</td>
                   </>
                 )}
                 {activeModal === 'profit' && (
                   <>
-                    <td className="py-2 px-3 text-right border border-ds-border font-mono">{rec.revenue.toFixed(3)} {currency}</td>
-                    <td className="py-2 px-3 text-right border border-ds-border font-mono">{rec.profitComplete ? `${(rec.revenue - rec.profit).toFixed(3)} ${currency}` : 'Coûts manquants'}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border font-mono">{formatAmount(rec.revenue)} {currency}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border font-mono">{rec.profitComplete ? `${formatAmount(rec.revenue - rec.profit)} ${currency}` : t('print.missingCosts')}</td>
                     <td className="py-2 px-3 text-center border border-ds-border font-mono font-bold">
-                      {rec.profitComplete && rec.revenue > 0 ? ((rec.profit / rec.revenue) * 100).toFixed(1) + '%' : '—'}
+                      {rec.profitComplete && rec.revenue > 0 ? `${formatPercent((rec.profit / rec.revenue) * 100)}%` : '—'}
                     </td>
-                    <td className="py-2 px-3 text-right border border-ds-border bg-ds-surface-2 font-mono font-bold">{rec.profitComplete ? `${rec.profit.toFixed(3)} ${currency}` : '—'}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border bg-ds-surface-2 font-mono font-bold">{rec.profitComplete ? `${formatAmount(rec.profit)} ${currency}` : '—'}</td>
                   </>
                 )}
                 {activeModal === 'debt' && (
                   <>
-                    <td className="py-2 px-3 text-right border border-ds-border font-mono">{rec.revenue.toFixed(3)} {currency}</td>
-                    <td className="py-2 px-3 text-right border border-ds-border font-mono">{rec.cashAmount.toFixed(3)} {currency}</td>
-                    <td className="py-2 px-3 text-center border border-ds-border">{rec.salesCount}</td>
-                    <td className="py-2 px-3 text-right border border-ds-border bg-ds-surface-2 font-mono font-bold text-ds-danger">{rec.debt.toFixed(3)} {currency}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border font-mono">{formatAmount(rec.revenue)} {currency}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border font-mono">{formatAmount(rec.cashAmount)} {currency}</td>
+                    <td className="py-2 px-3 text-center border border-ds-border">{formatCount(rec.salesCount)}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border bg-ds-surface-2 font-mono font-bold text-ds-danger">{formatAmount(rec.debt)} {currency}</td>
                   </>
                 )}
                 {activeModal === 'sales' && (
                   <>
-                    <td className="py-2 px-3 text-center border border-ds-border">{rec.salesCount}</td>
-                    <td className="py-2 px-3 text-right border border-ds-border font-mono">
-                      {rec.salesCount > 0 ? (rec.revenue / rec.salesCount).toFixed(3) : '0.000'} {currency}
+                    <td className="py-2 px-3 text-center border border-ds-border">{formatCount(rec.salesCount)}</td>
+                    <td className="py-2 px-3 text-end border border-ds-border font-mono">
+                      {formatAmount(rec.salesCount > 0 ? rec.revenue / rec.salesCount : 0)} {currency}
                     </td>
-                    <td className="py-2 px-3 text-center border border-ds-border bg-ds-surface-2 font-mono font-bold">{rec.salesCount}</td>
+                    <td className="py-2 px-3 text-center border border-ds-border bg-ds-surface-2 font-mono font-bold">{formatCount(rec.salesCount)}</td>
                   </>
                 )}
               </tr>
@@ -211,7 +214,7 @@ function PrintableReport({ activeModal, records, storeSettings, currency, canVie
       </table>
 
       <div className="mt-8 pt-4 border-t border-ds-border text-[10px] text-center text-ds-muted font-bold uppercase tracking-widest">
-        RAZ de caisse - Fin du rapport d'activité
+        {t('print.footer')}
       </div>
     </div>
   );
@@ -223,6 +226,8 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ userProfile, cashSession }: DashboardProps) {
+  const { t, i18n } = useTranslation('dashboard');
+  const isRtl = i18n.dir() === 'rtl';
   const brand = useBrand();
   const [sales, setSales] = useState<Sale[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -731,7 +736,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
     if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase();
       result = result.filter(rec => {
-        const formatted = rec.dateObj.toLocaleDateString('fr-FR'); // ex: "22/06/2026"
+        const formatted = rec.dateObj.toLocaleDateString(getDateLocale()); // ex: "22/06/2026"
         return formatted.toLowerCase().includes(q) || rec.dateStr.includes(q);
       });
     }
@@ -880,7 +885,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
     try {
       if (activeModal === 'stock') {
         if (filteredAndSortedProducts.length === 0) {
-          alert("Aucun enregistrement à exporter.");
+          alert(t('alerts.noExportRecords'));
           return;
         }
 
@@ -889,21 +894,21 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
           const buyValue = canViewBuyPrice ? stock * (p.buyPrice || 0) : 0;
           const sellValue = stock * (p.sellPrice || 0);
           const theoreticalMargin = canViewMargin ? sellValue - buyValue : 0;
-          const ratio = canViewMargin && sellValue > 0 ? ((theoreticalMargin / sellValue) * 100).toFixed(1) + '%' : '0.0%';
+          const ratio = `${formatPercent(canViewMargin && sellValue > 0 ? (theoreticalMargin / sellValue) * 100 : 0)}%`;
           return {
-            'Désignation du Produit': p.name || '',
-            'Code barre': p.barcode || 'Sans codebarre',
-            'Catégorie': p.category || 'Général',
-            'Quantité en stock': stock,
-            'Prix de vente unitaire (DT)': (p.sellPrice || 0).toFixed(3),
-            'Valeur de vente totale (Revenus) (DT)': sellValue.toFixed(3),
+            [t('exports.columns.productDesignation')]: p.name || '',
+            [t('exports.columns.barcode')]: p.barcode || t('common.noBarcode'),
+            [t('exports.columns.category')]: p.category || t('common.general'),
+            [t('exports.columns.stockQuantity')]: stock,
+            [t('exports.columns.unitSalePrice')]: formatAmount(p.sellPrice || 0),
+            [t('exports.columns.totalSaleValue')]: formatAmount(sellValue),
             ...(canViewBuyPrice ? {
-              'Prix d\'achat unitaire (DT)': (p.buyPrice || 0).toFixed(3),
-              'Valeur d\'achat totale (DT)': buyValue.toFixed(3),
+              [t('exports.columns.unitPurchasePrice')]: formatAmount(p.buyPrice || 0),
+              [t('exports.columns.totalPurchaseValue')]: formatAmount(buyValue),
             } : {}),
             ...(canViewMargin ? {
-              'Marge théorique estimée (DT)': theoreticalMargin.toFixed(3),
-              'Ratio Marge (%)': ratio,
+              [t('exports.columns.estimatedTheoreticalMargin')]: formatAmount(theoreticalMargin),
+              [t('exports.columns.marginRatio')]: ratio,
             } : {}),
           };
         });
@@ -914,67 +919,67 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
         // Feuille de synthèse : état instantané du stock
         const now = new Date();
         const summaryRows = [
-          { 'Indicateur': 'Date et heure du calcul', 'Valeur': `${now.toLocaleDateString('fr-FR')} ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}` },
-          { 'Indicateur': 'Produits existants en stock (quantité > 0)', 'Valeur': stockValuation.inStockItemsCount },
-          { 'Indicateur': 'Références totales répertoriées', 'Valeur': stockValuation.totalItemsCount },
-          { 'Indicateur': 'Produits en rupture de stock', 'Valeur': stockValuation.outOfStockCount },
-          { 'Indicateur': 'Quantité totale en stock (unités)', 'Valeur': stockValuation.totalStockQty },
-          { 'Indicateur': `Valeur du stock à cet instant — Vente potentielle (${currency})`, 'Valeur': stockValuation.totalSellValue.toFixed(3) },
+          { [t('exports.columns.indicator')]: t('exports.stockSummary.calculationDateTime'), [t('exports.columns.value')]: `${now.toLocaleDateString(getDateLocale())} ${now.toLocaleTimeString(getDateLocale(), { hour: '2-digit', minute: '2-digit' })}` },
+          { [t('exports.columns.indicator')]: t('stockSummary.productsInStock'), [t('exports.columns.value')]: stockValuation.inStockItemsCount },
+          { [t('exports.columns.indicator')]: t('exports.stockSummary.totalReferences'), [t('exports.columns.value')]: stockValuation.totalItemsCount },
+          { [t('exports.columns.indicator')]: t('exports.stockSummary.outOfStock'), [t('exports.columns.value')]: stockValuation.outOfStockCount },
+          { [t('exports.columns.indicator')]: t('exports.stockSummary.totalStockQuantity'), [t('exports.columns.value')]: stockValuation.totalStockQty },
+          { [t('exports.columns.indicator')]: t('exports.stockSummary.potentialSaleValue', { currency }), [t('exports.columns.value')]: formatAmount(stockValuation.totalSellValue) },
           ...(canViewBuyPrice ? [
-            { 'Indicateur': `Valeur du stock à cet instant — Achat (${currency})`, 'Valeur': stockValuation.totalBuyValue.toFixed(3) },
+            { [t('exports.columns.indicator')]: t('exports.stockSummary.stockPurchaseValue', { currency }), [t('exports.columns.value')]: formatAmount(stockValuation.totalBuyValue) },
           ] : []),
           ...(canViewMargin ? [
-            { 'Indicateur': `Marge théorique estimée (${currency})`, 'Valeur': stockValuation.theoreticalMargin.toFixed(3) },
-            { 'Indicateur': 'Taux de marge moyen (%)', 'Valeur': stockValuation.marginRatio.toFixed(1) + '%' }
+            { [t('exports.columns.indicator')]: t('exports.stockSummary.theoreticalMargin', { currency }), [t('exports.columns.value')]: formatAmount(stockValuation.theoreticalMargin) },
+            { [t('exports.columns.indicator')]: t('exports.stockSummary.averageMarginRate'), [t('exports.columns.value')]: `${formatPercent(stockValuation.marginRatio)}%` }
           ] : [])
         ];
         const wsSummary = XLSX.utils.json_to_sheet(summaryRows);
         wsSummary['!cols'] = [{ wch: 48 }, { wch: 24 }];
-        XLSX.utils.book_append_sheet(wb, wsSummary, 'Synthèse');
+        XLSX.utils.book_append_sheet(wb, wsSummary, t('exports.sheetSummary'));
 
-        XLSX.utils.book_append_sheet(wb, ws, 'Valorisation Stock');
-        XLSX.writeFile(wb, `${slugifyAppName(brand.storeName)}-rapport-valorisation-stock_${new Date().toISOString().split('T')[0]}.xlsx`);
+        XLSX.utils.book_append_sheet(wb, ws, t('exports.sheetStockValuation'));
+        XLSX.writeFile(wb, `${slugifyAppName(brand.storeName)}-${t('exports.filename.stockReport')}_${new Date().toISOString().split('T')[0]}.xlsx`);
         return;
       }
 
       if (filteredAndSortedRecords.length === 0) {
-        alert("Aucun enregistrement à exporter.");
+        alert(t('alerts.noExportRecords'));
         return;
       }
 
       const rows = filteredAndSortedRecords.map(rec => {
-        const fmtDate = rec.dateObj.toLocaleDateString('fr-FR');
+        const fmtDate = rec.dateObj.toLocaleDateString(getDateLocale());
         if (activeModal === 'revenue') {
           return {
-            'Date': fmtDate,
-            'Nombre de Ventes': rec.salesCount,
-            'Total Encaissé (DT)': rec.cashAmount.toFixed(3),
-            'Dettes Générées (DT)': rec.debt.toFixed(3),
-            'Chiffre d\'Affaires (DT)': rec.revenue.toFixed(3)
+            [t('exports.columns.date')]: fmtDate,
+            [t('exports.columns.salesCount')]: rec.salesCount,
+            [t('exports.columns.cashCollected')]: formatAmount(rec.cashAmount),
+            [t('exports.columns.generatedDebts')]: formatAmount(rec.debt),
+            [t('exports.columns.revenue')]: formatAmount(rec.revenue)
           };
         } else if (activeModal === 'profit') {
-          const ratio = rec.profitComplete && rec.revenue > 0 ? ((rec.profit / rec.revenue) * 100).toFixed(1) + '%' : '—';
+          const ratio = rec.profitComplete && rec.revenue > 0 ? `${formatPercent((rec.profit / rec.revenue) * 100)}%` : '—';
           return {
-            'Date': fmtDate,
-            'Chiffre d\'Affaires (DT)': rec.revenue.toFixed(3),
-            'Coûts et dépenses (DT)': rec.profitComplete ? (rec.revenue - rec.profit).toFixed(3) : 'Coûts manquants',
-            'Marge Ratio (%)': ratio,
-            'Bénéfice Net (DT)': rec.profitComplete ? rec.profit.toFixed(3) : 'Coûts manquants'
+            [t('exports.columns.date')]: fmtDate,
+            [t('exports.columns.revenue')]: formatAmount(rec.revenue),
+            [t('exports.columns.costsExpenses')]: rec.profitComplete ? formatAmount(rec.revenue - rec.profit) : t('print.missingCosts'),
+            [t('exports.columns.marginRatio')]: ratio,
+            [t('exports.columns.netProfit')]: rec.profitComplete ? formatAmount(rec.profit) : t('print.missingCosts')
           };
         } else if (activeModal === 'debt') {
           return {
-            'Date': fmtDate,
-            'Chiffre d\'Affaires (DT)': rec.revenue.toFixed(3),
-            'Montant Payé (DT)': rec.cashAmount.toFixed(3),
-            'Transactions total': rec.salesCount,
-            'Total des Impayés (DT)': rec.debt.toFixed(3)
+            [t('exports.columns.date')]: fmtDate,
+            [t('exports.columns.revenue')]: formatAmount(rec.revenue),
+            [t('exports.columns.amountPaid')]: formatAmount(rec.cashAmount),
+            [t('exports.columns.totalTransactions')]: rec.salesCount,
+            [t('exports.columns.totalUnpaid')]: formatAmount(rec.debt)
           };
         } else {
           return {
-            'Date': fmtDate,
-            'Tickets encaissés': rec.salesCount,
-            'Panier Moyen (DT)': rec.salesCount > 0 ? (rec.revenue / rec.salesCount).toFixed(3) : '0.000',
-            'Nombre total Transactions': rec.salesCount
+            [t('exports.columns.date')]: fmtDate,
+            [t('exports.columns.ticketsCollected')]: rec.salesCount,
+            [t('exports.columns.averageBasket')]: formatAmount(rec.salesCount > 0 ? rec.revenue / rec.salesCount : 0),
+            [t('exports.columns.totalTransactions')]: rec.salesCount
           };
         }
       });
@@ -982,16 +987,16 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
       
-      let tabName = 'Chiffre d\'Affaires';
-      if (activeModal === 'profit') tabName = 'Bénéfice Net';
-      else if (activeModal === 'debt') tabName = 'Dettes';
-      else if (activeModal === 'sales') tabName = 'Transactions';
+      let tabName = t('exports.sheet.revenue');
+      if (activeModal === 'profit') tabName = t('exports.sheet.netProfit');
+      else if (activeModal === 'debt') tabName = t('exports.sheet.debts');
+      else if (activeModal === 'sales') tabName = t('exports.sheet.transactions');
 
       XLSX.utils.book_append_sheet(wb, ws, tabName.slice(0, 30));
-      XLSX.writeFile(wb, `${slugifyAppName(brand.storeName)}-rapport-caisse-${tabName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`);
+      XLSX.writeFile(wb, `${slugifyAppName(brand.storeName)}-${t('exports.filename.cashReport')}-${tabName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`);
     } catch (e) {
       console.error(e);
-      alert("Une erreur est survenue lors de l'exportation vers Excel.");
+      alert(t('alerts.exportFailed'));
     }
   };
 
@@ -1016,7 +1021,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
       const q = expensesSearch.toLowerCase();
       result = result.filter(sup => 
         (sup.productName || '').toLowerCase().includes(q) ||
-        (sup.date && typeof sup.date.toDate === 'function' && sup.date.toDate().toLocaleDateString('fr-FR').includes(q))
+        (sup.date && typeof sup.date.toDate === 'function' && sup.date.toDate().toLocaleDateString(getDateLocale()).includes(q))
       );
     }
     return result;
@@ -1035,33 +1040,33 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
       let filename = '';
       if (expensesTab === 'daily') {
         rows = dailySuppliesRecords.map(rec => ({
-          'Date': rec.dateObj.toLocaleDateString('fr-FR'),
-          'Nombre de produits ajoutés': rec.productsCount,
-          'Quantité totale ajoutée': rec.totalQty,
-          'Dépenses totales (DT)': rec.totalExpenses.toFixed(3)
+          [t('exports.columns.date')]: rec.dateObj.toLocaleDateString(getDateLocale()),
+          [t('exports.columns.productsAdded')]: rec.productsCount,
+          [t('exports.columns.totalQuantityAdded')]: rec.totalQty,
+          [t('exports.columns.totalExpenses')]: formatAmount(rec.totalExpenses)
         }));
-        filename = `Depenses_Journalieres`;
+        filename = t('exports.filename.dailyExpenses');
       } else {
         rows = supplies.map(sup => {
-          const timestampStr = !sup.date ? '' : (typeof sup.date.toDate === 'function' ? sup.date.toDate().toLocaleString('fr-FR') : new Date(sup.date).toLocaleString('fr-FR'));
+          const timestampStr = !sup.date ? '' : (typeof sup.date.toDate === 'function' ? sup.date.toDate().toLocaleString(getDateLocale()) : new Date(sup.date).toLocaleString(getDateLocale()));
           return {
-            'Date et Heure': timestampStr,
-            'Produit': sup.productName || '',
-            'Quantité Ajoutée': sup.quantity || 0,
-            'Prix d\'achat unitaire (DT)': (sup.buyPrice || 0).toFixed(3),
-            'Coût Total (DT)': (sup.totalCost || 0).toFixed(3)
+            [t('exports.columns.dateTime')]: timestampStr,
+            [t('exports.columns.product')]: sup.productName || '',
+            [t('exports.columns.quantityAdded')]: sup.quantity || 0,
+            [t('exports.columns.unitPurchasePrice')]: formatAmount(sup.buyPrice || 0),
+            [t('exports.columns.totalCost')]: formatAmount(sup.totalCost || 0)
           };
         });
-        filename = `Details_Depenses`;
+        filename = t('exports.filename.expenseDetails');
       }
 
       const ws = XLSX.utils.json_to_sheet(rows);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Dépenses');
+      XLSX.utils.book_append_sheet(wb, ws, t('exports.sheet.expenses'));
       XLSX.writeFile(wb, `${slugifyAppName(brand.storeName)}-${filename}_${new Date().toISOString().split('T')[0]}.xlsx`);
     } catch (e) {
       console.error(e);
-      alert("Une erreur est survenue lors de l'exportation vers Excel.");
+      alert(t('alerts.exportFailed'));
     }
   };
 
@@ -1099,12 +1104,12 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
       setEditingSupply(null);
     } catch (err) {
       console.error('Error updating supply:', err);
-      alert('Erreur lors de la modification de l\'approvisionnement.');
+      alert(t('alerts.supplyUpdateFailed'));
     }
   };
 
   const handleDeleteSupply = async (supply: any) => {
-    if (!window.confirm(`Voulez-vous vraiment supprimer cet approvisionnement pour "${supply.productName}" ?`)) return;
+    if (!window.confirm(t('confirm.deleteSupply', { product: supply.productName }))) return;
     try {
       // 1. Subtract supply quantity from product stock
       if (supply.productId) {
@@ -1120,23 +1125,23 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
       await deleteDoc(doc(db, 'supplies', supply.id));
     } catch (err) {
       console.error('Error deleting supply:', err);
-      alert('Erreur lors de la suppression.');
+      alert(t('alerts.deleteFailed'));
     }
   };
 
   const financialCards = [
-    { label: 'Ventes encaissées', value: periodSalesCollected, unit: currency, icon: Wallet, count: false },
+    { label: t('financialCards.collectedSales'), value: periodSalesCollected, unit: currency, icon: Wallet, count: false },
     ...(canShowMargin ? [
-      { label: "Coût d'achat", value: periodSalesCost, unit: currency, icon: Package, count: false },
+      { label: t('financialCards.purchaseCost'), value: periodSalesCost, unit: currency, icon: Package, count: false },
     ] : []),
-    { label: 'Impayés', value: financialSummary.debt, unit: currency, icon: AlertCircle, count: false },
-    { label: 'Réparations en cours', value: activeRepairCount, unit: 'réparations', icon: Wrench, count: true },
+    { label: t('financialCards.unpaid'), value: financialSummary.debt, unit: currency, icon: AlertCircle, count: false },
+    { label: t('financialCards.repairsInProgress'), value: activeRepairCount, unit: t('units.repairs'), icon: Wrench, count: true },
   ];
   const historicalTvaSalesCount = sales.filter(sale => Number(sale.tva) > 0).length;
 
   if (loading) return (
-    <div role="status" aria-label="Chargement des indicateurs" className="flex min-h-[60vh] min-w-0 flex-col items-center justify-center gap-4">
-      <span className="sr-only">Chargement des indicateurs...</span>
+    <div role="status" aria-label={t('loading.ariaLabel')} className="flex min-h-[60vh] min-w-0 flex-col items-center justify-center gap-4">
+      <span className="sr-only">{t('loading.message')}</span>
       <div className="grid w-full max-w-6xl grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }, (_, index) => (
           <div key={index} className="h-28 animate-pulse rounded-ds-lg border border-ds-border bg-ds-surface" />
@@ -1149,8 +1154,8 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
   return (
     <div className="mx-auto w-full max-w-[1680px] min-w-0 space-y-6 pb-12 [&_button]:min-h-11 sm:space-y-8 xl:space-y-10">
       <PageHeader
-        title="Tableau de bord"
-        description={canViewSales ? 'Performance financière et opérationnelle en temps réel' : 'Suivi opérationnel en temps réel'}
+        title={t('page.title')}
+        description={canViewSales ? t('page.descriptionWithSales') : t('page.descriptionOperations')}
         className="border-b border-ds-border pb-5"
         actions={<div className="flex min-w-0 flex-wrap items-center gap-2">
           {dashboardData.lowStockAlerts.length > 0 && stockAlertDismissed && (
@@ -1158,25 +1163,25 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
               type="button"
               onClick={() => setStockAlertDismissed(false)}
               className="flex min-h-11 items-center gap-1.5 rounded-full border border-ds-danger bg-ds-danger-soft px-4 py-2 text-xs font-black text-ds-danger transition-colors hover:bg-ds-danger-soft"
-              title="Cliquer pour afficher la notification d'alerte de stock"
+              title={t('stockAlert.showNotification')}
             >
               <AlertTriangle className="h-3.5 w-3.5 text-ds-danger" />
-              <span>{dashboardData.lowStockAlerts.length} alerte{dashboardData.lowStockAlerts.length > 1 ? 's' : ''} de stock (Afficher)</span>
+              <span>{t('stockAlert.showButton', { count: formatCount(dashboardData.lowStockAlerts.length) })}</span>
             </button>
           )}
           <div className="flex min-h-11 items-center gap-2 rounded-ds-md border border-ds-border bg-ds-surface px-4 py-2 text-xs font-semibold text-ds-muted">
             <Calendar className="h-4 w-4 text-ds-brand" />
-            <span>Aujourd'hui, {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
+            <span>{t('page.today')}, {new Date().toLocaleDateString(getDateLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</span>
           </div>
         </div>}
       />
 
       <section className="hidden">
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-ds-brand-contrast/90">Bénéfice net, aujourd'hui</p>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-ds-brand-contrast/90">{t('overview.netProfitToday')}</p>
           <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span className="font-display text-[62px] font-bold leading-none tracking-[-0.06em] tabular-nums lg:text-[104px]">
-              {canShowMargin && todaySummary.netProfit !== null ? todaySummary.netProfit.toFixed(3) : '—'}
+              {canShowMargin && todaySummary.netProfit !== null ? formatAmount(todaySummary.netProfit) : '—'}
             </span>
             {canShowMargin && todaySummary.netProfit !== null && (
               <span className="text-xl font-semibold text-ds-brand-contrast/90">{currency}</span>
@@ -1185,25 +1190,25 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
           {canShowMargin && (
             <div className="mt-6 flex flex-wrap gap-2">
               <span className="rounded-full border border-ds-brand-contrast/25 bg-ds-surface/10 px-4 py-2 text-xs font-semibold text-ds-brand-contrast">
-                Bénéfice brut <span className="ml-1 font-display tabular-nums">{todaySummary.grossProfit === null ? '—' : `${todaySummary.grossProfit.toFixed(3)} ${currency}`}</span>
+                {t('overview.grossProfit')} <span className="ms-1 font-display tabular-nums">{todaySummary.grossProfit === null ? '—' : `${formatAmount(todaySummary.grossProfit)} ${currency}`}</span>
               </span>
               <span className="rounded-full border border-ds-brand-contrast/25 bg-ds-surface/10 px-4 py-2 text-xs font-semibold text-ds-brand-contrast">
-                Dépenses <span className="ml-1 font-display tabular-nums">{todaySummary.expenses.toFixed(3)} {currency}</span>
+                {t('overview.expenses')} <span className="ms-1 font-display tabular-nums">{formatAmount(todaySummary.expenses)} {currency}</span>
               </span>
             </div>
           )}
           {canShowMargin && todaySummary.netProfit === null && (
             <p role="status" className="mt-4 max-w-xl text-xs leading-5 text-ds-brand-contrast/90">
-              Bénéfice masqué : des coûts historiques sont manquants. Aucun coût estimé n’est utilisé.
+              {t('profit.hiddenMissingHistoricalCosts')}
             </p>
           )}
         </div>
         <div className="min-w-0">
           <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-ds-brand-contrast/90">Bénéfice net · 7 jours</p>
-            {canShowMargin && <span className="text-[10px] text-ds-brand-contrast/75">Derniers jours</span>}
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-ds-brand-contrast/90">{t('overview.netProfitSevenDays')}</p>
+            {canShowMargin && <span className="text-[10px] text-ds-brand-contrast/75">{t('overview.recentDays')}</span>}
           </div>
-          <div className="flex h-24 items-end gap-2" role="img" aria-label="Graphique du bénéfice net sur les sept derniers jours">
+          <div className="flex h-24 items-end gap-2" role="img" aria-label={t('overview.netProfitChartAriaLabel')}>
             {sevenDaySummaries.map(({ date, netProfit }) => {
               const maxProfit = Math.max(1, ...sevenDaySummaries.map(day => Math.abs(day.netProfit || 0)));
               const height = netProfit === null ? 8 : Math.max(8, Math.abs(netProfit) / maxProfit * 100);
@@ -1216,10 +1221,10 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                         netProfit < 0 ? 'bg-ds-danger' : 'bg-ds-surface',
                     )}
                     style={{ height: `${height}%` }}
-                    title={`${date.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })} : ${netProfit === null ? 'indisponible' : `${netProfit.toFixed(3)} ${currency}`}`}
+                    title={t('overview.chartPointTitle', { date: date.toLocaleDateString(getDateLocale(), { weekday: 'long', day: 'numeric', month: 'long' }), value: netProfit === null ? t('common.unavailable') : `${formatAmount(netProfit)} ${currency}` })}
                   />
                   <span className="text-[10px] font-semibold capitalize text-ds-brand-contrast/80">
-                    {date.toLocaleDateString('fr-FR', { weekday: 'short' }).replace('.', '')}
+                    {date.toLocaleDateString(getDateLocale(), { weekday: 'short' }).replace('.', '')}
                   </span>
                 </div>
               );
@@ -1230,15 +1235,15 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
 
       <section className="hidden">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-sm font-black uppercase tracking-wider text-ds-text">Synthèse financière</h2>
-          <div className="flex max-w-full gap-1 overflow-x-auto rounded-full border border-ds-border bg-ds-surface p-1" role="group" aria-label="Période de la synthèse financière">
+          <h2 className="text-sm font-black uppercase tracking-wider text-ds-text">{t('overview.financialSummary')}</h2>
+          <div className="flex max-w-full gap-1 overflow-x-auto rounded-full border border-ds-border bg-ds-surface p-1" role="group" aria-label={t('overview.financialPeriodAriaLabel')}>
             {([
-              ['today', "Aujourd'hui"],
-              ['7', '7 jours'],
-              ['30', '30 jours'],
-              ['90', '90 jours'],
-              ['year', 'Cette année'],
-              ['all', 'Tout'],
+              ['today', t('period.today')],
+              ['7', t('period.sevenDays')],
+              ['30', t('period.thirtyDays')],
+              ['90', t('period.ninetyDays')],
+              ['year', t('period.thisYear')],
+              ['all', t('period.all')],
             ] as const).map(([period, label]) => (
               <button
                 key={period}
@@ -1267,8 +1272,8 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
               <div className="min-w-0">
                 <p className="stat-label">{label}</p>
                 <p className="stat-value mt-2 break-words text-ds-text">
-                  {value === null ? '—' : count ? value : value.toFixed(3)}
-                  {value !== null && <span className="ml-1 text-xs font-semibold text-ds-muted">{unit}</span>}
+                  {value === null ? '—' : count ? formatCount(value) : formatAmount(value)}
+                  {value !== null && <span className="ms-1 text-xs font-semibold text-ds-muted">{unit}</span>}
                 </p>
               </div>
               <span className="stat-icon shrink-0" style={{ '--stat-accent': accent } as React.CSSProperties}>
@@ -1280,15 +1285,17 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
         </div>
         {canShowMargin && (
           <div className="rounded-[18px] border border-ds-border bg-ds-surface px-4 py-3 text-xs text-ds-muted">
-            <strong>CA réparations :</strong> main-d’œuvre {financialSummary.laborRevenue.toFixed(3)} {currency}
-            {' · '}pièces facturées {financialSummary.repairPartsRevenue.toFixed(3)} {currency}
-            {' · '}coût des pièces {financialSummary.repairPartsCost.toFixed(3)} {currency}
-            {' · '}{financialSummary.salesWithTva} vente(s) avec TVA sur la période
-            {' · '}historique total : {historicalTvaSalesCount} vente(s) avec TVA
+            <strong>{t('financial.repairRevenue')}</strong> {t('financial.labor')} {formatAmount(financialSummary.laborRevenue)} {currency}
+            {' · '}{t('financial.invoicedParts')} {formatAmount(financialSummary.repairPartsRevenue)} {currency}
+            {' · '}{t('financial.partsCost')} {formatAmount(financialSummary.repairPartsCost)} {currency}
+            {' · '}{t('financial.salesWithVat', { count: formatCount(financialSummary.salesWithTva) })}
+            {' · '}{t('financial.totalVatHistory', { count: formatCount(historicalTvaSalesCount) })}
             {(financialSummary.incompleteSales > 0 || financialSummary.incompleteRepairs > 0) && (
               <p role="status" className="mt-2 font-semibold text-ds-danger">
-                Bénéfice masqué : coûts historiques manquants pour {financialSummary.incompleteSales} vente(s)
-                {financialSummary.incompleteRepairs ? ' ou certaines réparations' : ''}. Aucun coût estimé n’est utilisé.
+                {t('profit.hiddenMissingDetails', {
+                  sales: formatCount(financialSummary.incompleteSales),
+                  repairs: financialSummary.incompleteRepairs ? t('financial.orSomeRepairs') : '',
+                })}
               </p>
             )}
           </div>
@@ -1299,9 +1306,9 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
         {canAccessCashSession && <Card className="min-w-0 rounded-ds-lg p-5 sm:p-6 xl:p-8">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="font-display text-lg font-bold text-ds-text">Caisse en cours</h2>
+              <h2 className="font-display text-lg font-bold text-ds-text">{t('cash.currentSession')}</h2>
               <p className="mt-1 text-xs text-ds-muted">
-                {cashSession ? 'Session ouverte' : 'Aucune caisse ouverte'}
+                {cashSession ? t('cash.sessionOpen') : t('cash.noSession')}
               </p>
             </div>
             <Wallet className="h-5 w-5 text-ds-muted" aria-hidden="true" />
@@ -1310,38 +1317,38 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
             <>
               <div className="mt-5 space-y-3 text-sm">
                 <div className="flex justify-between gap-4">
-                  <span className="text-ds-muted">Fond de caisse</span>
-                  <span className="font-display font-semibold tabular-nums text-ds-text">{Number(cashSession.openingFloat || 0).toFixed(3)} {currency}</span>
+                  <span className="text-ds-muted">{t('cash.openingFloat')}</span>
+                  <span className="font-display font-semibold tabular-nums text-ds-text">{formatAmount(Number(cashSession.openingFloat || 0))} {currency}</span>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <span className="text-ds-muted">Espèces encaissées</span>
+                  <span className="text-ds-muted">{t('cash.cashCollected')}</span>
                   <span className="font-display font-semibold tabular-nums text-ds-text">
-                    {(
+                    {formatAmount(
                       Number(cashSession.totals?.cash || 0) +
                       Number(cashSession.totals?.debtsCollectedCash ?? cashSession.totals?.debtsCollected ?? 0) +
                       Number(cashSession.totals?.repairsCollectedCash ?? cashSession.totals?.repairsCollected ?? 0)
-                    ).toFixed(3)} {currency}
+                    )} {currency}
                   </span>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <span className="text-ds-muted">Dépenses en espèces</span>
-                  <span className="font-display font-semibold tabular-nums text-ds-text">−{Number(cashSession.totals?.expensesCash || 0).toFixed(3)} {currency}</span>
+                  <span className="text-ds-muted">{t('cash.cashExpenses')}</span>
+                  <span className="font-display font-semibold tabular-nums text-ds-text">−{formatAmount(Number(cashSession.totals?.expensesCash || 0))} {currency}</span>
                 </div>
                 <div className="flex justify-between gap-4 border-t border-ds-border pt-3">
-                  <span className="font-bold text-ds-text">Attendu en caisse</span>
-                  <span className="font-display font-bold tabular-nums text-ds-text">{computeExpectedCash(cashSession).toFixed(3)} {currency}</span>
+                  <span className="font-bold text-ds-text">{t('cash.expectedInRegister')}</span>
+                  <span className="font-display font-bold tabular-nums text-ds-text">{formatAmount(computeExpectedCash(cashSession))} {currency}</span>
                 </div>
               </div>
               {canAccessCashSession && (
                 <Link to="/cash-session" className="mt-5 inline-flex min-h-11 items-center justify-center rounded-full bg-ds-brand px-5 text-sm font-bold text-ds-brand-contrast transition-colors hover:bg-ds-brand-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:ring-ds-brand">
-                  Clôturer la caisse
+                  {t('cash.closeSession')}
                 </Link>
               )}
             </>
           ) : (
             canAccessCashSession && (
               <Link to="/cash-session" className="mt-5 inline-flex min-h-11 items-center justify-center rounded-full border border-ds-border bg-ds-surface px-5 text-sm font-bold text-ds-text transition-colors hover:bg-ds-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:ring-ds-brand">
-                Ouvrir la caisse
+                {t('cash.openSession')}
               </Link>
             )
           )}
@@ -1350,31 +1357,31 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
         <Card className="min-w-0 rounded-ds-lg p-5 sm:p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <h2 className="font-display text-lg font-bold text-ds-text">À traiter</h2>
-              <p className="mt-1 text-xs text-ds-muted">Éléments nécessitant votre attention</p>
+              <h2 className="font-display text-lg font-bold text-ds-text">{t('tasks.title')}</h2>
+              <p className="mt-1 text-xs text-ds-muted">{t('tasks.description')}</p>
             </div>
             <AlertTriangle className="h-5 w-5 text-ds-muted" aria-hidden="true" />
           </div>
           <div className="mt-5 space-y-2">
             {hasMenuAccess(userProfile, 'pieces') && (
               <Link to="/parts" className="flex min-h-11 items-center justify-between gap-4 rounded-xl px-3 text-sm transition-colors hover:bg-ds-surface-2">
-                <span className="text-ds-text">Stock faible</span>
+                <span className="text-ds-text">{t('tasks.lowStock')}</span>
                 <span className={cn('rounded-full px-3 py-1 font-display text-xs font-bold tabular-nums', dashboardData.lowStockAlerts.length ? 'bg-ds-danger-soft text-ds-danger' : 'bg-ds-surface-2 text-ds-muted')}>
-                  {dashboardData.lowStockAlerts.length}
+                  {formatCount(dashboardData.lowStockAlerts.length)}
                 </span>
               </Link>
             )}
             {isAdmin && hasMenuAccess(userProfile, 'reparation') && (
               <Link to="/repairs" className="flex min-h-11 items-center justify-between gap-4 rounded-xl px-3 text-sm transition-colors hover:bg-ds-surface-2">
-                <span className="text-ds-text">Réparations terminées</span>
-                <span className="rounded-full bg-ds-surface-2 px-3 py-1 font-display text-xs font-bold tabular-nums text-ds-muted">{repairsToDeliver ?? '—'}</span>
+                <span className="text-ds-text">{t('tasks.completedRepairs')}</span>
+                <span className="rounded-full bg-ds-surface-2 px-3 py-1 font-display text-xs font-bold tabular-nums text-ds-muted">{repairsToDeliver === null ? '—' : formatCount(repairsToDeliver)}</span>
               </Link>
             )}
             {canViewSales && hasMenuAccess(userProfile, 'clients') && (
               <Link to="/clients" className="flex min-h-11 items-center justify-between gap-4 rounded-xl px-3 text-sm transition-colors hover:bg-ds-surface-2">
-                <span className="text-ds-text">Clients avec impayés</span>
+                <span className="text-ds-text">{t('tasks.clientsWithUnpaid')}</span>
                 <span className={cn('rounded-full px-3 py-1 font-display text-xs font-bold tabular-nums', clientsWithDebt ? 'bg-ds-danger-soft text-ds-danger' : 'bg-ds-surface-2 text-ds-muted')}>
-                  {clientsWithDebt}
+                  {formatCount(clientsWithDebt)}
                 </span>
               </Link>
             )}
@@ -1393,7 +1400,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                 <div className="flex h-10 w-10 items-center justify-center rounded-ds-md bg-ds-warning text-ds-brand-contrast">
                   <AlertTriangle className="w-5 h-5 animate-pulse" />
                 </div>
-                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="absolute -top-1 -end-1 flex h-3 w-3">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ds-danger-soft opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-3 w-3 bg-ds-danger"></span>
                 </span>
@@ -1402,19 +1409,19 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <h3 className="text-sm font-black text-ds-danger tracking-tight">
-                    Alerte de Stock Faible ({dashboardData.lowStockAlerts.length} produit{dashboardData.lowStockAlerts.length > 1 ? 's' : ''})
+                    {t('stockAlert.title', { count: formatCount(dashboardData.lowStockAlerts.length) })}
                   </h3>
                   <Badge variant="warning" className="min-h-7 px-2 py-0.5 text-[10px] uppercase tracking-wider">
-                    Seuil minimum : {dashboardData.configuredMinStock} unités
+                    {t('stockAlert.minimumThreshold', { count: formatCount(dashboardData.configuredMinStock) })}
                   </Badge>
                   {dashboardData.lowStockAlerts.filter(p => p.stock <= 0).length > 0 && (
                     <Badge variant="danger" className="min-h-7 px-2 py-0.5 text-[10px] uppercase tracking-wider">
-                      {dashboardData.lowStockAlerts.filter(p => p.stock <= 0).length} rupture{dashboardData.lowStockAlerts.filter(p => p.stock <= 0).length > 1 ? 's' : ''} immédiate{dashboardData.lowStockAlerts.filter(p => p.stock <= 0).length > 1 ? 's' : ''} !
+                      {t('stockAlert.immediateOutOfStock', { count: formatCount(dashboardData.lowStockAlerts.filter(p => p.stock <= 0).length) })}
                     </Badge>
                   )}
                 </div>
                 <p className="mt-1 text-xs font-medium text-ds-warning">
-                  La quantité en stock de ces articles est inférieure ou égale au seuil minimum défini dans vos paramètres ({dashboardData.configuredMinStock} unités). Un réapprovisionnement est recommandé.
+                  {t('stockAlert.replenishmentWarning', { count: formatCount(dashboardData.configuredMinStock) })}
                 </p>
 
                 {/* Quick list of urgent items */}
@@ -1435,7 +1442,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                         "px-1.5 py-0.2 rounded font-mono font-black text-[10px]",
                         prod.stock <= 0 ? "bg-ds-brand-contrast/20 text-ds-brand-contrast" : "bg-ds-surface text-ds-warning"
                       )}>
-                        {prod.stock} restant{prod.stock > 1 ? 's' : ''}
+                        {t('stockAlert.remaining', { count: formatCount(prod.stock) })}
                       </span>
                     </div>
                   ))}
@@ -1443,9 +1450,9 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                     <button
                       type="button"
                       onClick={() => openHistoryModal('stock')}
-                      className="ml-1 cursor-pointer text-[11px] font-bold text-ds-danger underline underline-offset-2 transition-colors hover:text-ds-danger"
+                      className="ms-1 cursor-pointer text-[11px] font-bold text-ds-danger underline underline-offset-2 transition-colors hover:text-ds-danger"
                     >
-                      +{dashboardData.lowStockAlerts.length - 6} autres produits...
+                      {t('stockAlert.moreProducts', { count: formatCount(dashboardData.lowStockAlerts.length - 6) })}
                     </button>
                   )}
                 </div>
@@ -1460,13 +1467,13 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                 className="rounded-full px-4 text-xs font-black uppercase tracking-wider"
               >
                 <Package className="w-3.5 h-3.5" />
-                <span>Gérer le Stock</span>
+                <span>{t('stockAlert.manageStock')}</span>
               </Button>
               <button
                 type="button"
                 onClick={() => setStockAlertDismissed(true)}
-                aria-label="Masquer l'alerte de stock"
-                title="Masquer l'alerte temporairement"
+                aria-label={t('stockAlert.dismiss')}
+                title={t('stockAlert.dismissTitle')}
                 className="min-h-11 min-w-11 cursor-pointer rounded-full text-ds-danger transition-colors hover:bg-ds-danger-soft"
               >
                 <X className="w-4 h-4" />
@@ -1486,7 +1493,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
           className="stat-card before:hidden flex min-h-[140px] cursor-pointer flex-col justify-between border-0 bg-ds-brand p-3.5 text-ds-brand-contrast shadow-ds-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand sm:min-h-[170px] sm:p-6"
         >
           <div className="flex items-center justify-between relative z-10 gap-1">
-            <span className="truncate text-xs font-black uppercase tracking-widest text-ds-brand-contrast/90 sm:text-sm">CA Jour</span>
+            <span className="truncate text-xs font-black uppercase tracking-widest text-ds-brand-contrast/90 sm:text-sm">{t('metrics.dailyRevenue')}</span>
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-ds-surface/15 sm:h-9 sm:w-9">
               <TrendingUp className="h-4 w-4 text-ds-brand-contrast sm:h-5 sm:w-5" />
             </div>
@@ -1494,13 +1501,13 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
           <div className="mt-3 sm:mt-4 relative z-10">
             <div className="flex items-baseline gap-1">
               <span className="truncate font-mono text-xl font-black leading-none tracking-tight text-ds-brand-contrast tabular-nums sm:text-[28px] lg:text-[30px]">
-                {dashboardData.dailyRevenue.toFixed(3)}
+                {formatAmount(dashboardData.dailyRevenue)}
               </span>
               <span className="shrink-0 text-xs font-black text-ds-brand-contrast sm:text-sm">{currency}</span>
             </div>
             <p className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-ds-brand-contrast/90 sm:mt-2.5 sm:text-xs">
               <Clock className="w-3 h-3 shrink-0" />
-              <span className="truncate">Historique</span>
+              <span className="truncate">{t('metrics.history')}</span>
             </p>
           </div>
         </div>
@@ -1510,7 +1517,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
           className="stat-card before:hidden flex min-h-[140px] cursor-pointer flex-col justify-between rounded-ds-lg border border-ds-border bg-ds-surface p-3.5 text-ds-text shadow-ds-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand sm:min-h-[170px] sm:p-6"
         >
           <div className="flex items-center justify-between relative z-10 gap-1">
-            <span className="truncate text-xs font-black uppercase tracking-widest text-ds-success sm:text-sm">Bénéfice Net</span>
+            <span className="truncate text-xs font-black uppercase tracking-widest text-ds-success sm:text-sm">{t('metrics.netProfit')}</span>
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-ds-success-soft sm:h-9 sm:w-9">
               <Coins className="h-4 w-4 text-ds-success sm:h-5 sm:w-5" />
             </div>
@@ -1518,13 +1525,13 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
           <div className="mt-3 sm:mt-4 relative z-10">
             <div className="flex items-baseline gap-1">
               <span className="truncate font-mono text-xl font-black leading-none tracking-tight text-ds-text tabular-nums sm:text-[28px] lg:text-[30px]">
-                {dashboardData.dailyProfit === null ? '—' : dashboardData.dailyProfit.toFixed(3)}
+                {dashboardData.dailyProfit === null ? '—' : formatAmount(dashboardData.dailyProfit)}
               </span>
               <span className="shrink-0 text-[10px] font-black text-ds-muted sm:text-xs">{currency}</span>
             </div>
             <p className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-ds-success sm:mt-2.5 sm:text-xs">
               <Clock className="w-3 h-3 shrink-0" />
-              <span className="truncate">Historique</span>
+              <span className="truncate">{t('metrics.history')}</span>
             </p>
           </div>
         </div>}
@@ -1535,7 +1542,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
           className="stat-card before:hidden flex min-h-[140px] cursor-pointer flex-col justify-between rounded-ds-lg border border-ds-border bg-ds-surface p-3.5 text-ds-text shadow-ds-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand sm:min-h-[170px] sm:p-6"
         >
           <div className="flex items-center justify-between relative z-10 gap-1">
-            <span className="truncate text-xs font-black uppercase tracking-widest text-ds-muted sm:text-sm">Dépenses</span>
+            <span className="truncate text-xs font-black uppercase tracking-widest text-ds-muted sm:text-sm">{t('metrics.expenses')}</span>
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-ds-brand-soft sm:h-9 sm:w-9">
               <PackagePlus className="h-4 w-4 text-ds-brand sm:h-5 sm:w-5" />
             </div>
@@ -1543,13 +1550,13 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
           <div className="mt-3 sm:mt-4 relative z-10">
             <div className="flex items-baseline gap-1">
               <span className="truncate font-mono text-xl font-black leading-none tracking-tight text-ds-text tabular-nums sm:text-[28px] lg:text-[30px]">
-                {dashboardData.dailyExpenses.toFixed(3)}
+                {formatAmount(dashboardData.dailyExpenses)}
               </span>
               <span className="shrink-0 text-[10px] font-black text-ds-muted sm:text-xs">{currency}</span>
             </div>
             <p className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-ds-muted sm:mt-2.5 sm:text-xs">
               <Clock className="w-3 h-3 shrink-0" />
-              <span className="truncate">Historique</span>
+              <span className="truncate">{t('metrics.history')}</span>
             </p>
           </div>
         </div>
@@ -1560,7 +1567,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
           className="stat-card before:hidden flex min-h-[140px] cursor-pointer flex-col justify-between rounded-ds-lg border border-ds-border bg-ds-surface p-3.5 text-ds-text shadow-ds-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand sm:min-h-[170px] sm:p-6"
         >
           <div className="flex items-center justify-between relative z-10 gap-1">
-            <span className="truncate text-xs font-black uppercase tracking-widest text-ds-muted sm:text-sm">Dettes</span>
+            <span className="truncate text-xs font-black uppercase tracking-widest text-ds-muted sm:text-sm">{t('metrics.debts')}</span>
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-ds-danger-soft sm:h-9 sm:w-9">
               <AlertCircle className="h-4 w-4 text-ds-danger sm:h-5 sm:w-5" />
             </div>
@@ -1568,13 +1575,13 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
           <div className="mt-3 sm:mt-4 relative z-10">
             <div className="flex items-baseline gap-1">
               <span className="truncate font-mono text-xl font-black leading-none tracking-tight text-ds-text tabular-nums sm:text-[28px] lg:text-[30px]">
-                {dashboardData.dailyDebt.toFixed(3)}
+                {formatAmount(dashboardData.dailyDebt)}
               </span>
               <span className="shrink-0 text-[10px] font-black text-ds-muted sm:text-xs">{currency}</span>
             </div>
             <p className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-ds-muted sm:mt-2.5 sm:text-xs">
               <Clock className="w-3 h-3 shrink-0" />
-              <span className="truncate">Historique</span>
+              <span className="truncate">{t('metrics.history')}</span>
             </p>
           </div>
         </div>
@@ -1585,7 +1592,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
           className="stat-card before:hidden col-span-1 flex min-h-[140px] cursor-pointer flex-col justify-between rounded-ds-lg border border-ds-border bg-ds-surface p-3.5 text-ds-text shadow-ds-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand sm:col-span-2 sm:min-h-[170px] sm:p-6 xl:col-span-1"
         >
           <div className="flex items-center justify-between relative z-10 gap-1">
-            <span className="truncate text-xs font-black uppercase tracking-widest text-ds-muted sm:text-sm">Ventes</span>
+            <span className="truncate text-xs font-black uppercase tracking-widest text-ds-muted sm:text-sm">{t('metrics.sales')}</span>
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-ds-brand-soft sm:h-9 sm:w-9">
               <ShoppingCart className="h-4 w-4 text-ds-brand sm:h-5 sm:w-5" />
             </div>
@@ -1593,13 +1600,13 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
           <div className="mt-3 sm:mt-4 relative z-10">
             <div className="flex items-baseline gap-1">
               <span className="truncate font-mono text-xl font-black leading-none tracking-tight text-ds-text tabular-nums sm:text-[28px] lg:text-[30px]">
-                {dashboardData.todaySalesCount}
+                {formatCount(dashboardData.todaySalesCount)}
               </span>
-              <span className="shrink-0 text-[10px] font-black text-ds-muted sm:text-xs">ventes</span>
+              <span className="shrink-0 text-[10px] font-black text-ds-muted sm:text-xs">{t('units.sales')}</span>
             </div>
             <p className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-ds-muted sm:mt-2.5 sm:text-xs">
               <Clock className="w-3 h-3 shrink-0" />
-              <span className="truncate">Historique</span>
+              <span className="truncate">{t('metrics.history')}</span>
             </p>
           </div>
         </div>
@@ -1611,16 +1618,16 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
           <div>
             <div className="flex items-center gap-2">
               <span className="h-2.5 w-2.5 rounded-full bg-ds-brand"></span>
-              <h2 className="font-display text-sm font-bold uppercase tracking-wider text-ds-text">Valorisation & Performance du Stock Restant</h2>
+              <h2 className="font-display text-sm font-bold uppercase tracking-wider text-ds-text">{t('stockValuation.title')}</h2>
             </div>
-            <p className="mt-0.5 text-[11px] font-semibold uppercase text-ds-muted">Calculé automatiquement en temps réel à chaque modification de prix ou de stock</p>
+            <p className="mt-0.5 text-[11px] font-semibold uppercase text-ds-muted">{t('stockValuation.description')}</p>
           </div>
           {canViewSales && <button
             onClick={() => openHistoryModal('stock')}
             className="flex min-h-11 cursor-pointer items-center gap-1.5 self-start rounded-full bg-ds-brand px-5 text-xs font-black uppercase tracking-wider text-ds-brand-contrast transition-colors hover:bg-ds-brand-hover sm:self-auto"
           >
             <BarChart3 className="w-4 h-4" />
-            Consulter le Rapport d'Inventaire
+            {t('stockValuation.viewInventoryReport')}
           </button>}
         </div>
 
@@ -1631,11 +1638,11 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
               <Coins className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <span className="block text-[10px] font-black uppercase tracking-wider text-ds-muted">Valeur d'Achat Totale</span>
+              <span className="block text-[10px] font-black uppercase tracking-wider text-ds-muted">{t('stockValuation.totalPurchaseValue')}</span>
               <span className="mt-0.5 block font-display text-base font-bold tabular-nums text-ds-text">
-                {stockValuation.totalBuyValue.toFixed(3)} <span className="text-xs text-ds-muted">{currency}</span>
+                {formatAmount(stockValuation.totalBuyValue)} <span className="text-xs text-ds-muted">{currency}</span>
               </span>
-              <span className="mt-0.5 block text-[10px] font-bold uppercase text-ds-muted">Investi dans les marchandises</span>
+              <span className="mt-0.5 block text-[10px] font-bold uppercase text-ds-muted">{t('stockValuation.investedInGoods')}</span>
             </div>
           </div>}
 
@@ -1645,11 +1652,11 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
               <TrendingUp className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <span className="block text-[10px] font-black uppercase tracking-wider text-ds-muted">Revenus Potentiels Estimés</span>
+              <span className="block text-[10px] font-black uppercase tracking-wider text-ds-muted">{t('stockValuation.estimatedPotentialRevenue')}</span>
               <span className="mt-0.5 block font-display text-base font-bold tabular-nums text-ds-text">
-                {stockValuation.totalSellValue.toFixed(3)} <span className="text-xs text-ds-muted">{currency}</span>
+                {formatAmount(stockValuation.totalSellValue)} <span className="text-xs text-ds-muted">{currency}</span>
               </span>
-              <span className="mt-0.5 block text-[10px] font-bold uppercase text-ds-muted">Chiffre d'affaires estimé</span>
+              <span className="mt-0.5 block text-[10px] font-bold uppercase text-ds-muted">{t('stockValuation.estimatedRevenue')}</span>
             </div>
           </div>}
 
@@ -1658,11 +1665,11 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
               <Sparkles className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <span className="block text-[10px] font-black uppercase tracking-wider text-ds-muted">Bénéfice Théorique (Marge)</span>
+              <span className="block text-[10px] font-black uppercase tracking-wider text-ds-muted">{t('stockValuation.theoreticalProfit')}</span>
               <span className="mt-0.5 block font-display text-base font-bold tabular-nums text-ds-success">
-                {stockValuation.theoreticalMargin.toFixed(3)} <span className="text-xs text-ds-muted">{currency}</span>
+                {formatAmount(stockValuation.theoreticalMargin)} <span className="text-xs text-ds-muted">{currency}</span>
               </span>
-              <span className="mt-0.5 block text-[10px] font-bold uppercase text-ds-muted">Marge brute théorique</span>
+              <span className="mt-0.5 block text-[10px] font-bold uppercase text-ds-muted">{t('stockValuation.theoreticalGrossMargin')}</span>
             </div>
           </div>}
 
@@ -1671,11 +1678,11 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
               <Percent className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <span className="block text-[10px] font-black uppercase tracking-wider text-ds-muted">Marge Commerciale Moyenne</span>
+              <span className="block text-[10px] font-black uppercase tracking-wider text-ds-muted">{t('stockValuation.averageCommercialMargin')}</span>
               <span className="mt-0.5 block font-display text-base font-bold tabular-nums text-ds-text">
-                {stockValuation.marginRatio.toFixed(1)}%
+                {formatPercent(stockValuation.marginRatio)}%
               </span>
-              <span className="mt-0.5 block text-[10px] font-bold uppercase text-ds-muted">Taux de profitabilité du stock</span>
+              <span className="mt-0.5 block text-[10px] font-bold uppercase text-ds-muted">{t('stockValuation.stockProfitabilityRate')}</span>
             </div>
           </div>}
 
@@ -1702,8 +1709,8 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                   <ShoppingCart className="h-4 w-4" />
                 </div>
                 <div>
-                  <h2 className="font-display text-sm font-bold uppercase tracking-wider text-ds-text">Dernières ventes</h2>
-                  <p className="mt-0.5 text-[10px] font-semibold uppercase text-ds-muted">Transactions récentes enregistrées</p>
+                  <h2 className="font-display text-sm font-bold uppercase tracking-wider text-ds-text">{t('recentSales.title')}</h2>
+                  <p className="mt-0.5 text-[10px] font-semibold uppercase text-ds-muted">{t('recentSales.description')}</p>
                 </div>
               </div>
             </div>
@@ -1713,70 +1720,70 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                 <EmptyState
                   className="py-16"
                   icon={<ShoppingCart className="h-12 w-12" />}
-                  title="Aucune vente récente dans le système"
+                  title={t('recentSales.empty')}
                 />
               ) : (
-                <table className="responsive-card-table w-full border-collapse text-left">
+                <table className="responsive-card-table w-full border-collapse text-start">
                   <thead>
                     <tr className="border-b border-ds-border bg-ds-surface-2 text-[10px] font-extrabold uppercase tracking-wider text-ds-muted">
-                      <th className="px-4 py-4">Vente</th>
-                      {canShowMargin && <th className="px-4 py-4 text-right">Achat</th>}
-                      {canShowMargin && <th className="px-4 py-4 text-right">Bénéfice</th>}
-                      <th className="px-4 py-4 text-right">Total</th>
-                      <th className="px-4 py-4 text-right">Montant payé</th>
-                      <th className="px-4 py-4 text-right">Reste à payer</th>
-                      <th className="px-4 py-4 text-center">Statut</th>
+                      <th className="px-4 py-4">{t('recentSales.columns.sale')}</th>
+                      {canShowMargin && <th className="px-4 py-4 text-end">{t('recentSales.columns.purchase')}</th>}
+                      {canShowMargin && <th className="px-4 py-4 text-end">{t('recentSales.columns.profit')}</th>}
+                      <th className="px-4 py-4 text-end">{t('recentSales.columns.total')}</th>
+                      <th className="px-4 py-4 text-end">{t('recentSales.columns.amountPaid')}</th>
+                      <th className="px-4 py-4 text-end">{t('recentSales.columns.remainingToPay')}</th>
+                      <th className="px-4 py-4 text-center">{t('recentSales.columns.status')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-ds-border">
                     {sales.slice(0, 10).map((sale) => {
                       const sDate = getSaleDate(sale);
-                      const formattedDate = sDate.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                      const formattedTime = sDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+                      const formattedDate = sDate.toLocaleDateString(getDateLocale(), { day: '2-digit', month: '2-digit', year: 'numeric' });
+                      const formattedTime = sDate.toLocaleTimeString(getDateLocale(), { hour: '2-digit', minute: '2-digit' });
                       const margin = canShowMargin ? computeSaleProfit(sale, saleCostSnapshots[sale.id]) : null;
                       return (
                         <tr key={sale.id} className="transition-colors hover:bg-ds-surface-2">
-                          <td data-label="Vente" className="whitespace-nowrap px-4 py-4">
+                          <td data-label={t('recentSales.columns.sale')} className="whitespace-nowrap px-4 py-4">
                             <div className="flex flex-col">
-                              <span className="text-xs font-bold text-ds-text">{sale.clientName || 'Client de passage'}</span>
+                              <span className="text-xs font-bold text-ds-text">{sale.clientName || t('recentSales.walkInCustomer')}</span>
                               <span className="mt-0.5 font-mono text-[10px] font-semibold text-ds-muted">{formattedDate} · {formattedTime}</span>
                             </div>
                           </td>
                           {canShowMargin && (
                             <>
-                              <td data-label="Achat" className="whitespace-nowrap px-4 py-4 text-right">
+                              <td data-label={t('recentSales.columns.purchase')} className="whitespace-nowrap px-4 py-4 text-end">
                                 <span className="font-mono text-xs font-semibold tabular-nums text-ds-text">
-                                  {margin?.complete ? `${margin.cost.toFixed(3)} ${currency}` : '—'}
+                                  {margin?.complete ? `${formatAmount(margin.cost)} ${currency}` : '—'}
                                 </span>
                               </td>
-                              <td data-label="Bénéfice" className="whitespace-nowrap px-4 py-4 text-right">
+                              <td data-label={t('recentSales.columns.profit')} className="whitespace-nowrap px-4 py-4 text-end">
                                 {margin?.complete && margin.profit !== null ? (
                                   <span className="inline-flex items-center gap-2">
                                     <span className={cn('font-mono text-xs font-bold tabular-nums', margin.profit < 0 ? 'text-ds-danger' : 'text-ds-success')}>
-                                      {margin.profit.toFixed(3)} {currency}
+                                      {formatAmount(margin.profit)} {currency}
                                     </span>
-                                    {margin.profit < 0 && <span className="rounded-full bg-ds-danger-soft px-2.5 py-1 text-[9px] font-bold text-ds-danger">à perte</span>}
+                                    {margin.profit < 0 && <span className="rounded-full bg-ds-danger-soft px-2.5 py-1 text-[9px] font-bold text-ds-danger">{t('recentSales.atLoss')}</span>}
                                   </span>
                                 ) : <span className="font-mono text-xs text-ds-muted">—</span>}
                               </td>
                             </>
                           )}
-                          <td data-label="Total" className="whitespace-nowrap px-4 py-4 text-right">
-                            <span className="font-mono text-xs font-bold tabular-nums text-ds-text">{sale.total.toFixed(3)} {currency}</span>
+                          <td data-label={t('recentSales.columns.total')} className="whitespace-nowrap px-4 py-4 text-end">
+                            <span className="font-mono text-xs font-bold tabular-nums text-ds-text">{formatAmount(sale.total)} {currency}</span>
                           </td>
-                          <td data-label="Montant payé" className="whitespace-nowrap px-4 py-4 text-right">
-                            <span className="font-mono text-xs font-semibold tabular-nums text-ds-text">{sale.paid.toFixed(3)} {currency}</span>
+                          <td data-label={t('recentSales.columns.amountPaid')} className="whitespace-nowrap px-4 py-4 text-end">
+                            <span className="font-mono text-xs font-semibold tabular-nums text-ds-text">{formatAmount(sale.paid)} {currency}</span>
                           </td>
-                          <td data-label="Reste à payer" className="whitespace-nowrap px-4 py-4 text-right">
+                          <td data-label={t('recentSales.columns.remainingToPay')} className="whitespace-nowrap px-4 py-4 text-end">
                             {sale.debt > 0 ? (
-                              <span className="font-mono text-xs font-bold tabular-nums text-ds-danger">-{sale.debt.toFixed(3)} {currency}</span>
+                              <span className="font-mono text-xs font-bold tabular-nums text-ds-danger">-{formatAmount(sale.debt)} {currency}</span>
                             ) : (
-                              <span className="font-mono text-xs font-semibold tabular-nums text-ds-muted">0.000 {currency}</span>
+                              <span className="font-mono text-xs font-semibold tabular-nums text-ds-muted">{formatAmount(0)} {currency}</span>
                             )}
                           </td>
-                          <td data-label="Statut" className="whitespace-nowrap px-4 py-4 text-center">
+                          <td data-label={t('recentSales.columns.status')} className="whitespace-nowrap px-4 py-4 text-center">
                             <Badge variant={sale.debt > 0 ? 'warning' : 'success'} className="min-h-7 px-2.5 py-1 text-[9px] uppercase tracking-wider">
-                              {sale.debt > 0 ? 'Crédit' : 'Réglé'}
+                              {sale.debt > 0 ? t('recentSales.status.credit') : t('recentSales.status.paid')}
                             </Badge>
                           </td>
                         </tr>
@@ -1800,8 +1807,8 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                   <Package className="h-4 w-4" />
                 </div>
                 <div>
-                  <h2 className="font-display text-xs font-bold uppercase tracking-wider text-ds-text">Top Ventes Aujourd'hui</h2>
-                  <p className="mt-0.5 text-[10px] font-semibold uppercase text-ds-muted">Par volume d'articles vendus</p>
+                  <h2 className="font-display text-xs font-bold uppercase tracking-wider text-ds-text">{t('topProducts.title')}</h2>
+                  <p className="mt-0.5 text-[10px] font-semibold uppercase text-ds-muted">{t('topProducts.description')}</p>
                 </div>
               </div>
             </div>
@@ -1811,7 +1818,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                 <EmptyState
                   className="py-10"
                   icon={<Package className="h-10 w-10" />}
-                  title="Aucune vente aujourd'hui"
+                  title={t('topProducts.empty')}
                 />
               ) : (
                 dashboardData.topProductsToday.map((p, idx) => (
@@ -1819,14 +1826,14 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                     <div className={cn(
                       "flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-ds-surface-2 text-xs font-extrabold text-ds-text"
                     )}>
-                      #{idx + 1}
+                      #{formatCount(idx + 1)}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="truncate text-xs font-bold text-ds-text">{p.name}</h4>
                       <div className="flex items-center gap-2 mt-0.5">
-                        <span className="font-mono text-[10px] font-bold text-ds-muted">{p.count} unités</span>
+                        <span className="font-mono text-[10px] font-bold text-ds-muted">{t('topProducts.units', { count: formatCount(p.count) })}</span>
                         <span className="text-[10px] text-ds-muted">|</span>
-                        <span className="text-[10px] font-black text-ds-text">CA: {p.total.toFixed(3)} {currency}</span>
+                        <span className="text-[10px] font-black text-ds-text">{t('topProducts.revenue')}: {formatAmount(p.total)} {currency}</span>
                       </div>
                     </div>
                   </div>
@@ -1843,9 +1850,9 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                   <AlertTriangle className="h-4 w-4" />
                 </div>
                 <div>
-                  <h2 className="font-display text-xs font-bold uppercase tracking-wider text-ds-text">Alerte Stock Faible</h2>
+                  <h2 className="font-display text-xs font-bold uppercase tracking-wider text-ds-text">{t('lowStock.title')}</h2>
                   <p className="mt-0.5 text-[10px] font-semibold uppercase text-ds-muted">
-                    Seuil configuré : {dashboardData.configuredMinStock} unités
+                    {t('lowStock.configuredThreshold', { count: formatCount(dashboardData.configuredMinStock) })}
                   </p>
                 </div>
               </div>
@@ -1853,13 +1860,13 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                 "rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider",
                 dashboardData.lowStockAlerts.length > 0 ? "bg-ds-danger-soft text-ds-danger" : "bg-ds-surface-2 text-ds-muted"
               )}>
-                {dashboardData.lowStockAlerts.length} produits
+                {t('lowStock.productsCount', { count: formatCount(dashboardData.lowStockAlerts.length) })}
               </span>
             </div>
 
             <div className="max-h-[350px] divide-y divide-ds-border overflow-y-auto p-5">
               {dashboardData.lowStockAlerts.length === 0 ? (
-                <EmptyState className="py-10" icon={<Package className="h-10 w-10" />} title="État des stocks satisfaisant" />
+                <EmptyState className="py-10" icon={<Package className="h-10 w-10" />} title={t('lowStock.satisfactory')} />
               ) : (
                 dashboardData.lowStockAlerts.map((product) => {
                   const effectiveThreshold = product.lowStockAlert !== undefined && product.lowStockAlert >= 0 
@@ -1871,17 +1878,17 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                       onClick={() => openHistoryModal('stock')}
                       className="group -mx-2 flex cursor-pointer items-center justify-between rounded-xl px-2 py-3 transition-colors first:pt-1 last:pb-1 hover:bg-ds-surface-2"
                     >
-                      <div className="min-w-0 flex-1 pr-2">
+                      <div className="min-w-0 flex-1 pe-2">
                         <h4 className="truncate text-xs font-bold text-ds-text transition-colors" title={product.name}>
                           {product.name}
                         </h4>
                         <p className="mt-0.5 text-[10px] font-semibold text-ds-muted">
-                          Seuil minimal : {effectiveThreshold} unités
+                          {t('lowStock.minimumThreshold', { count: formatCount(effectiveThreshold) })}
                         </p>
                       </div>
-                      <div className="text-right shrink-0">
+                      <div className="text-end shrink-0">
                         <Badge variant={product.stock <= 0 ? 'danger' : 'warning'} className="min-h-7 rounded-ds-sm px-2 py-1 font-mono text-xs font-black">
-                          {product.stock <= 0 ? 'Rupture (0)' : `${product.stock} dispo`}
+                          {product.stock <= 0 ? t('lowStock.outOfStock') : t('lowStock.available', { count: formatCount(product.stock) })}
                         </Badge>
                       </div>
                     </div>
@@ -1925,20 +1932,12 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                 </div>
                 <div>
                   <h3 className="text-lg font-black tracking-tight leading-none">
-                    {activeModal === 'revenue' && "Consulter l'Historique : Chiffre d'Affaires"}
-                    {activeModal === 'profit' && "Consulter l'Historique : Bénéfice Net"}
-                    {activeModal === 'debt' && "Consulter l'Historique : Dettes"}
-                    {activeModal === 'sales' && "Consulter l'Historique : Nombre de ventes"}
-                    {activeModal === 'stock' && "Rapport de Valorisation & Rentabilité du Stock"}
+                    {t(`history.title.${activeModal}`)}
                   </h3>
                   <p className="text-[10px] uppercase font-bold tracking-wider text-ds-brand-contrast/70 mt-1">
-                    {activeModal === 'revenue' && "Suivi de la courbe des ventes brutes"}
-                    {activeModal === 'profit' && "Rendement financier après déduction du coût d'achat"}
-                    {activeModal === 'debt' && "Encours clients et d'impayés du jour"}
-                    {activeModal === 'sales' && "Intensité de l'activité du magasin"}
-                    {activeModal === 'stock' && (canShowMargin
-                      ? "Analyse en temps réel de la valeur d'achat, de vente et des marges bénéficiaires de l'inventaire actuel"
-                      : "Analyse en temps réel du stock disponible et des revenus potentiels")}
+                    {activeModal === 'stock'
+                      ? t(canShowMargin ? 'history.subtitle.stockWithMargin' : 'history.subtitle.stock')
+                      : t(`history.subtitle.${activeModal}`)}
                   </p>
                 </div>
               </div>
@@ -1948,7 +1947,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                 className="relative z-10 px-4 py-2 flex items-center gap-2 bg-ds-surface/15 hover:bg-ds-surface/25 rounded-xl transition-all cursor-pointer text-ds-brand-contrast text-xs font-black uppercase tracking-wider"
               >
                 <X className="w-4 h-4" />
-                <span>Fermer</span>
+                <span>{t('common.close')}</span>
               </button>
             </div>
 
@@ -1958,13 +1957,14 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                 
                 {/* Search bar */}
                 <div className="md:col-span-4 relative">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ds-muted" />
+                  <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ds-muted" />
                   <input 
                     type="text"
                     value={searchQuery}
                     onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                    placeholder={activeModal === 'stock' ? "Rechercher un produit, code barre..." : "Rechercher une date (ex: 22/06)..."}
-                    className="w-full pl-10 pr-4 py-2 bg-ds-surface border border-ds-border rounded-xl text-base font-semibold placeholder:text-ds-muted outline-none focus:ring-2 focus:ring-ds-brand/10 focus:border-ds-brand transition-all sm:text-xs"
+                    aria-label={activeModal === 'stock' ? t('history.searchStockAriaLabel') : t('history.searchDateAriaLabel')}
+                    placeholder={activeModal === 'stock' ? t('history.searchStockPlaceholder') : t('history.searchDatePlaceholder')}
+                    className="w-full ps-10 pe-4 py-2 bg-ds-surface border border-ds-border rounded-xl text-base font-semibold placeholder:text-ds-muted outline-none focus:ring-2 focus:ring-ds-brand/10 focus:border-ds-brand transition-all sm:text-xs"
                   />
                 </div>
 
@@ -1973,41 +1973,41 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                   <div className="md:col-span-8 flex flex-wrap items-center gap-4 md:justify-end">
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 bg-ds-surface px-4 py-2.5 rounded-2xl border border-ds-border shadow-xs text-[11px] font-bold text-ds-muted">
                       <div>
-                        <span>Articles : </span>
-                        <span className="text-ds-text font-black font-mono">{stockValuation.totalItemsCount}</span>
+                        <span>{t('history.stockItems')}: </span>
+                        <span className="text-ds-text font-black font-mono">{formatCount(stockValuation.totalItemsCount)}</span>
                       </div>
                       <div className="hidden sm:block w-px h-3.5 bg-ds-surface-2"></div>
                       <div>
-                        <span>Stock Total : </span>
-                        <span className="text-ds-text font-black font-mono">{stockValuation.totalStockQty}</span>
+                        <span>{t('history.totalStock')}: </span>
+                        <span className="text-ds-text font-black font-mono">{formatCount(stockValuation.totalStockQty)}</span>
                       </div>
                       <div className="hidden sm:block w-px h-3.5 bg-ds-surface-2"></div>
                       {canShowBuyPrice && <div>
-                        <span>Valeur d'Achat : </span>
-                        <span className="text-ds-text font-black font-mono">{stockValuation.totalBuyValue.toFixed(3)} {currency}</span>
+                        <span>{t('history.purchaseValue')}: </span>
+                        <span className="text-ds-text font-black font-mono">{formatAmount(stockValuation.totalBuyValue)} {currency}</span>
                       </div>}
                       {canShowBuyPrice && <div className="hidden sm:block w-px h-3.5 bg-ds-surface-2"></div>}
                       <div>
-                        <span>Revenus Est. : </span>
-                        <span className="text-ds-brand font-black font-mono">{stockValuation.totalSellValue.toFixed(3)} {currency}</span>
+                        <span>{t('history.estimatedRevenue')}: </span>
+                        <span className="text-ds-brand font-black font-mono">{formatAmount(stockValuation.totalSellValue)} {currency}</span>
                       </div>
                       {canShowMargin && <div className="hidden sm:block w-px h-3.5 bg-ds-surface-2"></div>}
                       {canShowMargin && <div>
-                        <span>Marge Est. : </span>
-                        <span className="text-ds-brand font-black font-mono">{stockValuation.theoreticalMargin.toFixed(3)} {currency} ({stockValuation.marginRatio.toFixed(1)}%)</span>
+                        <span>{t('history.estimatedMargin')}: </span>
+                        <span className="text-ds-brand font-black font-mono">{formatAmount(stockValuation.theoreticalMargin)} {currency} ({formatPercent(stockValuation.marginRatio)}%)</span>
                       </div>}
                     </div>
                   </div>
                 ) : (
                   <div className="md:col-span-8 flex flex-wrap items-center gap-2 md:justify-end">
-                    <span className="text-[10px] font-black uppercase text-ds-muted tracking-wider mr-1">Filtre Période :</span>
+                    <span className="text-[10px] font-black uppercase text-ds-muted tracking-wider me-1">{t('history.periodFilter')}:</span>
                     {(['today', '7', '30', '90', 'year', 'all', 'custom'] as const).map(p => {
-                      const label = p === 'today' ? "Aujourd'hui" :
-                                    p === '7' ? '7 jours' :
-                                    p === '30' ? '30 jours' :
-                                    p === '90' ? '90 jours' :
-                                    p === 'year' ? 'Cette année' :
-                                    p === 'all' ? 'Tout' : 'Personnalisée';
+                      const label = p === 'today' ? t('period.today') :
+                                    p === '7' ? t('period.sevenDays') :
+                                    p === '30' ? t('period.thirtyDays') :
+                                    p === '90' ? t('period.ninetyDays') :
+                                    p === 'year' ? t('period.thisYear') :
+                                    p === 'all' ? t('period.all') : t('period.custom');
                       return (
                         <button
                           key={p}
@@ -2031,22 +2031,24 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
               {activeModal !== 'stock' && periodFilter === 'custom' && (
                 <div className="flex items-center gap-3 p-3 bg-ds-surface rounded-2xl border border-ds-border shadow-xs max-w-lg animate-in slide-in-from-top-2 duration-200">
                   <div className="relative flex-1">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ds-muted pointer-events-none" />
+                    <Calendar className="absolute start-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ds-muted pointer-events-none" />
                     <input 
                       type="date"
                       value={startDate}
                       onChange={(e) => { setStartDate(e.target.value); setCurrentPage(1); }}
-                      className="w-full pl-9 pr-3 py-1.5 border border-ds-border rounded-xl text-base font-medium outline-none sm:text-xs"
+                      aria-label={t('history.startDate')}
+                      className="w-full ps-9 pe-3 py-1.5 border border-ds-border rounded-xl text-base font-medium outline-none sm:text-xs"
                     />
                   </div>
-                  <span className="text-ds-muted font-bold text-xs">à</span>
+                  <span className="text-ds-muted font-bold text-xs">{t('common.to')}</span>
                   <div className="relative flex-1">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ds-muted pointer-events-none" />
+                    <Calendar className="absolute start-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-ds-muted pointer-events-none" />
                     <input 
                       type="date"
                       value={endDate}
                       onChange={(e) => { setEndDate(e.target.value); setCurrentPage(1); }}
-                      className="w-full pl-9 pr-3 py-1.5 border border-ds-border rounded-xl text-base font-medium outline-none sm:text-xs"
+                      aria-label={t('history.endDate')}
+                      className="w-full ps-9 pe-3 py-1.5 border border-ds-border rounded-xl text-base font-medium outline-none sm:text-xs"
                     />
                   </div>
                 </div>
@@ -2063,30 +2065,30 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                         <Package className="w-5 h-5 text-ds-brand" />
                       </div>
                       <div>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-ds-brand/80 block">Produits existants en stock</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-ds-brand/80 block">{t('stockSummary.productsInStock')}</span>
                         <div className="flex items-baseline gap-1.5 mt-0.5">
-                          <span className="text-2xl font-black font-mono leading-none">{stockValuation.inStockItemsCount}</span>
-                          <span className="text-[11px] font-bold text-ds-brand/80">/ {stockValuation.totalItemsCount} références</span>
+                          <span className="text-2xl font-black font-mono leading-none">{formatCount(stockValuation.inStockItemsCount)}</span>
+                          <span className="text-[11px] font-bold text-ds-brand/80">/ {t('stockSummary.references', { count: formatCount(stockValuation.totalItemsCount) })}</span>
                         </div>
                         {stockValuation.outOfStockCount > 0 && (
-                          <span className="text-[9px] font-bold uppercase text-ds-danger block mt-0.5">{stockValuation.outOfStockCount} produit(s) en rupture</span>
+                          <span className="text-[9px] font-bold uppercase text-ds-danger block mt-0.5">{t('stockSummary.productsOutOfStock', { count: formatCount(stockValuation.outOfStockCount) })}</span>
                         )}
                       </div>
                     </div>
                     <div className="hidden md:block w-px h-12 bg-ds-surface/15"></div>
                     <div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-ds-brand/80 block">Valeur de mon stock à cet instant</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-ds-brand/80 block">{t('stockSummary.currentStockValue')}</span>
                       <div className="flex items-baseline gap-1.5 mt-0.5">
-                        <span className="text-2xl font-black font-mono leading-none">{stockValuation.totalBuyValue.toFixed(3)}</span>
-                        <span className="text-[11px] font-bold text-ds-brand/80">{currency} (valeur d'achat)</span>
+                        <span className="text-2xl font-black font-mono leading-none">{formatAmount(stockValuation.totalBuyValue)}</span>
+                        <span className="text-[11px] font-bold text-ds-brand/80">{currency} ({t('stockSummary.purchaseValue')})</span>
                       </div>
-                      <span className="text-[9px] font-bold uppercase text-ds-brand/70 block mt-0.5">Soit {stockValuation.totalSellValue.toFixed(3)} {currency} en valeur de vente potentielle</span>
+                      <span className="text-[9px] font-bold uppercase text-ds-brand/70 block mt-0.5">{t('stockSummary.potentialSaleValue', { value: formatAmount(stockValuation.totalSellValue), currency })}</span>
                     </div>
                     <div className="hidden md:block w-px h-12 bg-ds-surface/15"></div>
-                    <div className="text-right md:text-left">
-                      <span className="text-[10px] font-black uppercase tracking-widest text-ds-brand/80 block">Calculé le</span>
-                      <span className="text-xs font-black font-mono block mt-1">{new Date().toLocaleDateString('fr-FR')} à {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
-                      <span className="text-[9px] font-bold uppercase text-ds-brand/70 block mt-0.5">Temps réel · inventaire actuel</span>
+                    <div className="text-end md:text-start">
+                      <span className="text-[10px] font-black uppercase tracking-widest text-ds-brand/80 block">{t('stockSummary.calculatedAt')}</span>
+                      <span className="text-xs font-black font-mono block mt-1">{new Date().toLocaleDateString(getDateLocale())} {t('common.at')} {new Date().toLocaleTimeString(getDateLocale(), { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="text-[9px] font-bold uppercase text-ds-brand/70 block mt-0.5">{t('stockSummary.realTime')}</span>
                     </div>
                   </div>
                 </div>
@@ -2099,12 +2101,12 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                 <EmptyState
                   className="py-24"
                   icon={<Calendar className="h-12 w-12" />}
-                  title="Aucune donnée trouvée"
-                  description="Ajustez la recherche pour visualiser d'autres articles ou données."
+                  title={t('history.emptyTitle')}
+                  description={t('history.emptyDescription')}
                 />
               ) : (
                 <div className="overflow-x-auto p-3 sm:p-6">
-                  <table className="w-full border-collapse text-left text-xs">
+                  <table className="w-full border-collapse text-start text-xs">
                     <thead>
                       <tr className="border-b border-ds-border text-[10px] font-black uppercase tracking-wider text-ds-muted bg-ds-surface-2/70">
                         {activeModal === 'stock' ? (
@@ -2114,21 +2116,21 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                               className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors select-none"
                             >
                               <div className="flex items-center gap-1.5">
-                                Désignation du Produit
+                                {t('history.columns.productDesignation')}
                                 <ArrowUpDown className="w-3.5 h-3.5 text-ds-muted" />
                               </div>
                             </th>
-                            <th className="px-6 py-3 text-center">Quantité en Stock</th>
-                            {canShowBuyPrice && <th className="px-6 py-3 text-right">Prix d'Achat Unit.</th>}
-                            <th className="px-6 py-3 text-right">Prix de Vente Unit.</th>
-                            {canShowBuyPrice && <th className="px-6 py-3 text-right">Valeur d'Achat Totale</th>}
-                            <th className="px-6 py-3 text-right">Valeur de Vente Totale (Revenus Est.)</th>
+                            <th className="px-6 py-3 text-center">{t('history.columns.stockQuantity')}</th>
+                            {canShowBuyPrice && <th className="px-6 py-3 text-end">{t('history.columns.unitPurchasePrice')}</th>}
+                            <th className="px-6 py-3 text-end">{t('history.columns.unitSalePrice')}</th>
+                            {canShowBuyPrice && <th className="px-6 py-3 text-end">{t('history.columns.totalPurchaseValue')}</th>}
+                            <th className="px-6 py-3 text-end">{t('history.columns.totalSaleValue')}</th>
                             {canShowMargin && <th
                               onClick={() => { setSortField('value'); setSortAsc(!sortAsc); }}
-                              className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors text-right select-none"
+                              className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors text-end select-none"
                             >
                               <div className="flex items-center gap-1.5 justify-end">
-                                Marge Bénéficiaire Théorique
+                                {t('history.columns.theoreticalProfitMargin')}
                                 <ArrowUpDown className="w-3.5 h-3.5 text-ds-muted" />
                               </div>
                             </th>}
@@ -2139,7 +2141,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                             className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors select-none"
                           >
                             <div className="flex items-center gap-1.5">
-                              Date de l'activité
+                              {t('history.columns.activityDate')}
                               <ArrowUpDown className="w-3.5 h-3.5 text-ds-muted" />
                             </div>
                           </th>
@@ -2147,15 +2149,15 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                         
                         {activeModal === 'revenue' && (
                           <>
-                            <th className="px-6 py-3 text-center">Nbre Ventes</th>
-                            <th className="px-6 py-3 text-right">Montant Encaissé (Liquide)</th>
-                            <th className="px-6 py-3 text-right">Dettes Créées</th>
+                            <th className="px-6 py-3 text-center">{t('history.columns.salesCount')}</th>
+                            <th className="px-6 py-3 text-end">{t('history.columns.cashCollectedLiquid')}</th>
+                            <th className="px-6 py-3 text-end">{t('history.columns.debtsCreated')}</th>
                             <th 
                               onClick={() => { setSortField('value'); setSortAsc(!sortAsc); }}
-                              className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors text-right select-none"
+                              className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors text-end select-none"
                             >
                               <div className="flex items-center gap-1.5 justify-end">
-                                Chiffre d'Affaires Brut
+                                {t('history.columns.grossRevenue')}
                                 <ArrowUpDown className="w-3.5 h-3.5 text-ds-muted" />
                               </div>
                             </th>
@@ -2164,15 +2166,15 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
 
                         {activeModal === 'profit' && (
                           <>
-                            <th className="px-6 py-3 text-right">Chiffre d'Affaires</th>
-                            <th className="px-6 py-3 text-right">Coût estimé des articles</th>
-                            <th className="px-6 py-3 text-right">Ratio Marge (%)</th>
+                            <th className="px-6 py-3 text-end">{t('print.columns.revenue')}</th>
+                            <th className="px-6 py-3 text-end">{t('history.columns.estimatedItemCost')}</th>
+                            <th className="px-6 py-3 text-end">{t('print.columns.marginRatio')}</th>
                             <th 
                               onClick={() => { setSortField('value'); setSortAsc(!sortAsc); }}
-                              className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors text-right select-none"
+                              className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors text-end select-none"
                             >
                               <div className="flex items-center gap-1.5 justify-end">
-                                Bénéfice Net
+                                {t('print.columns.netProfit')}
                                 <ArrowUpDown className="w-3.5 h-3.5 text-ds-muted" />
                               </div>
                             </th>
@@ -2181,15 +2183,15 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
 
                         {activeModal === 'debt' && (
                           <>
-                            <th className="px-6 py-3 text-right">Total CA du Jour</th>
-                            <th className="px-6 py-3 text-right">Total Crédit Accordé</th>
-                            <th className="px-6 py-3 text-center">Nbre Tickets à Crédit</th>
+                            <th className="px-6 py-3 text-end">{t('history.columns.dailyRevenueTotal')}</th>
+                            <th className="px-6 py-3 text-end">{t('history.columns.totalCreditGranted')}</th>
+                            <th className="px-6 py-3 text-center">{t('history.columns.creditTickets')}</th>
                             <th 
                               onClick={() => { setSortField('value'); setSortAsc(!sortAsc); }}
-                              className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors text-right select-none"
+                              className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors text-end select-none"
                             >
                               <div className="flex items-center gap-1.5 justify-end">
-                                Somme des Impayés
+                                {t('history.columns.unpaidTotal')}
                                 <ArrowUpDown className="w-3.5 h-3.5 text-ds-muted" />
                               </div>
                             </th>
@@ -2198,14 +2200,14 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
 
                         {activeModal === 'sales' && (
                           <>
-                            <th className="px-6 py-3 text-center font-bold text-ds-muted">Panier Moyen journalier</th>
-                            <th className="px-6 py-3 text-right">Ventes encaissées</th>
+                            <th className="px-6 py-3 text-center font-bold text-ds-muted">{t('print.columns.dailyAverageBasket')}</th>
+                            <th className="px-6 py-3 text-end">{t('financialCards.collectedSales')}</th>
                             <th 
                               onClick={() => { setSortField('value'); setSortAsc(!sortAsc); }}
                               className="px-6 py-3 cursor-pointer hover:bg-ds-surface-2 transition-colors text-center select-none bg-ds-brand-soft/30"
                             >
                               <div className="flex items-center gap-1.5 justify-center">
-                                Nombre de Ventes
+                                {t('history.columns.salesCount')}
                                 <ArrowUpDown className="w-3.5 h-3.5 text-ds-muted" />
                               </div>
                             </th>
@@ -2226,7 +2228,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                               <td className="px-6 py-3.5 whitespace-nowrap">
                                 <div className="flex flex-col">
                                   <span className="text-xs font-bold text-ds-text">{product.name}</span>
-                                  <span className="text-[10px] text-ds-muted font-mono">{product.barcode || 'Sans codebarre'}</span>
+                                  <span className="text-[10px] text-ds-muted font-mono">{product.barcode || t('common.noBarcode')}</span>
                                 </div>
                               </td>
                               <td className="px-6 py-3.5 text-center whitespace-nowrap">
@@ -2236,24 +2238,24 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                                   stock <= (product.lowStockAlert || 5) ? "bg-ds-danger-soft text-ds-danger border-ds-danger" :
                                   "bg-ds-success-soft text-ds-success border-ds-success"
                                 )}>
-                                  {stock} unités
+                                  {t('units.stockQuantity', { count: formatCount(stock) })}
                                 </span>
                               </td>
-                              {canShowBuyPrice && <td className="px-6 py-3.5 text-right font-semibold text-ds-muted font-mono">
-                                {(product.buyPrice || 0).toFixed(3)} {currency}
+                              {canShowBuyPrice && <td className="px-6 py-3.5 text-end font-semibold text-ds-muted font-mono">
+                                {formatAmount(product.buyPrice || 0)} {currency}
                               </td>}
-                              <td className="px-6 py-3.5 text-right font-bold text-ds-text font-mono">
-                                {(product.sellPrice || 0).toFixed(3)} {currency}
+                              <td className="px-6 py-3.5 text-end font-bold text-ds-text font-mono">
+                                {formatAmount(product.sellPrice || 0)} {currency}
                               </td>
-                              {canShowBuyPrice && <td className="px-6 py-3.5 text-right text-ds-muted font-mono">
-                                {buyVal.toFixed(3)} {currency}
+                              {canShowBuyPrice && <td className="px-6 py-3.5 text-end text-ds-muted font-mono">
+                                {formatAmount(buyVal)} {currency}
                               </td>}
-                              <td className="px-6 py-3.5 text-right font-black text-ds-text font-mono">
-                                {sellVal.toFixed(3)} {currency}
+                              <td className="px-6 py-3.5 text-end font-black text-ds-text font-mono">
+                                {formatAmount(sellVal)} {currency}
                               </td>
-                              {canShowMargin && <td className="px-6 py-3.5 text-right whitespace-nowrap">
+                              {canShowMargin && <td className="px-6 py-3.5 text-end whitespace-nowrap">
                                 <span className="px-3 py-1 bg-ds-brand-soft text-ds-brand font-black font-mono rounded-lg border border-ds-border text-xs">
-                                  {profitVal.toFixed(3)} {currency}
+                                  {formatAmount(profitVal)} {currency}
                                 </span>
                               </td>}
                             </tr>
@@ -2261,7 +2263,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                         }
 
                         const dayRec = rec as any;
-                        const formattedDate = dayRec.dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+                        const formattedDate = dayRec.dateObj.toLocaleDateString(getDateLocale(), { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
                         return (
                           <tr key={dayRec.dateStr} className="hover:bg-ds-surface-2/50 transition-colors">
                             <td className="px-6 py-3.5 whitespace-nowrap">
@@ -2273,12 +2275,12 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
 
                             {activeModal === 'revenue' && (
                               <>
-                                <td className="px-6 py-3.5 text-center font-bold text-ds-text font-mono">{dayRec.salesCount}</td>
-                                <td className="px-6 py-3.5 text-right font-bold text-ds-success font-mono">{dayRec.cashAmount.toFixed(3)} {currency}</td>
-                                <td className="px-6 py-3.5 text-right font-semibold text-ds-danger font-mono">{dayRec.debt.toFixed(3)} {currency}</td>
-                                <td className="px-6 py-3.5 text-right whitespace-nowrap">
+                                <td className="px-6 py-3.5 text-center font-bold text-ds-text font-mono">{formatCount(dayRec.salesCount)}</td>
+                                <td className="px-6 py-3.5 text-end font-bold text-ds-success font-mono">{formatAmount(dayRec.cashAmount)} {currency}</td>
+                                <td className="px-6 py-3.5 text-end font-semibold text-ds-danger font-mono">{formatAmount(dayRec.debt)} {currency}</td>
+                                <td className="px-6 py-3.5 text-end whitespace-nowrap">
                                   <span className="px-3 py-1 bg-ds-accent-soft text-ds-accent font-black font-mono rounded-lg border border-ds-border text-xs">
-                                    {dayRec.revenue.toFixed(3)} {currency}
+                                    {formatAmount(dayRec.revenue)} {currency}
                                   </span>
                                 </td>
                               </>
@@ -2286,16 +2288,16 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
 
                             {activeModal === 'profit' && (
                               <>
-                                <td className="px-6 py-3.5 text-right font-semibold text-ds-muted font-mono">{dayRec.revenue.toFixed(3)} {currency}</td>
-                                <td className="px-6 py-3.5 text-right text-ds-muted font-mono">{(dayRec.revenue - dayRec.profit).toFixed(3)} {currency}</td>
-                                <td className="px-6 py-3.5 text-right whitespace-nowrap">
+                                <td className="px-6 py-3.5 text-end font-semibold text-ds-muted font-mono">{formatAmount(dayRec.revenue)} {currency}</td>
+                                <td className="px-6 py-3.5 text-end text-ds-muted font-mono">{formatAmount(dayRec.revenue - dayRec.profit)} {currency}</td>
+                                <td className="px-6 py-3.5 text-end whitespace-nowrap">
                                   <span className="text-[10px] font-black text-ds-success bg-ds-success-soft px-2 py-0.5 rounded-md border border-ds-success">
-                                    {dayRec.revenue > 0 ? ((dayRec.profit / dayRec.revenue) * 100).toFixed(1) + '%' : '0.0%'}
+                                    {`${formatPercent(dayRec.revenue > 0 ? (dayRec.profit / dayRec.revenue) * 100 : 0)}%`}
                                   </span>
                                 </td>
-                                <td className="px-6 py-3.5 text-right whitespace-nowrap">
+                                <td className="px-6 py-3.5 text-end whitespace-nowrap">
                                   <span className="px-3 py-1 bg-ds-success-soft text-ds-success font-black font-mono rounded-lg border border-ds-success text-xs">
-                                    {dayRec.profit.toFixed(3)} {currency}
+                                    {formatAmount(dayRec.profit)} {currency}
                                   </span>
                                 </td>
                               </>
@@ -2303,12 +2305,12 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
 
                             {activeModal === 'debt' && (
                               <>
-                                <td className="px-6 py-3.5 text-right text-ds-muted font-mono">{dayRec.revenue.toFixed(3)} {currency}</td>
-                                <td className="px-6 py-3.5 text-right text-ds-muted font-mono">{dayRec.cashAmount.toFixed(3)} {currency}</td>
-                                <td className="px-6 py-3.5 text-center font-bold text-ds-text font-mono">{dayRec.salesCount}</td>
-                                <td className="px-6 py-3.5 text-right whitespace-nowrap">
+                                <td className="px-6 py-3.5 text-end text-ds-muted font-mono">{formatAmount(dayRec.revenue)} {currency}</td>
+                                <td className="px-6 py-3.5 text-end text-ds-muted font-mono">{formatAmount(dayRec.cashAmount)} {currency}</td>
+                                <td className="px-6 py-3.5 text-center font-bold text-ds-text font-mono">{formatCount(dayRec.salesCount)}</td>
+                                <td className="px-6 py-3.5 text-end whitespace-nowrap">
                                   <span className="px-3 py-1 bg-ds-danger-soft text-ds-danger font-black font-mono rounded-lg border border-ds-danger text-xs">
-                                    {dayRec.debt.toFixed(3)} {currency}
+                                    {formatAmount(dayRec.debt)} {currency}
                                   </span>
                                 </td>
                               </>
@@ -2317,12 +2319,12 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                             {activeModal === 'sales' && (
                               <>
                                 <td className="px-6 py-3.5 text-center font-semibold text-ds-muted font-mono">
-                                  {dayRec.salesCount > 0 ? (dayRec.revenue / dayRec.salesCount).toFixed(3) : '0.000'} {currency}
+                                  {formatAmount(dayRec.salesCount > 0 ? dayRec.revenue / dayRec.salesCount : 0)} {currency}
                                 </td>
-                                <td className="px-6 py-3.5 text-right text-ds-muted font-mono">{dayRec.salesCount}</td>
+                                <td className="px-6 py-3.5 text-end text-ds-muted font-mono">{formatCount(dayRec.salesCount)}</td>
                                 <td className="px-6 py-3.5 text-center whitespace-nowrap bg-ds-brand-soft/10">
                                   <span className="px-3 py-1 bg-ds-brand-soft text-ds-brand font-black font-mono rounded-lg border border-ds-border text-xs">
-                                    {dayRec.salesCount} transactions
+                                    {t('history.transactionsCount', { count: formatCount(dayRec.salesCount) })}
                                   </span>
                                 </td>
                               </>
@@ -2345,26 +2347,28 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                   <button
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    aria-label={t('pagination.previous')}
                     className="p-1.5 bg-ds-surface border border-ds-border rounded-lg text-ds-muted disabled:opacity-40 hover:bg-ds-surface-2 cursor-pointer transition-colors"
                   >
-                    <ChevronLeft className="w-4 h-4" />
+                    {isRtl ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
                   </button>
                   <span className="text-xs font-bold text-ds-muted">
-                    Page {currentPage} sur {totalPages}
+                    {t('pagination.pageOf', { current: formatCount(currentPage), total: formatCount(totalPages) })}
                   </span>
                   <button
                     disabled={currentPage === totalPages}
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    aria-label={t('pagination.next')}
                     className="p-1.5 bg-ds-surface border border-ds-border rounded-lg text-ds-muted disabled:opacity-40 hover:bg-ds-surface-2 cursor-pointer transition-colors"
                   >
-                    <ChevronRight className="w-4 h-4" />
+                    {isRtl ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </button>
                 </div>
               ) : (
                 <div className="text-xs font-bold text-ds-muted block uppercase">
                   {activeModal === 'stock'
-                    ? `Total : ${filteredAndSortedProducts.length} articles répertoriés`
-                    : `Total : ${filteredAndSortedRecords.length} rapports de journée`}
+                    ? t('history.stockTotal', { count: formatCount(filteredAndSortedProducts.length) })
+                    : t('history.recordsTotal', { count: formatCount(filteredAndSortedRecords.length) })}
                 </div>
               )}
 
@@ -2375,8 +2379,8 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                   onClick={() => setActiveModal(null)}
                   className="flex items-center gap-2 px-4 py-2.5 bg-ds-surface-2 hover:bg-ds-surface-2 text-ds-text rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer transition-all active:scale-[0.98] border border-ds-border shadow-xs"
                 >
-                  <ChevronLeft className="w-4 h-4" />
-                  Retour au Tableau de bord
+                  {isRtl ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                  {t('history.backToDashboard')}
                 </button>
 
                 <button
@@ -2389,7 +2393,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                   className="flex items-center gap-2 px-4 py-2.5 bg-ds-brand hover:bg-ds-brand text-ds-brand-contrast rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer transition-all active:scale-[0.98] shadow-md shadow-ds-sm"
                 >
                   <Printer className="w-4 h-4" />
-                  Imprimer le rapport
+                  {t('history.printReport')}
                 </button>
                 
                 <button
@@ -2398,7 +2402,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                   className="flex items-center gap-2 px-4 py-2.5 bg-ds-success hover:bg-ds-success text-ds-brand-contrast rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer transition-all active:scale-[0.98] shadow-md shadow-ds-sm"
                 >
                   <Download className="w-4 h-4" />
-                  Exporter Excel
+                  {t('history.exportExcel')}
                 </button>
               </div>
 
@@ -2426,10 +2430,10 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                 </div>
                 <div>
                   <h3 className="text-lg font-black tracking-tight leading-none">
-                    Consulter l'Historique : Dépenses de Stock
+                    {t('expenses.title')}
                   </h3>
                   <p className="text-[10px] uppercase font-bold tracking-wider text-ds-brand-contrast/70 mt-1">
-                    Suivi automatique du coût d'acquisition des marchandises
+                    {t('expenses.description')}
                   </p>
                 </div>
               </div>
@@ -2439,7 +2443,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                 className="relative z-10 px-4 py-2 flex items-center gap-2 bg-ds-surface/15 hover:bg-ds-surface/25 rounded-xl transition-all cursor-pointer text-ds-brand-contrast text-xs font-black uppercase tracking-wider"
               >
                 <X className="w-4 h-4" />
-                <span>Fermer</span>
+                <span>{t('common.close')}</span>
               </button>
             </div>
 
@@ -2455,7 +2459,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                       : "bg-ds-surface text-ds-muted border border-ds-border hover:bg-ds-surface-2"
                   )}
                 >
-                  Historique Journalier
+                  {t('expenses.dailyHistory')}
                 </button>
                 <button
                   onClick={() => { setExpensesTab('detailed'); setExpensesPage(1); }}
@@ -2466,19 +2470,20 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                       : "bg-ds-surface text-ds-muted border border-ds-border hover:bg-ds-surface-2"
                   )}
                 >
-                  Détails des Opérations
+                  {t('expenses.operationDetails')}
                 </button>
               </div>
 
               {/* Search input dynamically scoped to active tab search */}
               <div className="relative w-full sm:w-72">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ds-muted" />
+                <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ds-muted" />
                 <input 
                   type="text"
                   value={expensesSearch}
                   onChange={(e) => { setExpensesSearch(e.target.value); setExpensesPage(1); }}
-                  placeholder={expensesTab === 'daily' ? "Rechercher une date (ex: 22/06)..." : "Rechercher un produit ou date..."}
-                  className="w-full pl-10 pr-4 py-2 bg-ds-surface border border-ds-border rounded-xl text-base font-semibold placeholder:text-ds-muted outline-none focus:ring-2 focus:ring-ds-brand/10 focus:border-ds-brand transition-all sm:text-xs"
+                  aria-label={expensesTab === 'daily' ? t('history.searchDateAriaLabel') : t('expenses.searchAriaLabel')}
+                  placeholder={expensesTab === 'daily' ? t('history.searchDatePlaceholder') : t('expenses.searchPlaceholder')}
+                  className="w-full ps-10 pe-4 py-2 bg-ds-surface border border-ds-border rounded-xl text-base font-semibold placeholder:text-ds-muted outline-none focus:ring-2 focus:ring-ds-brand/10 focus:border-ds-brand transition-all sm:text-xs"
                 />
               </div>
             </div>
@@ -2491,36 +2496,36 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                   <EmptyState
                     className="py-12"
                     icon={<AlertCircle className="h-5 w-5" />}
-                    title="Aucun approvisionnement"
-                    description="Ajoutez du stock aux articles pour suivre vos dépenses."
+                    title={t('expenses.noSupplies')}
+                    description={t('expenses.addStockToTrack')}
                   />
                 ) : (
-                  <table className="w-full border-collapse text-left text-xs">
+                  <table className="w-full border-collapse text-start text-xs">
                     <thead>
                       <tr className="border-b border-ds-border text-[10px] font-black uppercase tracking-wider text-ds-muted bg-ds-surface-2/70">
-                        <th className="px-6 py-3">Date</th>
-                        <th className="px-6 py-3 text-center">Nbre de Produits Ajoutés</th>
-                        <th className="px-6 py-3 text-center">Quantité Totale Ajoutée</th>
-                        <th className="px-6 py-3 text-right">Dépenses Totales</th>
+                        <th className="px-6 py-3">{t('expenses.columns.date')}</th>
+                        <th className="px-6 py-3 text-center">{t('expenses.columns.productsAdded')}</th>
+                        <th className="px-6 py-3 text-center">{t('expenses.columns.totalQuantityAdded')}</th>
+                        <th className="px-6 py-3 text-end">{t('expenses.columns.totalExpenses')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-ds-border">
                       {dailySuppliesRecords.map((rec) => {
-                        const formattedDate = rec.dateObj.toLocaleDateString('fr-FR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+                        const formattedDate = rec.dateObj.toLocaleDateString(getDateLocale(), { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
                         return (
                           <tr key={rec.dateStr} className="hover:bg-ds-surface-2/50 transition-colors">
                             <td className="px-6 py-3.5 whitespace-nowrap font-bold text-ds-text capitalize">
                               {formattedDate}
                             </td>
                             <td className="px-6 py-3.5 text-center font-bold text-ds-muted font-mono">
-                              {rec.productsCount}
+                              {formatCount(rec.productsCount)}
                             </td>
                             <td className="px-6 py-3.5 text-center font-bold text-ds-muted font-mono">
-                              {rec.totalQty}
+                              {formatCount(rec.totalQty)}
                             </td>
-                            <td className="px-6 py-3.5 text-right whitespace-nowrap">
+                            <td className="px-6 py-3.5 text-end whitespace-nowrap">
                               <span className="px-3 py-1 bg-ds-brand-soft text-ds-brand font-black font-mono rounded-lg border border-ds-brand text-xs">
-                                {rec.totalExpenses.toFixed(3)} {currency}
+                                {formatAmount(rec.totalExpenses)} {currency}
                               </span>
                             </td>
                           </tr>
@@ -2535,24 +2540,24 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                   <EmptyState
                     className="py-12"
                     icon={<AlertCircle className="h-5 w-5" />}
-                    title="Aucune opération trouvée"
-                    description="Ajustez les termes de votre recherche."
+                    title={t('expenses.noOperations')}
+                    description={t('expenses.adjustSearch')}
                   />
                 ) : (
-                  <table className="w-full border-collapse text-left text-xs">
+                  <table className="w-full border-collapse text-start text-xs">
                     <thead>
                       <tr className="border-b border-ds-border text-[10px] font-black uppercase tracking-wider text-ds-muted bg-ds-surface-2/70">
-                        <th className="px-6 py-3">Date et Heure</th>
-                        <th className="px-6 py-3">Produit</th>
-                        <th className="px-6 py-3 text-center">Quantité Ajoutée</th>
-                        <th className="px-6 py-3 text-right">Prix d'Achat unitaire</th>
-                        <th className="px-6 py-3 text-right">Coût Total</th>
+                        <th className="px-6 py-3">{t('expenses.columns.dateTime')}</th>
+                        <th className="px-6 py-3">{t('expenses.columns.product')}</th>
+                        <th className="px-6 py-3 text-center">{t('expenses.columns.quantityAdded')}</th>
+                        <th className="px-6 py-3 text-end">{t('expenses.columns.unitPurchasePrice')}</th>
+                        <th className="px-6 py-3 text-end">{t('expenses.columns.totalCost')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-ds-border">
                       {paginatedSupplies.map((sup: any) => {
                         const dateObj = !sup.date ? new Date() : (typeof sup.date.toDate === 'function' ? sup.date.toDate() : new Date(sup.date));
-                        const formattedDateTime = dateObj.toLocaleString('fr-FR', { 
+                        const formattedDateTime = dateObj.toLocaleString(getDateLocale(), {
                           day: '2-digit', 
                           month: 'short', 
                           year: 'numeric',
@@ -2565,16 +2570,16 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                               {formattedDateTime}
                             </td>
                             <td className="px-6 py-3.5 font-bold text-ds-text">
-                              {sup.productName || 'Produit supprimé'}
+                              {sup.productName || t('expenses.deletedProduct')}
                             </td>
                             <td className="px-6 py-3.5 text-center font-extrabold text-ds-text font-mono">
-                              {sup.quantity || 0}
+                              {formatCount(sup.quantity || 0)}
                             </td>
-                            <td className="px-6 py-3.5 text-right font-semibold text-ds-muted font-mono">
-                              {(sup.buyPrice || 0).toFixed(3)} {currency}
+                            <td className="px-6 py-3.5 text-end font-semibold text-ds-muted font-mono">
+                              {formatAmount(sup.buyPrice || 0)} {currency}
                             </td>
-                            <td className="px-6 py-3.5 text-right font-black text-ds-brand font-mono">
-                              {(sup.totalCost || 0).toFixed(3)} {currency}
+                            <td className="px-6 py-3.5 text-end font-black text-ds-brand font-mono">
+                              {formatAmount(sup.totalCost || 0)} {currency}
                             </td>
                           </tr>
                         );
@@ -2594,24 +2599,26 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                   <button
                     disabled={expensesPage === 1}
                     onClick={() => setExpensesPage(prev => Math.max(1, prev - 1))}
+                    aria-label={t('pagination.previous')}
                     className="p-1.5 bg-ds-surface border border-ds-border rounded-lg text-ds-muted disabled:opacity-40 hover:bg-ds-surface-2 cursor-pointer transition-colors"
                   >
-                    <ChevronLeft className="w-4 h-4" />
+                    {isRtl ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
                   </button>
                   <span className="text-[11px] font-bold text-ds-muted">
-                    Page {expensesPage} sur {totalExpensesPages}
+                    {t('pagination.pageOf', { current: formatCount(expensesPage), total: formatCount(totalExpensesPages) })}
                   </span>
                   <button
                     disabled={expensesPage === totalExpensesPages}
                     onClick={() => setExpensesPage(prev => Math.min(totalExpensesPages, prev + 1))}
+                    aria-label={t('pagination.next')}
                     className="p-1.5 bg-ds-surface border border-ds-border rounded-lg text-ds-muted disabled:opacity-40 hover:bg-ds-surface-2 cursor-pointer transition-colors"
                   >
-                    <ChevronRight className="w-4 h-4" />
+                    {isRtl ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                   </button>
                 </div>
               ) : (
                 <div className="text-xs font-bold text-ds-muted block uppercase tracking-wide">
-                  Total : {expensesTab === 'daily' ? dailySuppliesRecords.length : filteredSupplies.length} enregistrements
+                  {t('expenses.recordsTotal', { count: formatCount(expensesTab === 'daily' ? dailySuppliesRecords.length : filteredSupplies.length) })}
                 </div>
               )}
 
@@ -2622,8 +2629,8 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                   onClick={() => setActiveModal(null)}
                   className="flex items-center gap-2 px-4 py-2.5 bg-ds-surface-2 hover:bg-ds-surface-2 text-ds-text rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer transition-all active:scale-[0.98] border border-ds-border shadow-xs"
                 >
-                  <ChevronLeft className="w-4 h-4" />
-                  Retour au Tableau de bord
+                  {isRtl ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                  {t('history.backToDashboard')}
                 </button>
 
                 <button
@@ -2632,7 +2639,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                   className="flex items-center gap-2 px-4 py-2.5 bg-ds-success hover:bg-ds-success text-ds-brand-contrast rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer transition-all active:scale-[0.98] shadow-md shadow-ds-sm hover:scale-[1.01]"
                 >
                   <Download className="w-4 h-4" />
-                  Exporter Excel
+                  {t('history.exportExcel')}
                 </button>
               </div>
 
@@ -2648,10 +2655,11 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
           <div className="bg-ds-surface rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden border border-ds-border p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-ds-border pb-3">
               <h3 className="text-sm font-black text-ds-text uppercase tracking-wider">
-                Modifier l'approvisionnement
+                {t('supplyDialog.title')}
               </h3>
               <button 
                 onClick={() => setEditingSupply(null)}
+                aria-label={t('common.close')}
                 className="p-1 text-ds-muted hover:text-ds-muted rounded-lg cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -2661,13 +2669,13 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
             <form onSubmit={handleUpdateSupply} className="space-y-4">
               <div>
                 <p className="text-[10px] text-ds-muted font-extrabold uppercase mb-2">
-                  Produit : <span className="text-ds-text font-bold">{editingSupply.productName}</span>
+                  {t('supplyDialog.product')}: <span className="text-ds-text font-bold">{editingSupply.productName}</span>
                 </p>
               </div>
               
               <div>
                 <label className="block text-xs font-black uppercase tracking-wider text-ds-muted mb-1">
-                  Quantité d'approvisionnement
+                  {t('supplyDialog.quantity')}
                 </label>
                 <input
                   type="number"
@@ -2681,7 +2689,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
 
               <div>
                 <label className="block text-xs font-black uppercase tracking-wider text-ds-muted mb-1">
-                  Prix d'achat unitaire ({currency})
+                  {t('supplyDialog.unitPurchasePrice', { currency })}
                 </label>
                 <input
                   type="number"
@@ -2700,13 +2708,13 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                   onClick={() => setEditingSupply(null)}
                   className="px-4 py-2 bg-ds-surface-2 hover:bg-ds-surface-2 text-ds-muted text-xs font-bold uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
                 >
-                  Annuler
+                  {t('common.cancel')}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-2 bg-ds-brand hover:bg-ds-brand text-ds-brand-contrast text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-md shadow-ds-sm cursor-pointer active:scale-[0.98]"
                 >
-                  Enregistrer
+                  {t('common.save')}
                 </button>
               </div>
             </form>

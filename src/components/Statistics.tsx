@@ -6,11 +6,11 @@ import {
   BarChart3, Users as UsersIcon, Database, Activity, RefreshCcw, ChevronDown, ChevronRight,
   Shield, Calendar, Store, Layers, ShieldAlert
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import { cn } from '../lib/utils';
 import { useIsSuperAdmin } from '../lib/useIsSuperAdmin';
 import { useBrand } from './BrandProvider';
+import { useTranslation } from 'react-i18next';
+import { formatDateTime, formatNumber } from '../i18n/format';
 
 // Collections comptabilisées dans la "taille de la base" de chaque magasin
 const DATA_COLLECTIONS = ['products', 'sales', 'clients', 'invoices', 'categories', 'notes', 'supplies'];
@@ -27,17 +27,21 @@ interface StatisticsProps {
   userProfile: UserProfile | null;
 }
 
-function formatDate(value?: string) {
-  if (!value) return 'Non disponible';
+function formatDate(value: string | undefined, unavailableLabel: string) {
+  if (!value) return unavailableLabel;
   try {
-    return format(new Date(value), 'dd MMM yyyy', { locale: fr });
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return unavailableLabel;
+    return formatDateTime(date, { day: '2-digit', month: 'short', year: 'numeric' });
   } catch {
-    return 'Non disponible';
+    return unavailableLabel;
   }
 }
 
 export default function Statistics({ userProfile }: StatisticsProps) {
+  const { t, i18n } = useTranslation('statistics');
   const { storeName } = useBrand();
+  const isRtl = i18n.dir() === 'rtl';
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [loadingStats, setLoadingStats] = useState(false);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
@@ -59,10 +63,10 @@ export default function Statistics({ userProfile }: StatisticsProps) {
       })
       .catch((err) => {
         console.error('[Statistics] Erreur chargement utilisateurs:', err);
-        setError("Impossible de charger la liste des comptes.");
+        setError(t('loadUsersError'));
       })
       .finally(() => setLoadingUsers(false));
-  }, [isSuper]);
+  }, [isSuper, t]);
 
   // 2. Pour chaque magasin (compte admin), calculer la taille de la base et l'activité
   const computeStats = useCallback(async () => {
@@ -109,11 +113,11 @@ export default function Statistics({ userProfile }: StatisticsProps) {
       setLastRefresh(new Date());
     } catch (err) {
       console.error('[Statistics] Erreur globale de calcul:', err);
-      setError("Une erreur est survenue lors du calcul des statistiques.");
+      setError(t('computeError'));
     } finally {
       setLoadingStats(false);
     }
-  }, [isSuper, allUsers]);
+  }, [isSuper, allUsers, t]);
 
   useEffect(() => {
     if (allUsers.length > 0) {
@@ -129,8 +133,8 @@ export default function Statistics({ userProfile }: StatisticsProps) {
     return (
       <div className="max-w-lg mx-auto mt-16 text-center space-y-3">
         <ShieldAlert className="w-10 h-10 text-rose-400 mx-auto" />
-        <h2 className="font-bold text-slate-700">Accès réservé</h2>
-        <p className="text-sm text-slate-400">Cette rubrique n'est disponible que pour l'administrateur principal de la plateforme.</p>
+        <h2 className="font-bold text-slate-700">{t('accessDenied')}</h2>
+        <p className="text-sm text-slate-400">{t('accessDescription')}</p>
       </div>
     );
   }
@@ -150,13 +154,13 @@ export default function Statistics({ userProfile }: StatisticsProps) {
   const maxTotalDocs = Math.max(1, ...storeStats.map((s) => s.totalDocs));
 
   const collectionLabels: Record<string, string> = {
-    products: 'Produits',
-    sales: 'Ventes',
-    clients: 'Clients',
-    invoices: 'Factures',
-    categories: 'Catégories',
-    notes: 'Notes',
-    supplies: 'Approvisionnements',
+    products: t('collections.products'),
+    sales: t('collections.sales'),
+    clients: t('collections.clients'),
+    invoices: t('collections.invoices'),
+    categories: t('collections.categories'),
+    notes: t('collections.notes'),
+    supplies: t('collections.supplies'),
   };
 
   return (
@@ -165,10 +169,10 @@ export default function Statistics({ userProfile }: StatisticsProps) {
         <div>
           <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
             <BarChart3 className="w-7 h-7 text-indigo-600" />
-            Statistique
+            {t('title')}
           </h1>
           <p className="text-xs text-slate-400 font-semibold mt-1">
-            Vue d'ensemble de tous les magasins utilisant {storeName}
+            {t('overview', { storeName })}
           </p>
         </div>
         <button
@@ -177,7 +181,7 @@ export default function Statistics({ userProfile }: StatisticsProps) {
           className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <RefreshCcw className={cn('w-3.5 h-3.5', loadingStats && 'animate-spin')} />
-          {loadingStats ? 'Calcul en cours...' : 'Actualiser'}
+          {loadingStats ? t('calculating') : t('refresh')}
         </button>
       </div>
 
@@ -189,7 +193,7 @@ export default function Statistics({ userProfile }: StatisticsProps) {
 
       {lastRefresh && (
         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
-          Dernière mise à jour : {format(lastRefresh, 'dd MMM yyyy HH:mm', { locale: fr })}
+          {t('lastUpdated', { date: formatDateTime(lastRefresh, { dateStyle: 'medium', timeStyle: 'short' }) })}
         </p>
       )}
 
@@ -198,31 +202,31 @@ export default function Statistics({ userProfile }: StatisticsProps) {
         <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
           <div className="flex items-center gap-2 text-slate-400 mb-2">
             <Store className="w-4 h-4" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Magasins</span>
+            <span className="text-[10px] font-black uppercase tracking-widest">{t('stores')}</span>
           </div>
           <p className="text-2xl font-black text-slate-800">{totalStores}</p>
         </div>
         <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
           <div className="flex items-center gap-2 text-slate-400 mb-2">
             <UsersIcon className="w-4 h-4" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Comptes</span>
+            <span className="text-[10px] font-black uppercase tracking-widest">{t('accounts')}</span>
           </div>
           <p className="text-2xl font-black text-slate-800">{totalUsers}</p>
-          <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{totalCollaborators} collaborateur(s)</p>
+          <p className="text-[10px] text-slate-400 font-semibold mt-0.5">{t('collaboratorCount', { count: formatNumber(totalCollaborators) })}</p>
         </div>
         <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
           <div className="flex items-center gap-2 text-slate-400 mb-2">
             <Database className="w-4 h-4" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Documents totaux</span>
+            <span className="text-[10px] font-black uppercase tracking-widest">{t('documents')}</span>
           </div>
-          <p className="text-2xl font-black text-slate-800">{totalDocsAll.toLocaleString('fr-FR')}</p>
+          <p className="text-2xl font-black text-slate-800">{formatNumber(totalDocsAll)}</p>
         </div>
         <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-xs">
           <div className="flex items-center gap-2 text-slate-400 mb-2">
             <Activity className="w-4 h-4" />
-            <span className="text-[10px] font-black uppercase tracking-widest">Actions journalisées</span>
+            <span className="text-[10px] font-black uppercase tracking-widest">{t('loggedActions')}</span>
           </div>
-          <p className="text-2xl font-black text-slate-800">{totalActivityAll.toLocaleString('fr-FR')}</p>
+          <p className="text-2xl font-black text-slate-800">{formatNumber(totalActivityAll)}</p>
         </div>
       </div>
 
@@ -230,12 +234,12 @@ export default function Statistics({ userProfile }: StatisticsProps) {
       <div className="bg-white rounded-3xl border border-slate-100 shadow-xs p-6">
         <h2 className="text-sm font-black text-slate-700 uppercase tracking-wider flex items-center gap-2 mb-4">
           <Layers className="w-4 h-4 text-indigo-500" />
-          Trafic général (toutes plateformes confondues)
+          {t('traffic')}
         </h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
           {DATA_COLLECTIONS.map((c) => (
             <div key={c} className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-center">
-              <p className="text-lg font-black text-indigo-600">{perCollectionTotals[c]?.toLocaleString('fr-FR') || 0}</p>
+              <p className="text-lg font-black text-indigo-600">{formatNumber(perCollectionTotals[c] || 0)}</p>
               <p className="text-[9px] font-black text-slate-400 uppercase tracking-wider mt-1">{collectionLabels[c]}</p>
             </div>
           ))}
@@ -246,7 +250,7 @@ export default function Statistics({ userProfile }: StatisticsProps) {
       <div className="bg-white rounded-3xl border border-slate-100 shadow-xs overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-2">
           <Shield className="w-4 h-4 text-indigo-500" />
-          <h2 className="text-sm font-black text-slate-700 uppercase tracking-wider">Détail par magasin</h2>
+          <h2 className="text-sm font-black text-slate-700 uppercase tracking-wider">{t('storeDetails')}</h2>
         </div>
 
         {(loadingUsers || (loadingStats && storeStats.length === 0)) ? (
@@ -254,7 +258,7 @@ export default function Statistics({ userProfile }: StatisticsProps) {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
           </div>
         ) : storeStats.length === 0 ? (
-          <div className="p-16 text-center text-sm text-slate-400 font-semibold">Aucun magasin trouvé.</div>
+          <div className="p-16 text-center text-sm text-slate-400 font-semibold">{t('noStores')}</div>
         ) : (
           <div className="divide-y divide-slate-100">
             {storeStats.map((s) => {
@@ -264,37 +268,37 @@ export default function Statistics({ userProfile }: StatisticsProps) {
                 <div key={s.owner.uid}>
                   <button
                     onClick={() => toggleExpand(s.owner.uid)}
-                    className="w-full text-left px-6 py-4 hover:bg-slate-50/60 transition-colors flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6"
+                    className="w-full text-start px-6 py-4 hover:bg-slate-50/60 transition-colors flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {isOpen ? <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />}
+                      {isOpen ? <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" /> : <ChevronRight className={cn('w-4 h-4 text-slate-400 shrink-0', isRtl && 'rotate-180')} />}
                       <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center font-black text-xs text-indigo-600 border border-indigo-100 shrink-0">
                         {(s.owner.name || s.owner.email)?.[0]?.toUpperCase()}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-bold text-xs text-slate-800 truncate">{s.owner.name || 'Sans nom'}</p>
+                        <p className="font-bold text-xs text-slate-800 truncate">{s.owner.name || t('noName')}</p>
                         <p className="text-[10px] text-slate-400 font-semibold truncate">{s.owner.email}</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold shrink-0">
                       <Calendar className="w-3.5 h-3.5" />
-                      {formatDate(s.owner.createdAt)}
+                      {formatDate(s.owner.createdAt, t('notAvailable'))}
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
                       <span className="px-2 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg text-[9px] font-black uppercase tracking-wider">
-                        {s.collaborators.length} collab.
+                        {formatNumber(s.collaborators.length)} {t('collaboratorShort')}
                       </span>
                       <span className="px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-[9px] font-black uppercase tracking-wider">
-                        {s.activityCount} action(s)
+                        {formatNumber(s.activityCount)} {t('actions')}
                       </span>
                     </div>
 
                     <div className="flex-1 min-w-[120px] max-w-[220px] shrink-0">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">Base</span>
-                        <span className="text-[10px] font-black text-slate-700">{s.totalDocs.toLocaleString('fr-FR')} docs</span>
+                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">{t('base')}</span>
+                        <span className="text-[10px] font-black text-slate-700">{formatNumber(s.totalDocs)} {t('docs')}</span>
                       </div>
                       <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                         <div className="h-full bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-full" style={{ width: `${barWidth}%` }} />
@@ -317,12 +321,12 @@ export default function Statistics({ userProfile }: StatisticsProps) {
                       {/* Collaborateurs */}
                       {s.collaborators.length > 0 && (
                         <div>
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Collaborateurs</p>
+                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">{t('collaborators')}</p>
                           <div className="space-y-1.5">
                             {s.collaborators.map((c) => (
                               <div key={c.uid} className="flex items-center justify-between bg-white border border-slate-100 rounded-lg px-3 py-2">
                                 <div className="min-w-0">
-                                  <p className="text-xs font-bold text-slate-700 truncate">{c.name || 'Sans nom'}</p>
+                                  <p className="text-xs font-bold text-slate-700 truncate">{c.name || t('noName')}</p>
                                   <p className="text-[10px] text-slate-400 truncate">{c.email}</p>
                                 </div>
                                 <div className="flex items-center gap-2 shrink-0">
@@ -330,11 +334,11 @@ export default function Statistics({ userProfile }: StatisticsProps) {
                                     'px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider',
                                     c.status === 'banned' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'
                                   )}>
-                                    {c.status === 'banned' ? 'Banni' : 'Actif'}
+                                    {c.status === 'banned' ? t('banned') : t('active')}
                                   </span>
                                   <span className="text-[9px] text-slate-400 font-bold flex items-center gap-1">
                                     <Calendar className="w-3 h-3" />
-                                    {formatDate(c.createdAt)}
+                                    {formatDate(c.createdAt, t('notAvailable'))}
                                   </span>
                                 </div>
                               </div>

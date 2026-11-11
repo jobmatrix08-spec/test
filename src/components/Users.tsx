@@ -31,20 +31,13 @@ import { apiRequest, checkApiHealth } from '../lib/api';
 import { slugifyAppName } from '../lib/brand';
 import { useBrand } from './BrandProvider';
 import { Badge, Button, Card, EmptyState, Input, PageHeader, Select } from './ui';
+import { useTranslation } from 'react-i18next';
+import { formatNumber } from '../i18n/format';
 
 const MENU_OPTIONS = [
-  { id: 'dashboard', name: 'Tableau de bord', description: 'Statistiques et graphiques généraux' },
-  { id: 'reparation', name: 'Partie Réparation', description: 'Suivi et gestion des réparations' },
-  { id: 'pieces', name: 'Pièces Détachées', description: 'Stock visible par le Casier ; gestion complète pour le Technicien' },
-  { id: 'pos', name: 'Vente (POS / Caisse)', description: 'Caisse, vente directe et paniers' },
-  { id: 'products', name: 'Articles / Services', description: 'Lecture pour le Casier ; création et gestion pour le Technicien' },
-  { id: 'clients', name: 'Gestion des Clients', description: 'Liste des clients et suivi des dettes' },
-  { id: 'sales', name: 'Historique des Ventes', description: 'Suivi et recherche des ventes' },
-  { id: 'invoices', name: 'Facturation', description: 'Édition et gestion des factures' },
-  { id: 'notes', name: 'Mémos & Notes', description: 'Ajouter et planifier des mémos' },
-  { id: 'settings', name: 'Paramètres du Magasin', description: 'Configurations de base' },
-  { id: 'users', name: 'Gestion des Utilisateurs', description: 'Accès restreint pour gérer l\'équipe' },
-];
+  'dashboard', 'reparation', 'pieces', 'pos', 'products', 'clients',
+  'sales', 'invoices', 'notes', 'settings', 'users',
+].map(id => ({ id }));
 
 type UserFormRole = UserProfile['role'] | 'technician' | 'cashier-repair';
 
@@ -64,6 +57,7 @@ interface UsersProps {
 }
 
 export default function Users({ userProfile }: UsersProps) {
+  const { t } = useTranslation('users');
   const brand = useBrand();
   // Initialize with the current admin's own profile so they always appear at the top
   const [users, setUsers] = useState<UserProfile[]>(userProfile ? [userProfile] : []);
@@ -118,15 +112,15 @@ export default function Users({ userProfile }: UsersProps) {
     permissions: PermissionMap,
     setPermissions: (next: PermissionMap) => void,
   ) => (
-    <div className="ml-3 space-y-3 border-l-2 border-ds-border pl-3">
+    <div className="ms-3 space-y-3 border-s-2 border-ds-border ps-3">
       {(['pieces', 'products', 'reparation', 'clients'] as const)
         .filter(menuId => menus.includes(menuId))
         .map(menuId => (
           <div key={menuId} className="space-y-1">
           <p className="text-xs font-black uppercase tracking-wider text-ds-muted">
-              {menuId === 'pieces' ? 'Pièces détachées' : menuId === 'products' ? 'Articles / Services' : menuId === 'reparation' ? 'Partie Réparation' : 'Clients'}
+              {t(`menus.${menuId}.name`)}
             </p>
-            {PERMISSION_FLAGS[menuId].map(({ id, label }) => (
+            {PERMISSION_FLAGS[menuId].map(({ id }) => (
               <label key={id} className="flex min-h-ds-touch-target items-center gap-2 text-sm font-medium text-ds-text">
                 <input
                   type="checkbox"
@@ -137,14 +131,14 @@ export default function Users({ userProfile }: UsersProps) {
                   })}
                   className="h-4 w-4 rounded border-ds-border accent-ds-brand"
                 />
-                {label}
+                {t(`permissions.flags.${id}`)}
               </label>
             ))}
           </div>
         ))}
       <div className="space-y-1 border-t border-ds-border pt-2">
-        <p className="text-xs font-black uppercase tracking-wider text-ds-muted">Coran & Adhkar</p>
-        {PERMISSION_FLAGS.startup.map(({ id, label }) => (
+        <p className="text-xs font-black uppercase tracking-wider text-ds-muted">{t('menus.startup.name')}</p>
+        {PERMISSION_FLAGS.startup.map(({ id }) => (
           <label key={id} className="flex min-h-ds-touch-target items-center gap-2 text-sm font-medium text-ds-text">
             <input
               type="checkbox"
@@ -155,7 +149,7 @@ export default function Users({ userProfile }: UsersProps) {
               })}
               className="h-4 w-4 rounded border-ds-border accent-ds-brand"
             />
-            {label}
+            {t(`permissions.flags.${id}`)}
           </label>
         ))}
       </div>
@@ -170,7 +164,7 @@ export default function Users({ userProfile }: UsersProps) {
     setPermissionMigrationPreview(missing);
     setPermissionMigrationBackupDownloaded(false);
     setPermissionMigrationError(null);
-    setSuccess(`${missing.length} compte(s) à migrer. Aucun document n’a été modifié.`);
+    setSuccess(t('permissionMigration.previewReady', { count: formatNumber(missing.length) }));
   };
 
   const downloadPermissionMigrationBackup = () => {
@@ -214,9 +208,11 @@ export default function Users({ userProfile }: UsersProps) {
       }
       setPermissionMigrationPreview([]);
       setPermissionMigrationBackupDownloaded(false);
-      setSuccess('Migration des permissions terminée.');
+      setSuccess(t('permissionMigration.success'));
     } catch (issue) {
-      setPermissionMigrationError(issue instanceof Error ? issue.message : String(issue));
+      setPermissionMigrationError(issue instanceof Error
+        ? t('errors.permissionMigration', { details: issue.message })
+        : t('errors.permissionMigration', { details: String(issue) }));
     } finally {
       setPermissionMigrationBusy(false);
     }
@@ -302,18 +298,20 @@ export default function Users({ userProfile }: UsersProps) {
     setTimeout(() => setCopiedField(null), 2000);
     } catch (error) {
     console.error('Unable to copy user information.');
-    setErrorOnEdit(error instanceof Error ? error.message : 'Copie impossible.');
+    setErrorOnEdit(error instanceof Error ? t('errors.copyFailed', { details: error.message }) : t('errors.copyFailed'));
     }
   };
 
   const sendPasswordResetLink = async (email: string) => {
     try {
       await sendPasswordResetEmail(auth, email);
-      setSuccess(`Lien de réinitialisation envoyé à ${email}.`);
+      setSuccess(t('messages.resetLinkSent', { email }));
       setErrorOnCreate(null);
       setTimeout(() => setSuccess(null), 5000);
     } catch (issue) {
-      setErrorOnCreate(issue instanceof Error ? `Impossible d’envoyer le lien : ${issue.message}` : 'Impossible d’envoyer le lien.');
+      setErrorOnCreate(issue instanceof Error
+        ? t('errors.resetLinkFailed', { details: issue.message })
+        : t('errors.resetLinkFailed'));
     }
   };
 
@@ -321,11 +319,11 @@ export default function Users({ userProfile }: UsersProps) {
     event.preventDefault();
     if (!passwordUser) return;
     if (newPassword.length < 8) {
-      setErrorOnCreate('Le mot de passe doit contenir au moins 8 caractères.');
+      setErrorOnCreate(t('errors.passwordMinLength'));
       return;
     }
     if (newPassword !== confirmNewPassword) {
-      setErrorOnCreate('La confirmation ne correspond pas au nouveau mot de passe.');
+      setErrorOnCreate(t('errors.passwordMismatch'));
       return;
     }
     setErrorOnCreate(null);
@@ -338,10 +336,12 @@ export default function Users({ userProfile }: UsersProps) {
       setPasswordUser(null);
       setNewPassword('');
       setConfirmNewPassword('');
-      setSuccess(`Mot de passe modifié pour ${passwordUser.email}.`);
+      setSuccess(t('messages.passwordChanged', { email: passwordUser.email }));
       setTimeout(() => setSuccess(null), 4000);
     } catch (issue) {
-      setErrorOnCreate(issue instanceof Error ? issue.message : 'Impossible de modifier le mot de passe.');
+      setErrorOnCreate(issue instanceof Error
+        ? t('errors.passwordChangeFailed', { details: issue.message })
+        : t('errors.passwordChangeFailed'));
     } finally {
       setActionLoading(null);
     }
@@ -354,7 +354,7 @@ export default function Users({ userProfile }: UsersProps) {
 
     // 1. Validation rigoureuse des données d'entrée
     if (!nameInput || nameInput.trim().length < 2) {
-      setErrorOnCreate("Le nom de l'utilisateur est obligatoire (min 2 caractères).");
+      setErrorOnCreate(t('errors.nameRequired'));
       setActionLoading(null);
       return;
     }
@@ -362,19 +362,19 @@ export default function Users({ userProfile }: UsersProps) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const cleanEmail = emailInput.trim().toLowerCase();
     if (!cleanEmail || !emailRegex.test(cleanEmail)) {
-      setErrorOnCreate("Veuillez saisir une adresse email valide.");
+      setErrorOnCreate(t('errors.invalidEmail'));
       setActionLoading(null);
       return;
     }
 
     if (!passwordInput || passwordInput.length < 6) {
-      setErrorOnCreate("Le mot de passe obligatoire doit contenir au moins 6 caractères.");
+      setErrorOnCreate(t('errors.createPasswordMinLength'));
       setActionLoading(null);
       return;
     }
 
     if (selectedMenus.length === 0) {
-      setErrorOnCreate("Veuillez sélectionner au moins un privilège d'accès.");
+      setErrorOnCreate(t('errors.menuRequired'));
       setActionLoading(null);
       return;
     }
@@ -389,7 +389,7 @@ export default function Users({ userProfile }: UsersProps) {
       );
 
       if (emailExists) {
-        setErrorOnCreate("Cette adresse email est déjà en cours d'utilisation.");
+        setErrorOnCreate(t('errors.emailAlreadyExists'));
         setActionLoading(null);
         return;
       }
@@ -398,7 +398,7 @@ export default function Users({ userProfile }: UsersProps) {
         code: fsErr?.code,
         message: fsErr?.message,
       });
-      setErrorOnCreate('Erreur de connexion lors de la vérification de l’utilisateur.');
+      setErrorOnCreate(t('errors.userCheckFailed'));
       setActionLoading(null);
       return;
     }
@@ -417,15 +417,15 @@ export default function Users({ userProfile }: UsersProps) {
       await tempAuth.signOut();
     } catch (authErr: any) {
       console.error('Unable to create the authentication account.');
-      let errorMsg = "La création du compte d'authentification a échoué.";
+      let errorMsg = t('errors.authCreateFailed');
       if (authErr.code === 'auth/email-already-in-use') {
-        errorMsg = "Cette adresse email est déjà utilisée dans Firebase Authentication.";
+        errorMsg = t('errors.authEmailInUse');
       } else if (authErr.code === 'auth/weak-password') {
-        errorMsg = "Le mot de passe choisi doit contenir au moins 6 caractères.";
+        errorMsg = t('errors.createPasswordMinLength');
       } else if (authErr.code === 'auth/invalid-email') {
-        errorMsg = "L'adresse email saisie est invalide pour Firebase Authentication.";
+        errorMsg = t('errors.authInvalidEmail');
       } else if (authErr.message) {
-        errorMsg += ` Détails : ${authErr.message}`;
+        errorMsg = t('errors.authCreateFailedWithDetails', { details: authErr.message });
       }
       setErrorOnCreate(errorMsg);
       setActionLoading(null);
@@ -455,10 +455,10 @@ export default function Users({ userProfile }: UsersProps) {
       });
       try {
         await sendPasswordResetEmail(auth, cleanEmail);
-        setSuccess('Utilisateur créé. Son lien de définition du mot de passe a été envoyé.');
+        setSuccess(t('messages.userCreatedResetSent'));
       } catch (resetError) {
         console.error('The user was created but the password reset email could not be sent.');
-        setSuccess('Utilisateur créé, mais le lien de réinitialisation n’a pas pu être envoyé. Renvoyez-le depuis sa ligne.');
+        setSuccess(t('messages.userCreatedResetFailed'));
       }
 
       setIsModalOpen(false);
@@ -472,7 +472,7 @@ export default function Users({ userProfile }: UsersProps) {
       setTimeout(() => setSuccess(null), 4000);
     } catch (err: any) {
       console.error("Unable to save the user's Firestore profile.");
-      setErrorOnCreate(`Impossible d'enregistrer l'utilisateur en base: ${err.message || 'Permission refusée'}`);
+      setErrorOnCreate(t('errors.userSaveFailed', { details: err.message || t('errors.permissionDenied') }));
     } finally {
       if (tempApp) {
         try {
@@ -558,26 +558,26 @@ export default function Users({ userProfile }: UsersProps) {
     setActionLoading('editing');
 
     if (!editName || editName.trim().length < 2) {
-      setErrorOnEdit("Le nom est obligatoire (min 2 caractères).");
+      setErrorOnEdit(t('errors.nameRequired'));
       setActionLoading(null);
       return;
     }
 
     const cleanEmail = editEmail.trim().toLowerCase();
     if (cleanEmail !== editingUser.email) {
-      setErrorOnEdit('L’adresse de connexion ne peut pas être modifiée depuis ce formulaire. Envoyez un lien de réinitialisation à l’utilisateur.');
+      setErrorOnEdit(t('errors.loginEmailImmutable'));
       setActionLoading(null);
       return;
     }
 
     if (editSelectedMenus.length === 0) {
-      setErrorOnEdit('Veuillez sélectionner au moins un droit d\'accès.');
+      setErrorOnEdit(t('errors.menuRequired'));
       setActionLoading(null);
       return;
     }
 
     if (editSecurityCode && !/^[0-9]{4}$/.test(editSecurityCode)) {
-      setErrorOnEdit('Le code de sécurité doit contenir exactement 4 chiffres (ou être laissé vide).');
+      setErrorOnEdit(t('errors.securityCodeInvalid'));
       setActionLoading(null);
       return;
     }
@@ -592,12 +592,14 @@ export default function Users({ userProfile }: UsersProps) {
         securityCode: editSecurityCode || '',
         ownerId: editRole === 'admin' ? editingUser.uid : ownerId,
       });
-      setSuccess(`Utilisateur ${cleanEmail} mis à jour avec succès.`);
+      setSuccess(t('messages.userUpdated', { email: cleanEmail }));
       setEditingUser(null);
       setTimeout(() => setSuccess(null), 6000);
     } catch (err: any) {
       console.error('Unable to update the user profile.');
-      setErrorOnEdit(err.message || 'Une erreur est survenue lors de la modification.');
+      setErrorOnEdit(err.message
+        ? t('errors.userUpdateFailed', { details: err.message })
+        : t('errors.userUpdateFailed'));
     } finally {
       setActionLoading(null);
     }
@@ -614,10 +616,12 @@ export default function Users({ userProfile }: UsersProps) {
         status: newStatus
       });
 
-      setSuccess(`L'utilisateur ${user.email} est désormais ${newStatus === 'banned' ? 'banni' : 'actif'}.`);
+      setSuccess(t(newStatus === 'banned' ? 'messages.userBlocked' : 'messages.userUnblocked', { email: user.email }));
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setErrorOnCreate(err instanceof Error ? err.message : 'Erreur de mise à jour.');
+      setErrorOnCreate(err instanceof Error
+        ? t('errors.userUpdateFailed', { details: err.message })
+        : t('errors.userUpdateFailed'));
     } finally {
       setActionLoading(null);
     }
@@ -625,7 +629,7 @@ export default function Users({ userProfile }: UsersProps) {
 
   const handleDeleteProfileAndAuth = async (user: UserProfile) => {
     if (user.uid === userProfile?.uid) {
-      setErrorOnCreate('Vous ne pouvez pas supprimer votre propre compte administrateur.');
+      setErrorOnCreate(t('errors.deleteOwnAccount'));
       return;
     }
     const storeOwnerId = userProfile?.ownerId || userProfile?.uid;
@@ -633,7 +637,7 @@ export default function Users({ userProfile }: UsersProps) {
       profile.role === 'admin' && (profile.ownerId || profile.uid) === storeOwnerId
     );
     if (user.role === 'admin' && storeAdmins.length <= 1) {
-      setErrorOnCreate('Impossible de supprimer le dernier administrateur du magasin.');
+      setErrorOnCreate(t('delete.lastAdmin'));
       return;
     }
     if (deleteConfirmation.trim().toLowerCase() !== user.email.toLowerCase()) {
@@ -650,11 +654,13 @@ export default function Users({ userProfile }: UsersProps) {
       setUsers((current) => current.filter((profile) => profile.uid !== user.uid));
       setDeletingUser(null);
       setDeleteConfirmation('');
-      setSuccess(`Utilisateur ${user.email} supprimé.`);
+      setSuccess(t('messages.userDeleted', { email: user.email }));
       setTimeout(() => setSuccess(null), 4000);
     } catch (error) {
       console.error('Unable to delete user profile.');
-      setErrorOnCreate(error instanceof Error ? error.message : 'Impossible de supprimer cet utilisateur.');
+      setErrorOnCreate(error instanceof Error
+        ? t('errors.userDeleteFailed', { details: error.message })
+        : t('errors.userDeleteFailed'));
     } finally {
       setActionLoading(null);
     }
@@ -665,11 +671,13 @@ export default function Users({ userProfile }: UsersProps) {
     setApiHealth(null);
     try {
       await checkApiHealth();
-      setApiHealth({ ok: true, message: 'Serveur API accessible.' });
+      setApiHealth({ ok: true, message: t('apiHealth.available') });
     } catch (error) {
       setApiHealth({
         ok: false,
-        message: error instanceof Error ? error.message : 'Vérification du serveur impossible.',
+        message: error instanceof Error
+          ? t('apiHealth.failedWithDetails', { details: error.message })
+          : t('apiHealth.failed'),
       });
     } finally {
       setApiHealthLoading(false);
@@ -679,8 +687,8 @@ export default function Users({ userProfile }: UsersProps) {
   return (
     <div className="mx-auto w-full min-w-0 max-w-7xl space-y-6">
       <PageHeader
-        title="Gestion des Utilisateurs"
-        description="Gérez les accès détaillés et modifiez les profils de l’équipe en temps réel."
+        title={t('page.title')}
+        description={t('page.description')}
         actions={<div className="flex min-w-0 flex-wrap items-center gap-2">
           <Button
             variant="secondary"
@@ -689,7 +697,7 @@ export default function Users({ userProfile }: UsersProps) {
             disabled={apiHealthLoading}
           >
             <Activity className="h-4 w-4" />
-            {apiHealthLoading ? 'Vérification…' : 'Tester le serveur'}
+            {apiHealthLoading ? t('checking') : t('testServer')}
           </Button>
           <Button
             onClick={() => {
@@ -701,7 +709,7 @@ export default function Users({ userProfile }: UsersProps) {
             }}
           >
             <UserPlus className="w-4 h-4" />
-            Créer un utilisateur
+            {t('createUser')}
           </Button>
         </div>}
       />
@@ -716,20 +724,20 @@ export default function Users({ userProfile }: UsersProps) {
           onClick={previewPermissionMigration}
           disabled={permissionMigrationBusy}
         >
-          Prévisualiser la migration des permissions
+          {t('permissionMigration.preview')}
         </Button>
         {permissionMigrationError && <p role="alert" className="text-sm font-semibold text-ds-danger">{permissionMigrationError}</p>}
         {permissionMigrationPreview.length > 0 && (
           <>
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm font-bold text-ds-text">{permissionMigrationPreview.length} compte(s) sans permissions explicites.</p>
+              <p className="text-sm font-bold text-ds-text">{t('permissionMigration.accountsWithoutPermissions', { count: permissionMigrationPreview.length })}</p>
               <div className="flex gap-2">
-                <Button type="button" variant="secondary" onClick={downloadPermissionMigrationBackup}>Télécharger la sauvegarde JSON</Button>
-                <Button type="button" variant="primary" onClick={() => setMigrationConfirmOpen(true)} disabled={!permissionMigrationBackupDownloaded || permissionMigrationBusy}>{permissionMigrationBusy ? 'Migration…' : 'Confirmer la migration'}</Button>
+                <Button type="button" variant="secondary" onClick={downloadPermissionMigrationBackup}>{t('permissionMigration.downloadBackup')}</Button>
+                <Button type="button" variant="primary" onClick={() => setMigrationConfirmOpen(true)} disabled={!permissionMigrationBackupDownloaded || permissionMigrationBusy}>{permissionMigrationBusy ? t('permissionMigration.running') : t('permissionMigration.confirm')}</Button>
               </div>
             </div>
             <ul className="max-h-36 space-y-1 overflow-y-auto text-sm text-ds-muted">
-              {permissionMigrationPreview.map(profile => <li key={profile.uid} className="rounded-ds-md bg-ds-surface-2 px-3 py-2">{profile.name || profile.email} · {permissionPreset(profile)}</li>)}
+              {permissionMigrationPreview.map(profile => <li key={profile.uid} className="rounded-ds-md bg-ds-surface-2 px-3 py-2">{profile.name || profile.email} · {t(`roles.${permissionPreset(profile)}Short`)}</li>)}
             </ul>
           </>
         )}
@@ -737,7 +745,7 @@ export default function Users({ userProfile }: UsersProps) {
 
       {success && (
         <Badge variant="success" role="status" className="min-h-0 rounded-ds-md p-4 text-sm">
-          <CheckCircle2 className="mr-2 h-4 w-4 shrink-0" />
+          <CheckCircle2 className="me-2 h-4 w-4 shrink-0" />
           {success}
         </Badge>
       )}
@@ -751,22 +759,22 @@ export default function Users({ userProfile }: UsersProps) {
       <Card className="min-w-0 overflow-hidden p-0">
         {loading ? (
           <div className="flex items-center justify-center p-16">
-            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-ds-brand" />
+            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-ds-brand" role="status" aria-label={t('loadingUsers')} />
           </div>
         ) : users.length === 0 ? (
-          <EmptyState icon={<UsersIcon className="h-12 w-12" />} title="Aucun utilisateur trouvé" />
+          <EmptyState icon={<UsersIcon className="h-12 w-12" />} title={t('table.empty')} />
         ) : (
           <div className="overflow-x-auto">
-            <table className="responsive-card-table w-full text-left border-collapse">
+            <table className="responsive-card-table w-full text-start border-collapse">
               <thead className="bg-ds-surface-2">
                 <tr className="border-b border-ds-border">
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-ds-muted">Utilisateur & ID</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-ds-muted">Coordonnées de connexion</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-ds-muted">Code sécurité</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-ds-muted">Rôle</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-ds-muted">Menus visibles</th>
-                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-ds-muted">Statut</th>
-                  <th className="px-6 py-4 text-right text-xs font-bold uppercase tracking-wider text-ds-muted">Actions</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-ds-muted">{t('table.userId')}</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-ds-muted">{t('table.login')}</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-ds-muted">{t('table.securityCode')}</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-ds-muted">{t('roles.label')}</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-ds-muted">{t('table.visibleMenus')}</th>
+                  <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-ds-muted">{t('table.status')}</th>
+                  <th className="px-6 py-4 text-end text-xs font-bold uppercase tracking-wider text-ds-muted">{t('table.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-ds-border">
@@ -781,10 +789,10 @@ export default function Users({ userProfile }: UsersProps) {
                   return (
                     <tr key={profile.uid} className={cn(
                       "group transition-colors hover:bg-ds-surface-2",
-                      isSelf && "border-l-2 border-ds-brand bg-ds-brand-soft/50"
+                      isSelf && "border-s-2 border-ds-brand bg-ds-brand-soft/50"
                     )}>
                       {/* Left Block: Avatar and Email/UID info */}
-                      <td data-label="Utilisateur & identifiant" className="py-4 px-6">
+                      <td data-label={t('table.userId')} className="py-4 px-6">
                         <div className="flex items-center gap-3">
                           <div className={cn(
                             "flex h-10 w-10 items-center justify-center rounded-ds-md border border-ds-brand/20 bg-ds-brand-soft text-xs font-black text-ds-brand",
@@ -794,37 +802,37 @@ export default function Users({ userProfile }: UsersProps) {
                           </div>
                           <div>
                             <div className="flex items-center gap-1.5 text-sm font-bold leading-none text-ds-text">
-                              {profile.name || 'Sans Nom'}
+                              {profile.name || t('table.noName')}
                               {isSelf && (
                                 <Badge variant="info" className="min-h-0 px-1.5 py-0.5 text-[10px]">
-                                  Vous
+                                  {t('table.you')}
                                 </Badge>
                               )}
                             </div>
                             <span className="mt-1 block break-all text-sm font-medium text-ds-muted">{profile.email}</span>
                             <div className="mt-1 space-y-0.5 break-all font-mono text-xs text-ds-muted">
                               <div>UID: {profile.uid}</div>
-                              <div>Owner ID: {profile.ownerId || 'Non défini'}</div>
-                              {profile.creatorId && <div>Créateur: {profile.creatorId}</div>}
+                              <div>{t('table.ownerId')}: {profile.ownerId || t('table.undefined')}</div>
+                              {profile.creatorId && <div>{t('table.creator')}: {profile.creatorId}</div>}
                             </div>
                           </div>
                         </div>
                       </td>
 
                       {/* Credentials Display Column with copy functions */}
-                      <td data-label="Coordonnées de connexion" className="py-4 px-6">
+                      <td data-label={t('table.login')} className="py-4 px-6">
                         <div className="space-y-1 text-xs">
                           {/* Email Copy Line */}
                           <div className="flex items-center gap-2 group/btn">
-                            <span className="w-10 text-xs font-black uppercase text-ds-muted">Email:</span>
+                            <span className="w-10 text-xs font-black uppercase text-ds-muted">{t('table.email')}:</span>
                             <span className="break-all text-sm font-semibold text-ds-text">{profile.email}</span>
                             <Button
                               variant="ghost"
                               onClick={() => copyToClipboard(profile.email, `${profile.uid}-email`)}
                               className="min-w-ds-touch-target"
                               size="sm"
-                              aria-label="Copier l'adresse email"
-                              title="Copier l'adresse email"
+                              aria-label={t('table.copyEmail')}
+                              title={t('table.copyEmail')}
                             >
                               {copiedField === `${profile.uid}-email` ? (
                                 <Check className="h-4 w-4 text-ds-success" />
@@ -839,16 +847,16 @@ export default function Users({ userProfile }: UsersProps) {
                               variant="secondary"
                               onClick={() => void sendPasswordResetLink(profile.email)}
                               size="sm"
-                              title="Envoyer un lien de réinitialisation"
+                              title={t('actions.sendResetLink')}
                             >
-                              <Mail className="h-4 w-4" /> Envoyer un lien de réinitialisation
+                              <Mail className="h-4 w-4" /> {t('actions.sendResetLink')}
                             </Button>
                           </div>
                         </div>
                       </td>
 
                       {/* Code de sécurité individuel */}
-                      <td data-label="Code sécurité" className="py-4 px-6">
+                      <td data-label={t('table.securityCode')} className="py-4 px-6">
                         {profile.securityCode ? (
                           <div className="flex items-center gap-2 group/btn">
                             <Shield className="h-4 w-4 shrink-0 text-ds-brand" />
@@ -859,30 +867,30 @@ export default function Users({ userProfile }: UsersProps) {
                               variant="ghost"
                               onClick={() => toggleCodeVisibility(profile.uid)}
                               size="sm"
-                              aria-label={visibleCodes[profile.uid] ? 'Masquer le code de sécurité' : 'Afficher le code de sécurité'}
-                              title={visibleCodes[profile.uid] ? 'Masquer' : 'Afficher le code'}
+                              aria-label={visibleCodes[profile.uid] ? t('table.hideCode') : t('table.showCode')}
+                              title={visibleCodes[profile.uid] ? t('table.hide') : t('table.show')}
                             >
                               {visibleCodes[profile.uid] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </Button>
                           </div>
                         ) : (
-                          <span className="text-xs font-bold uppercase tracking-wider text-ds-muted">Non défini</span>
+                          <span className="text-xs font-bold uppercase tracking-wider text-ds-muted">{t('table.undefined')}</span>
                         )}
                       </td>
 
                       {/* Rôle Badge */}
-                      <td data-label="Rôle" className="py-4 px-6">
+                      <td data-label={t('roles.label')} className="py-4 px-6">
                         <Badge
                           variant={profile.role === 'admin' ? 'neutral' : isTechnicianProfile(profile, allowed) ? 'info' : 'neutral'}
                           className={cn("min-h-0 gap-1.5 px-2.5 py-1 uppercase tracking-wider", profile.role === 'admin' && "border-ds-brand/20 bg-ds-brand-soft text-ds-brand")}
                         >
                           <Shield className="h-3.5 w-3.5" />
-                          {profile.role === 'admin' ? 'Administrateur' : isTechnicianProfile(profile, allowed) ? 'Technicien' : 'Casier'}
+                          {profile.role === 'admin' ? t('roles.adminShort') : isTechnicianProfile(profile, allowed) ? t('roles.technicianShort') : t('roles.cashierShort')}
                         </Badge>
                       </td>
 
                       {/* Allowed Menus List */}
-                      <td data-label="Menus visibles" className="py-4 px-6 max-w-xs">
+                      <td data-label={t('table.visibleMenus')} className="py-4 px-6 max-w-xs">
                         <div className="flex flex-wrap gap-1">
                           {MENU_OPTIONS.map((menu) => {
                             const isAllowed = allowed.includes(menu.id);
@@ -894,9 +902,9 @@ export default function Users({ userProfile }: UsersProps) {
                                   "min-h-0 rounded-ds-sm px-1.5 py-0.5 text-xs font-bold transition-all",
                                   !isAllowed && "opacity-60 line-through"
                                 )}
-                                title={menu.description}
+                                title={t(`menus.${menu.id}.description`)}
                               >
-                                {menu.name.split(' ')[0]}
+                                {t(`menus.${menu.id}.shortName`)}
                               </Badge>
                             );
                           })}
@@ -904,18 +912,18 @@ export default function Users({ userProfile }: UsersProps) {
                       </td>
 
                       {/* Statut Badge */}
-                      <td data-label="Statut" className="py-4 px-6">
+                      <td data-label={t('table.status')} className="py-4 px-6">
                         <Badge variant={profile.status === 'banned' ? 'danger' : 'success'} className="min-h-0 px-2.5 py-1 uppercase tracking-wider">
-                          {profile.status === 'banned' ? 'Inactif' : 'Actif'}
+                          {profile.status === 'banned' ? t('status.inactive') : t('status.active')}
                         </Badge>
                       </td>
 
                       {/* Combined Actions: Edit, Toggle Status, Delete */}
-                      <td data-label="Actions" className="py-4 px-6 text-right">
+                      <td data-label={t('table.actions')} className="py-4 px-6 text-end">
                         {isSelf ? (
                           <Badge variant="info" className="min-h-0 gap-1.5 rounded-ds-md px-3 py-1.5 uppercase tracking-wider">
                             <Shield className="h-4 w-4" />
-                            Compte principal
+                            {t('status.primaryAccount')}
                           </Badge>
                         ) : (
                         <div className="flex items-center justify-end gap-2">
@@ -924,10 +932,10 @@ export default function Users({ userProfile }: UsersProps) {
                               variant="secondary"
                               onClick={() => handleOpenEdit(profile)}
                               size="sm"
-                              title="Modifier ce profil"
+                              title={t('actions.editProfile')}
                             >
                               <Edit2 className="h-4 w-4" />
-                              Modifier
+                              {t('actions.edit')}
                             </Button>
                             <Button
                               variant="secondary"
@@ -935,7 +943,7 @@ export default function Users({ userProfile }: UsersProps) {
                               size="sm"
                             >
                               <Lock className="h-4 w-4" />
-                              Changer le mot de passe
+                              {t('actions.changePassword')}
                             </Button>
                             <Button
                               variant="secondary"
@@ -944,27 +952,27 @@ export default function Users({ userProfile }: UsersProps) {
                               size="sm"
                             >
                               <Mail className="h-4 w-4" />
-                              Envoyer un lien de réinitialisation
+                              {t('actions.sendResetLink')}
                             </Button>
                             <Button
                               variant={profile.status === 'banned' ? 'secondary' : 'danger'}
                               onClick={() => void handleToggleStatus(profile)}
                               disabled={actionLoading === profile.uid}
                               size="sm"
-                              title={profile.status === 'banned' ? 'Débloquer cet utilisateur' : 'Bloquer cet utilisateur'}
+                              title={profile.status === 'banned' ? t('actions.unblockUser') : t('actions.blockUser')}
                             >
                               <Ban className="h-4 w-4" />
-                              {profile.status === 'banned' ? 'Débloquer' : 'Bloquer'}
+                              {profile.status === 'banned' ? t('actions.unblock') : t('actions.block')}
                             </Button>
                             <Button
                               variant="danger"
                               onClick={() => { setDeletingUser(profile); setDeleteConfirmation(''); setErrorOnCreate(null); }}
                               disabled={actionLoading === profile.uid}
                               size="sm"
-                              title="Supprimer définitivement l'utilisateur"
+                              title={t('actions.deleteUser')}
                             >
                               <Trash2 className="h-4 w-4" />
-                              Supprimer définitivement
+                              {t('actions.deletePermanently')}
                             </Button>
                           </div>
                         </div>
@@ -983,15 +991,15 @@ export default function Users({ userProfile }: UsersProps) {
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-ds-text/60 p-4 backdrop-blur-sm" role="presentation">
           <form onSubmit={handleChangeUserPassword} className="w-full min-w-0 max-w-md space-y-4 rounded-ds-lg border border-ds-border bg-ds-surface p-6 shadow-ds-md" role="dialog" aria-modal="true" aria-labelledby="change-user-password-title">
             <div>
-              <h2 id="change-user-password-title" className="text-lg font-black text-ds-text">Changer le mot de passe</h2>
+              <h2 id="change-user-password-title" className="text-lg font-black text-ds-text">{t('changePassword.title')}</h2>
               <p className="mt-1 break-all text-sm text-ds-muted">{passwordUser.email}</p>
             </div>
-            <Input label="Nouveau mot de passe" type="password" autoComplete="new-password" minLength={8} required value={newPassword} onChange={event => setNewPassword(event.target.value)} />
-            <Input label="Confirmer le nouveau mot de passe" type="password" autoComplete="new-password" minLength={8} required value={confirmNewPassword} onChange={event => setConfirmNewPassword(event.target.value)} />
+            <Input label={t('changePassword.newPassword')} type="password" autoComplete="new-password" minLength={8} required value={newPassword} onChange={event => setNewPassword(event.target.value)} />
+            <Input label={t('changePassword.confirmPassword')} type="password" autoComplete="new-password" minLength={8} required value={confirmNewPassword} onChange={event => setConfirmNewPassword(event.target.value)} />
             {errorOnCreate && <p role="alert" className="rounded-ds-md bg-ds-danger-soft p-3 text-sm font-semibold text-ds-danger">{errorOnCreate}</p>}
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="secondary" onClick={() => { setPasswordUser(null); setErrorOnCreate(null); }}>Annuler</Button>
-              <Button type="submit" disabled={actionLoading === passwordUser.uid || newPassword.length < 8 || newPassword !== confirmNewPassword}>{actionLoading === passwordUser.uid ? 'Modification…' : 'Confirmer'}</Button>
+              <Button type="button" variant="secondary" onClick={() => { setPasswordUser(null); setErrorOnCreate(null); }}>{t('cancel')}</Button>
+              <Button type="submit" disabled={actionLoading === passwordUser.uid || newPassword.length < 8 || newPassword !== confirmNewPassword}>{actionLoading === passwordUser.uid ? t('editing') : t('confirm')}</Button>
             </div>
           </form>
         </div>
@@ -1003,17 +1011,17 @@ export default function Users({ userProfile }: UsersProps) {
             <div className="flex items-start gap-3">
               <div className="rounded-ds-md bg-ds-danger-soft p-2 text-ds-danger"><AlertCircle className="h-5 w-5" /></div>
               <div>
-                <h2 id="delete-user-title" className="text-lg font-black text-ds-text">Supprimer définitivement</h2>
-                <p className="mt-2 text-sm leading-relaxed text-ds-text">Êtes-vous sûr ? Cette action est définitive : le compte et l'accès de l'utilisateur seront supprimés.</p>
+                <h2 id="delete-user-title" className="text-lg font-black text-ds-text">{t('delete.title')}</h2>
+                <p className="mt-2 text-sm leading-relaxed text-ds-text">{t('delete.confirmation')}</p>
               </div>
             </div>
-            <p className="text-sm text-ds-muted">Saisissez l’email <strong className="text-ds-text">{deletingUser.email}</strong> pour confirmer.</p>
-            <Input autoFocus value={deleteConfirmation} onChange={event => setDeleteConfirmation(event.target.value)} aria-label="Confirmation de suppression" />
-            {deletingUser.role === 'admin' && users.filter(profile => profile.role === 'admin' && (profile.ownerId || profile.uid) === (userProfile?.ownerId || userProfile?.uid)).length <= 1 && <p role="alert" className="rounded-ds-md bg-ds-danger-soft p-3 text-sm font-semibold text-ds-danger">Impossible de supprimer le dernier administrateur du magasin.</p>}
+            <p className="text-sm text-ds-muted">{t('delete.typeEmail')} <strong className="text-ds-text">{deletingUser.email}</strong></p>
+            <Input autoFocus value={deleteConfirmation} onChange={event => setDeleteConfirmation(event.target.value)} aria-label={t('delete.confirmLabel')} />
+            {deletingUser.role === 'admin' && users.filter(profile => profile.role === 'admin' && (profile.ownerId || profile.uid) === (userProfile?.ownerId || userProfile?.uid)).length <= 1 && <p role="alert" className="rounded-ds-md bg-ds-danger-soft p-3 text-sm font-semibold text-ds-danger">{t('delete.lastAdmin')}</p>}
             {errorOnCreate && <p role="alert" className="rounded-ds-md bg-ds-danger-soft p-3 text-sm font-semibold text-ds-danger">{errorOnCreate}</p>}
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="secondary" onClick={() => { setDeletingUser(null); setDeleteConfirmation(''); setErrorOnCreate(null); }}>Annuler</Button>
-              <Button type="button" variant="danger" onClick={() => void handleDeleteProfileAndAuth(deletingUser)} disabled={actionLoading === deletingUser.uid || deleteConfirmation.trim().toLowerCase() !== deletingUser.email.toLowerCase() || (deletingUser.role === 'admin' && users.filter(profile => profile.role === 'admin' && (profile.ownerId || profile.uid) === (userProfile?.ownerId || userProfile?.uid)).length <= 1)}>{actionLoading === deletingUser.uid ? 'Suppression…' : 'Supprimer définitivement'}</Button>
+              <Button type="button" variant="secondary" onClick={() => { setDeletingUser(null); setDeleteConfirmation(''); setErrorOnCreate(null); }}>{t('cancel')}</Button>
+              <Button type="button" variant="danger" onClick={() => void handleDeleteProfileAndAuth(deletingUser)} disabled={actionLoading === deletingUser.uid || deleteConfirmation.trim().toLowerCase() !== deletingUser.email.toLowerCase() || (deletingUser.role === 'admin' && users.filter(profile => profile.role === 'admin' && (profile.ownerId || profile.uid) === (userProfile?.ownerId || userProfile?.uid)).length <= 1)}>{actionLoading === deletingUser.uid ? t('deleting') : t('actions.deletePermanently')}</Button>
             </div>
           </section>
         </div>
@@ -1022,11 +1030,11 @@ export default function Users({ userProfile }: UsersProps) {
       {migrationConfirmOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-ds-text/60 p-4" role="presentation">
           <section className="w-full min-w-0 max-w-md space-y-4 rounded-ds-lg bg-ds-surface p-6 shadow-ds-md" role="alertdialog" aria-modal="true">
-            <h2 className="text-lg font-black text-ds-text">Confirmer la migration</h2>
-            <p className="text-sm text-ds-muted">Les permissions des comptes prévisualisés seront mises à jour. Une sauvegarde JSON a été téléchargée.</p>
+            <h2 className="text-lg font-black text-ds-text">{t('permissionMigration.confirmTitle')}</h2>
+            <p className="text-sm text-ds-muted">{t('permissionMigration.confirmDescription')}</p>
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="secondary" onClick={() => setMigrationConfirmOpen(false)}>Annuler</Button>
-              <Button type="button" onClick={() => void confirmPermissionMigration()}>Confirmer la migration</Button>
+              <Button type="button" variant="secondary" onClick={() => setMigrationConfirmOpen(false)}>{t('cancel')}</Button>
+              <Button type="button" onClick={() => void confirmPermissionMigration()}>{t('permissionMigration.confirm')}</Button>
             </div>
           </section>
         </div>
@@ -1041,13 +1049,13 @@ export default function Users({ userProfile }: UsersProps) {
                 <div className="rounded-ds-md bg-ds-brand-soft p-2 text-ds-brand">
                   <UserPlus className="w-4 h-4" />
                 </div>
-                <h2 className="text-sm font-black uppercase tracking-wider text-ds-text">Ajouter un Utilisateur</h2>
+                <h2 className="text-sm font-black uppercase tracking-wider text-ds-text">{t('createModal.title')}</h2>
               </div>
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setIsModalOpen(false)} 
-                aria-label="Fermer"
+                aria-label={t('cancel')}
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -1061,31 +1069,31 @@ export default function Users({ userProfile }: UsersProps) {
                 </div>
               )}
 
-              <Input label="Nom complet" type="text" required value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder="Ex: Jean Dupont" />
+              <Input label={t('createModal.fullName')} type="text" required value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder={t('createModal.nameExample')} />
 
-              <Input label="Adresse Email de connexion" type="email" required value={emailInput} onChange={(e) => setEmailInput(e.target.value)} placeholder="caissier1@example.com" />
+              <Input label={t('createModal.loginEmail')} type="email" required value={emailInput} onChange={(e) => setEmailInput(e.target.value)} placeholder={t('createModal.emailExample')} />
 
-              <Input label="Mot de passe (Min 6 caractères)" type="password" required value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} placeholder="Mot de passe à définir dans Firebase Auth" />
+              <Input label={t('createModal.password')} type="password" required value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} placeholder={t('createModal.passwordPlaceholder')} />
 
               <Select
-                  label="Rôle de Base"
+                  label={t('roles.label')}
                   value={roleInput}
                   onChange={(e) => handleRoleChangeOnCreate(e.target.value as UserFormRole)}
                 >
-                  <option value="user">Compte à menus personnalisés</option>
-                  <option value="cashier-repair">Casier + Réparation</option>
-                  <option value="technician">Technicien (Réparation et pièces)</option>
-                  <option value="admin">Administrateur (Accès Intégral)</option>
+                  <option value="user">{t('roles.custom')}</option>
+                  <option value="cashier-repair">{t('roles.cashierRepair')}</option>
+                  <option value="technician">{t('roles.technician')}</option>
+                  <option value="admin">{t('roles.admin')}</option>
                 </Select>
 
               {/* Menus Accesses Checkboxes */}
               <div className="space-y-2 border-t border-ds-border pt-4">
                 <div>
-                  <label className="block text-sm font-black uppercase tracking-wider text-ds-text">Menus latéraux autorisés</label>
+                  <label className="block text-sm font-black uppercase tracking-wider text-ds-text">{t('createModal.allowedMenus')}</label>
                   <span className="text-sm font-medium text-ds-muted">
                     {roleInput === 'technician'
-                      ? 'Le technicien gère réparations, pièces, articles/services et clients, sans prix d’achat ni encaissement.'
-                      : 'Configurez les sections auxquelles cet utilisateur aura accès :'}
+                      ? t('createModal.technicianHelp')
+                      : t('createModal.menuHelp')}
                   </span>
                 </div>
 
@@ -1104,7 +1112,7 @@ export default function Users({ userProfile }: UsersProps) {
                         key={menu.id}
                         onClick={() => { if (roleInput !== 'technician' || TECHNICIAN_MENUS.includes(menu.id)) handleToggleMenuSelection(menu.id); }}
                         className={cn(
-                          "flex min-w-0 items-start gap-2.5 rounded-ds-md border p-3 text-left transition-colors hover:bg-ds-surface-2",
+                          "flex min-w-0 items-start gap-2.5 rounded-ds-md border p-3 text-start transition-colors hover:bg-ds-surface-2",
                           isChecked 
                             ? "border-ds-brand/30 bg-ds-brand-soft text-ds-brand"
                             : "border-ds-border bg-ds-surface text-ds-text"
@@ -1120,9 +1128,9 @@ export default function Users({ userProfile }: UsersProps) {
                         </div>
                         <div>
                           <div className="text-sm font-extrabold leading-tight">
-                            {menu.id === 'reparation' ? 'Partie Réparation' : menu.name}
+                            {t(`menus.${menu.id}.name`)}
                           </div>
-                          <p className="mt-0.5 text-sm leading-normal text-ds-muted">{menu.description}</p>
+                          <p className="mt-0.5 text-sm leading-normal text-ds-muted">{t(`menus.${menu.id}.description`)}</p>
                         </div>
                       </button>
                     );
@@ -1139,14 +1147,14 @@ export default function Users({ userProfile }: UsersProps) {
                   onClick={() => setIsModalOpen(false)}
                   className="flex-1"
                 >
-                  Annuler
+                  {t('cancel')}
                 </Button>
                 <Button
                   type="submit"
                   disabled={actionLoading !== null}
                   className="flex-1"
                 >
-                  {actionLoading === 'creating' ? 'Création en cours...' : 'Créer le compte'}
+                  {actionLoading === 'creating' ? t('createModal.creating') : t('createModal.submit')}
                 </Button>
               </div>
             </form>
@@ -1164,7 +1172,7 @@ export default function Users({ userProfile }: UsersProps) {
                   <Edit2 className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black uppercase tracking-wider text-ds-text">Modifier l'Utilisateur</h2>
+                  <h2 className="text-sm font-black uppercase tracking-wider text-ds-text">{t('editModal.title')}</h2>
                   <p className="mt-0.5 break-all text-sm font-bold text-ds-muted">{editingUser.email}</p>
                 </div>
               </div>
@@ -1172,7 +1180,7 @@ export default function Users({ userProfile }: UsersProps) {
                 type="button"
                 variant="ghost"
                 onClick={() => setEditingUser(null)} 
-                aria-label="Fermer"
+                aria-label={t('cancel')}
               >
                 <X className="h-5 w-5" />
               </Button>
@@ -1186,14 +1194,14 @@ export default function Users({ userProfile }: UsersProps) {
                 </div>
               )}
 
-              <Input label="Nom complet" type="text" required value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Ex: Jean Dupont" />
+              <Input label={t('createModal.fullName')} type="text" required value={editName} onChange={(e) => setEditName(e.target.value)} placeholder={t('createModal.nameExample')} />
 
-              <Input label="Email de connexion" type="email" value={editEmail} readOnly />
+              <Input label={t('createModal.loginEmail')} type="email" value={editEmail} readOnly />
 
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-ds-md border border-ds-info/20 bg-ds-accent-soft p-3 text-sm text-ds-text">
-                <span>Le changement de mot de passe se fait via le lien sécurisé envoyé à cette adresse.</span>
+                <span>{t('editModal.passwordResetHelp')}</span>
                 <Button type="button" variant="secondary" onClick={() => void sendPasswordResetLink(editingUser.email)} className="shrink-0">
-                  Envoyer un lien de réinitialisation
+                  {t('actions.sendResetLink')}
                 </Button>
               </div>
 
@@ -1201,28 +1209,28 @@ export default function Users({ userProfile }: UsersProps) {
               <div className="space-y-1.5">
                 <label className="flex items-center gap-1.5 text-sm font-black uppercase tracking-wider text-ds-danger">
                   <Shield className="w-3.5 h-3.5" />
-                  Code de sécurité (4 chiffres)
+                  {t('securityCode.label')}
                 </label>
                 <div className="relative">
                   <Input
-                    aria-label="Code de sécurité (4 chiffres)"
+                    aria-label={t('securityCode.label')}
                     type="text"
                     maxLength={4}
                     inputMode="numeric"
                     value={editSecurityCode}
                     onChange={(e) => setEditSecurityCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))}
-                    placeholder="Ex: 1234 (laisser vide = aucun)"
+                    placeholder={t('securityCode.placeholder')}
                     className="font-mono font-black tracking-[0.3em]"
                   />
                 </div>
                 <p className="text-sm font-medium leading-relaxed text-ds-muted">
-                  Ce code sera demandé à cet utilisateur avant toute modification ou suppression. Laisser vide pour ne définir aucun code.
+                  {t('securityCode.help')}
                 </p>
               </div>
 
               {/* Role */}
               <Select
-                  label="Rôle"
+                  label={t('roles.label')}
                   value={editRole}
                   onChange={(e) => {
                     const newRole = e.target.value as UserFormRole;
@@ -1241,27 +1249,27 @@ export default function Users({ userProfile }: UsersProps) {
                     setEditPermissions(permissionsForPreset(presetFromRole(newRole)));
                   }}
                 >
-                  <option value="user">Compte à menus personnalisés</option>
-                  <option value="cashier-repair">Casier + Réparation</option>
-                  <option value="technician">Technicien (Réparation et pièces)</option>
-                  <option value="admin">Administrateur (Accès Intégral)</option>
+                  <option value="user">{t('roles.custom')}</option>
+                  <option value="cashier-repair">{t('roles.cashierRepair')}</option>
+                  <option value="technician">{t('roles.technician')}</option>
+                  <option value="admin">{t('roles.admin')}</option>
                 </Select>
 
               {/* Status */}
               <Select
-                  label="Statut du compte"
+                  label={t('editModal.accountStatus')}
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value as 'active' | 'banned')}
                 >
-                  <option value="active">Actif (Accès autorisé)</option>
-                  <option value="banned">Bloqué / Banni (Accès refusé)</option>
+                  <option value="active">{t('editModal.statusActive')}</option>
+                  <option value="banned">{t('editModal.statusBanned')}</option>
                 </Select>
 
               {/* Menu privileges checkboxes */}
               <div className="space-y-2 border-t border-ds-border pt-4">
                 <div>
-                  <label className="block text-sm font-black uppercase tracking-wider text-ds-text">Modifier les Menus Autorisés</label>
-                  <span className="text-sm font-medium text-ds-muted">Cochez les sections visibles dans la barre latérale pour cet utilisateur :</span>
+                  <label className="block text-sm font-black uppercase tracking-wider text-ds-text">{t('editModal.allowedMenus')}</label>
+                  <span className="text-sm font-medium text-ds-muted">{t('editModal.allowedMenusHelp')}</span>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -1279,7 +1287,7 @@ export default function Users({ userProfile }: UsersProps) {
                         key={menu.id}
                         onClick={() => { if (editRole !== 'technician' || TECHNICIAN_MENUS.includes(menu.id)) handleToggleEditMenuSelection(menu.id); }}
                         className={cn(
-                          "flex min-w-0 items-start gap-2.5 rounded-ds-md border p-3 text-left transition-colors hover:bg-ds-surface-2",
+                          "flex min-w-0 items-start gap-2.5 rounded-ds-md border p-3 text-start transition-colors hover:bg-ds-surface-2",
                           isChecked 
                             ? "border-ds-brand/30 bg-ds-brand-soft text-ds-brand"
                             : "border-ds-border bg-ds-surface text-ds-text"
@@ -1295,9 +1303,9 @@ export default function Users({ userProfile }: UsersProps) {
                         </div>
                         <div>
                           <div className="text-sm font-extrabold leading-tight">
-                            {menu.id === 'reparation' ? 'Partie Réparation' : menu.name}
+                            {t(`menus.${menu.id}.name`)}
                           </div>
-                          <p className="mt-0.5 text-sm leading-normal text-ds-muted">{menu.description}</p>
+                          <p className="mt-0.5 text-sm leading-normal text-ds-muted">{t(`menus.${menu.id}.description`)}</p>
                         </div>
                       </button>
                     );
@@ -1314,14 +1322,14 @@ export default function Users({ userProfile }: UsersProps) {
                   onClick={() => setEditingUser(null)}
                   className="flex-1"
                 >
-                  Annuler
+                  {t('cancel')}
                 </Button>
                 <Button
                   type="submit"
                   disabled={actionLoading !== null}
                   className="flex-1"
                 >
-                  {actionLoading === 'editing' ? 'Enregistrement...' : 'Enregistrer'}
+                  {actionLoading === 'editing' ? t('editing') : t('editModal.save')}
                 </Button>
               </div>
             </form>

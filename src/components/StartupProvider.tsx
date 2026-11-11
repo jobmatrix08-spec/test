@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { Pause, Play, Volume2, VolumeX } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { db } from '../firebase';
 import type { StartupConfig, StartupItem, UserProfile } from '../types';
 import { can } from '../lib/permissions';
@@ -90,6 +91,7 @@ export function StartupProvider({
   online: boolean;
   children: ReactNode;
 }) {
+  const { t } = useTranslation('settings');
   const ownerId = userProfile?.ownerId || userProfile?.uid || '';
   const userId = userProfile?.uid || '';
   const audioAllowed = can(userProfile, 'startup', 'playAudio');
@@ -151,13 +153,13 @@ export function StartupProvider({
       },
       (snapshotError) => {
         console.error('Unable to load startup configuration:', snapshotError);
-        setError('Impossible de charger les réglages Coran & Adhkar.');
+        setError(t('embeddedStartup.configLoadError'));
         setLoading(false);
       },
     );
 
     return () => unsubscribeConfig();
-  }, [ownerId, online]);
+  }, [ownerId, online, t]);
 
   const openNow = useCallback(() => {
     if (!personalPreferences.enabled || !config.enabled || !online || loading || error) return;
@@ -188,7 +190,7 @@ export function StartupProvider({
   const playAudio = useCallback(async () => {
     if (!audioAllowed) return;
     if (!selectedAudioUrl) {
-      setAudioMessage('أضف مقطعًا صوتيًا من الإعدادات');
+      setAudioMessage(t('embeddedStartup.noAudio'));
       setAudioPlaying(false);
       return;
     }
@@ -203,7 +205,7 @@ export function StartupProvider({
     audio.onended = () => setAudioPlaying(false);
     audio.onerror = () => {
       setAudioPlaying(false);
-      setAudioMessage('تعذر تشغيل المقطع الصوتي. تحقق من الرابط.');
+      setAudioMessage(t('embeddedStartup.audioUnavailable'));
     };
     try {
       await audio.play();
@@ -213,9 +215,11 @@ export function StartupProvider({
     } catch (playError) {
       setAudioPlaying(false);
       setAudioBlocked(playError instanceof Error && playError.name === 'NotAllowedError');
-      setAudioMessage('تعذر بدء الصوت. اضغط على زر التشغيل للمحاولة مجددًا.');
+      setAudioMessage(playError instanceof Error && playError.name === 'NotAllowedError'
+        ? t('embeddedStartup.playbackBlocked')
+        : t('embeddedStartup.playbackError'));
     }
-  }, [audioAllowed, selectedAudioUrl, config.loop, config.volume, muted]);
+  }, [audioAllowed, selectedAudioUrl, config.loop, config.volume, muted, t]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -321,13 +325,14 @@ export function useStartup(): StartupContextValue {
 
 export function StartupMiniPlayer() {
   const { config, audioAllowed, audioPlaying, muted, toggleAudio, toggleMute } = useStartup();
+  const { t } = useTranslation('settings');
   if (!config.enabled || !audioAllowed || !isDirectAudioUrl(config.audioUrl || '')) return null;
   return (
-    <div className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full border border-ds-border bg-ds-surface px-2 py-1 shadow-ds-md backdrop-blur">
-      <button className="rounded-full p-2 text-ds-brand hover:bg-ds-brand-soft" onClick={toggleAudio} aria-label={audioPlaying ? 'إيقاف الصوت' : 'تشغيل الصوت'}>
+    <div className="fixed bottom-4 end-4 z-40 flex items-center gap-2 rounded-full border border-ds-border bg-ds-surface px-2 py-1 shadow-ds-md backdrop-blur">
+      <button className="rounded-full p-2 text-ds-brand hover:bg-ds-brand-soft" onClick={toggleAudio} aria-label={audioPlaying ? t('embeddedStartup.pause') : t('embeddedStartup.play')}>
         {audioPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
       </button>
-      <button className="rounded-full p-2 text-ds-brand hover:bg-ds-brand-soft" onClick={toggleMute} aria-label={muted ? 'تشغيل الصوت' : 'كتم الصوت'}>
+      <button className="rounded-full p-2 text-ds-brand hover:bg-ds-brand-soft" onClick={toggleMute} aria-label={muted ? t('embeddedStartup.unmute') : t('embeddedStartup.mute')}>
         {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
       </button>
     </div>

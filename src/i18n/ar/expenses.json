@@ -1,0 +1,53 @@
+{
+  "title": "المصاريف",
+  "description": "كل مبلغ يخرج من الكاسة: شراء قطع، مصاريف وخلاصات النهار",
+  "allExpensesTotal": "مجموع المصاريف الكل",
+  "monthExpensesTotal": "مصاريف الشهر",
+  "operation_one": "{{count}} عملية",
+  "operation_other": "{{count}} عمليات",
+  "newExpense": "مصروف جديد",
+  "close": "سكّر",
+  "cashChecking": "قاعد يتثبت في الكاسة…",
+  "cashRequired": "يلزم كاسة محلولة باش تسجّل المصروف.",
+  "openCash": "حلّ الكاسة",
+  "linkedToCash": "المصروف باش يتربط بالكاسة المحلولة توّة.",
+  "label": "التسمية",
+  "date": "التاريخ",
+  "category": "الصنف",
+  "amount": "المبلغ (DT)",
+  "paymentMode": "طريقة الخلاص",
+  "saving": "قاعد يسجّل…",
+  "saveExpense": "سجّل المصروف",
+  "search": "لوّج على مصروف…",
+  "all": "الكل",
+  "monthAria": "شهر المصاريف",
+  "loading": "قاعد يحمّل المصاريف…",
+  "empty": "ما فماش مصاريف",
+  "descriptionDate": "التاريخ",
+  "descriptionLabel": "التسمية",
+  "descriptionCategory": "الصنف",
+  "descriptionMode": "الطريقة",
+  "amountColumn": "المبلغ (DT)",
+  "accessDenied": "الدخول كان لمدير المغازة.",
+  "categories": {
+    "rent": "الكراء",
+    "transport": "النقل",
+    "salaries": "الشهريات",
+    "maintenance": "الصيانة",
+    "phoneInternet": "التليفون / الإنترنت",
+    "other": "أخرى"
+  },
+  "paymentModes": {
+    "cash": "كاش",
+    "card": "بطاقة",
+    "transfer": "تحويل",
+    "other": "أخرى"
+  },
+  "errors": {
+    "adminOnly": "كان المدير ينجم يتصرف في المصاريف.",
+    "invalidExpense": "اكتب التسمية ومبلغ أكبر من صفر.",
+    "saveFailed": "ما نجّمش نسجّل المصروف: {{message}}",
+    "unknown": "غلط موش معروف."
+  },
+  "saved": "المصروف تسجّل."
+}

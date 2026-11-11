@@ -13,7 +13,8 @@ import crypto from "crypto";
 import type { Request, Response, NextFunction } from "express";
 import { getInvoiceTotals } from "./src/lib/financial";
 import { slugifyAppName } from "./src/lib/brand";
-import { DEFAULT_APP_NAME } from "./src/config/brand-defaults";
+import { DEFAULT_APP_NAME, DEFAULT_STORE_NAME } from "./src/config/brand-defaults";
+import { applyArabicGlossary } from "./src/config/i18n";
 
 const firebaseConfigPath = path.join(process.cwd(), "firebase-applet-config.json");
 let firebaseConfig: Record<string, unknown> = {};
@@ -58,6 +59,47 @@ const adminApp = initializeApp({
 const adminAuth = getAuth(adminApp);
 const adminDb = getFirestore(adminApp, databaseId);
 const APP_NAME = process.env.APP_NAME?.trim() || DEFAULT_APP_NAME;
+type InvoicePdfLabels = {
+  title: string;
+  invoiceNumber: string;
+  date: string;
+  client: string;
+  clientCode: string;
+  phone: string;
+  address: string;
+  product: string;
+  quantity: string;
+  price: string;
+  lineTotal: string;
+  subtotal: string;
+  discount: string;
+  vat: string;
+  generalTotal: string;
+  paid: string;
+  remaining: string;
+  thanks: string;
+  pdfError: string;
+};
+const readInvoicePdfLabels = (locale: "fr" | "ar"): InvoicePdfLabels => {
+  const file = path.join(process.cwd(), "src", "i18n", locale, "invoices.json");
+  const resource = JSON.parse(fs.readFileSync(file, "utf-8")) as { pdf: InvoicePdfLabels };
+  return resource.pdf;
+};
+const invoicePdfLabels = {
+  fr: readInvoicePdfLabels("fr"),
+  ar: applyArabicGlossary(readInvoicePdfLabels("ar")),
+};
+const arabicPdfFontPath = path.join(
+  process.cwd(),
+  "node_modules",
+  "@fontsource",
+  "noto-sans-arabic",
+  "files",
+  "noto-sans-arabic-arabic-400-normal.woff",
+);
+if (!fs.existsSync(arabicPdfFontPath)) {
+  throw new Error("Arabic PDF font is unavailable: Noto Sans Arabic.");
+}
 const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN?.trim();
 
 // No super-admin is configured by default; set the allowed accounts via environment.
@@ -548,46 +590,96 @@ async function startServer() {
     try {
       const storeName = typeof invoice.storeName === "string" && invoice.storeName.trim()
         ? invoice.storeName.trim()
-        : APP_NAME;
+        : DEFAULT_STORE_NAME;
       const address = typeof invoice.address === "string" ? invoice.address.trim() : "";
       const phone = typeof invoice.phone === "string" ? invoice.phone.trim() : "";
+      const documentLanguage = invoice.documentLanguage === "ar" || invoice.documentLanguage === "both"
+        ? invoice.documentLanguage
+        : "fr";
+      const labels = invoicePdfLabels[documentLanguage === "ar" ? "ar" : "fr"];
+      const isArabic = documentLanguage === "ar";
+      const align = isArabic ? "right" : "left";
+      const formatAmount = (value: number) => new Intl.NumberFormat(
+        isArabic ? "ar-TN-u-nu-latn" : "fr-TN-u-nu-latn",
+        { numberingSystem: "latn", minimumFractionDigits: 3, maximumFractionDigits: 3 },
+      ).format(value);
       const doc = new PDFDocument({ size: [226, 600], margin: 10 }); // Thermal printer size (approx 80mm)
 
       res.setHeader("Content-Type", "application/pdf");
       res.setHeader("Content-Disposition", `attachment; filename=${slugifyAppName(APP_NAME)}-facture-${safeFilenamePart(invoice.number)}.pdf`);
 
       doc.pipe(res);
+      const writeLine = (value: string, lineAlign: "left" | "right" | "center" = align) => {
+        const font = /[\u0600-\u06ff]/u.test(value) ? arabicPdfFontPath : "Helvetica";
+        doc.font(font).text(value, { align: lineAlign });
+      };
+      const writeLabel = (key: keyof InvoicePdfLabels) => {
+        if (documentLanguage === "both") {
+          writeLine(invoicePdfLabels.fr[key], "left");
+          writeLine(invoicePdfLabels.ar[key], "right");
+          return;
+        }
+        writeLine(labels[key]);
+      };
+      const writeValue = (value: unknown) => writeLine(String(value ?? ""));
 
       // Header
-      doc.fontSize(14).text(storeName, { align: "center" });
-      if (address) doc.fontSize(8).text(address, { align: "center" });
-      if (phone) doc.fontSize(8).text(phone, { align: "center" });
+      doc.fontSize(14);
+      writeLine(storeName, "center");
+      if (address) {
+        doc.fontSize(8);
+        writeLine(address, "center");
+      }
+      if (phone) {
+        doc.fontSize(8);
+        writeLine(phone, "center");
+      }
       doc.moveDown();
 
-      doc.fontSize(10).text(`FACTURE: ${invoice.number || ""}`, { align: "center" });
-      doc.fontSize(8).text(`Date: ${invoice.date || ""}`, { align: "center" });
+      doc.fontSize(10);
+      writeLabel("title");
+      writeLabel("invoiceNumber");
+      writeValue(invoice.number);
+      doc.fontSize(8);
+      writeLabel("date");
+      writeValue(invoice.date);
       doc.moveDown();
 
       // Client Info
-      if (invoice.clientName) doc.text(`Client: ${invoice.clientName}`);
-      if (invoice.clientCode) doc.text(`Code Client: ${invoice.clientCode}`);
-      if (invoice.clientPhone) doc.text(`Tel: ${invoice.clientPhone}`);
-      if (invoice.clientAddress) doc.text(`Adresse: ${invoice.clientAddress}`);
+      if (invoice.clientName) {
+        writeLabel("client");
+        writeValue(invoice.clientName);
+      }
+      if (invoice.clientCode) {
+        writeLabel("clientCode");
+        writeValue(invoice.clientCode);
+      }
+      if (invoice.clientPhone) {
+        writeLabel("phone");
+        writeValue(invoice.clientPhone);
+      }
+      if (invoice.clientAddress) {
+        writeLabel("address");
+        writeValue(invoice.clientAddress);
+      }
       doc.moveDown();
 
       // Table Header
       doc.text("------------------------------------------");
-      doc.text("Produit          Qté   Prix   Total");
+      writeLabel("product");
+      writeLabel("quantity");
+      writeLabel("price");
+      writeLabel("lineTotal");
       doc.text("------------------------------------------");
 
       // Items
       if (Array.isArray(invoice.items)) {
         invoice.items.forEach((item: any) => {
-          const name = String(item?.name || "").substring(0, 15).padEnd(16);
-          const qty = String(item?.quantity || 1).padStart(3);
-          const price = num(item?.price).toFixed(3).padStart(8);
-          const total = num(item?.total).toFixed(3).padStart(8);
-          doc.text(`${name} ${qty} ${price} ${total}`);
+          writeValue(String(item?.name || ""));
+          writeLine(
+            `${new Intl.NumberFormat(isArabic ? "ar-TN-u-nu-latn" : "fr-TN-u-nu-latn", { numberingSystem: "latn", maximumFractionDigits: 0 }).format(num(item?.quantity || 1))} × ${formatAmount(num(item?.price))} DT · ${formatAmount(num(item?.total))} DT`,
+            align,
+          );
         });
       }
 
@@ -601,28 +693,41 @@ async function startServer() {
       const paid = num(invoice.paid);
       const debt = num(invoice.debt);
       if (totals.tvaVisible && tva > 0) {
-        doc.fontSize(10).text(`Sous-total: ${totals.subtotal.toFixed(3)} DT`, { align: "right" });
+        doc.fontSize(10);
+        writeLabel("subtotal");
+        writeValue(`${formatAmount(totals.subtotal)} DT`);
         if (totals.discount > 0) {
-          doc.fontSize(10).text(`Remise: -${totals.discount.toFixed(3)} DT`, { align: "right" });
+          writeLabel("discount");
+          writeValue(`-${formatAmount(totals.discount)} DT`);
         }
-        doc.fontSize(10).text(`TVA: ${tva.toFixed(3)} DT`, { align: "right" });
+        writeLabel("vat");
+        writeValue(`${formatAmount(tva)} DT`);
       } else if (totals.discount > 0) {
-        doc.fontSize(10).text(`Remise: -${totals.discount.toFixed(3)} DT`, { align: "right" });
+        doc.fontSize(10);
+        writeLabel("discount");
+        writeValue(`-${formatAmount(totals.discount)} DT`);
       }
-      doc.fontSize(12).font("Helvetica-Bold").text(`TOTAL GENERAL: ${total.toFixed(3)} DT`, { align: "right" });
-      doc.fontSize(10).font("Helvetica").text(`Payé: ${paid.toFixed(3)} DT`, { align: "right" });
+      doc.fontSize(12);
+      writeLabel("generalTotal");
+      writeValue(`${formatAmount(total)} DT`);
+      doc.fontSize(10);
+      writeLabel("paid");
+      writeValue(`${formatAmount(paid)} DT`);
       if (debt > 0) {
-        doc.fillColor("red").text(`Reste (Dette): ${debt.toFixed(2)} DT`, { align: "right" });
+        doc.fillColor("red");
+        writeLabel("remaining");
+        writeValue(`${formatAmount(debt)} DT`);
       }
 
       doc.moveDown();
-      doc.fontSize(8).fillColor("black").text("Merci de votre confiance !", { align: "center" });
+      doc.fontSize(8).fillColor("black");
+      writeLabel("thanks");
 
       doc.end();
     } catch (err) {
       console.error("[PDF]", err);
       if (!res.headersSent) {
-        res.status(500).json({ error: "Erreur de génération du PDF." });
+        res.status(500).json({ error: invoicePdfLabels.fr.pdfError });
       } else {
         res.end();
       }

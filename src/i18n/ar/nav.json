@@ -1,0 +1,27 @@
+{
+  "sections": {
+    "sales": "البيع",
+    "workshop": "الورشة",
+    "catalog": "الكتالوغ",
+    "tools": "أدوات",
+    "administration": "الإدارة"
+  },
+  "dashboard": "لوحة القيادة",
+  "pos": "POS",
+  "salesHistory": "تاريخ البيوعات",
+  "invoices": "الفواتير",
+  "cashSession": "تسكير الكاسة",
+  "repairs": "إصلاح",
+  "parts": "قطع الغيار",
+  "products": "منتجات",
+  "clients": "حرفاء",
+  "notes": "مذكرات وملاحظات",
+  "startup": "قرآن وأذكار",
+  "users": "مستخدمين",
+  "reports": "تقارير",
+  "expenses": "مصاريف",
+  "settings": "إعدادات",
+  "mainNavigation": "التنقّل الرئيسي",
+  "openMenu": "حلّ القائمة",
+  "closeMenu": "سكّر القائمة"
+}

@@ -49,7 +49,7 @@ export function auditName(value?: string | AuditActor | null): string {
   return typeof value === 'string' ? value : value.name;
 }
 
-export function auditDate(value: unknown): string {
+export function auditDate(value: unknown, locale = 'fr-TN'): string {
   let date: Date | null = null;
   if (value instanceof Date) date = value;
   else if (typeof value === 'string' || typeof value === 'number') date = new Date(value);
@@ -57,6 +57,6 @@ export function auditDate(value: unknown): string {
     date = value.toDate();
   }
   return date && !Number.isNaN(date.getTime())
-    ? new Intl.DateTimeFormat('fr-TN', { dateStyle: 'short', timeStyle: 'short' }).format(date)
+    ? new Intl.DateTimeFormat(locale, { dateStyle: 'short', timeStyle: 'short', numberingSystem: 'latn' }).format(date)
     : '';
 }

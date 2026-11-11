@@ -179,6 +179,15 @@
     color: var(--ds-text);
   }
 
+  html[lang="ar"] body {
+    font-family: "Noto Sans Arabic", var(--font-sans);
+  }
+
+  html[lang="ar"] {
+    --font-sans: "Noto Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+    --font-display: "Noto Sans Arabic", ui-sans-serif, system-ui, sans-serif;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-display);
   }
@@ -240,7 +249,7 @@
       overflow-wrap: anywhere;
       border: 0;
       padding: 0.35rem;
-      text-align: left;
+      text-align: start;
       white-space: normal;
     }
 
@@ -383,16 +392,16 @@
   }
 }
 
-@font-face {
-  font-family: "Amiri";
-  src: url("/fonts/Amiri-Regular.ttf") format("truetype");
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
+.font-arabic {
+  font-family: "Noto Sans Arabic", sans-serif;
 }
 
-.font-arabic {
-  font-family: "Amiri", serif;
+html[lang^="ar"] body,
+html[lang^="ar"] button,
+html[lang^="ar"] input,
+html[lang^="ar"] select,
+html[lang^="ar"] textarea {
+  font-family: "Noto Sans Arabic", sans-serif;
 }
 
 html {
@@ -507,9 +516,10 @@ tbody tr {
 .app-nav-active::before {
   position: absolute;
   inset-block: 0.5rem;
-  left: 0;
+  inset-inline-start: 0;
   width: 3px;
-  border-radius: 0 999px 999px 0;
+  border-start-end-radius: 999px;
+  border-end-end-radius: 999px;
   background: var(--ds-brand);
   content: "";
 }
@@ -565,7 +575,7 @@ tbody tr {
     display: block !important;
     position: fixed;
     top: 0;
-    left: 0;
+    inset-inline-start: 0;
     width: 100%;
     height: 100%;
     margin: 0;
@@ -574,7 +584,7 @@ tbody tr {
     color-scheme: light;
     z-index: 9999999;
   }
-  
+
   /* Remove default headers/footers */
   @page {
     margin: 0;
@@ -585,6 +595,13 @@ tbody tr {
 /* Hide print-container from the UI by default */
 .print-container {
   display: none;
+}
+
+html[dir="rtl"] .lucide-chevron-left,
+html[dir="rtl"] .lucide-chevron-right,
+html[dir="rtl"] .lucide-arrow-left,
+html[dir="rtl"] .lucide-arrow-right {
+  transform: scaleX(-1);
 }
 
 @media screen {

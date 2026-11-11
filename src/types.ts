@@ -141,6 +141,7 @@ export interface UserProfile {
   allowedMenus?: string[];
   permissions?: Partial<Record<PermissionMenuId, Partial<Record<PermissionFlag, boolean>>>>;
   securityCode?: string;
+  preferredLanguage?: 'fr' | 'ar';
   ownerId?: string;
   creatorId?: string;
   createdAt?: string;
@@ -210,6 +211,7 @@ export interface StoreSettings {
   tvaEnabled?: boolean;
   tvaOptIn?: boolean;
   sellerMentionMode?: 'none' | 'initial' | 'shortName';
+  documentLanguage?: 'fr' | 'ar' | 'both';
   ownerId?: string;
   deleteCode?: string;
   minStockAlert?: number;

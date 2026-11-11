@@ -9,7 +9,7 @@ import { cn } from '../lib/utils';
 import * as XLSX from 'xlsx';
 import { can } from '../lib/permissions';
 import { normalizeFinancialSettings } from '../lib/financial';
-import { DEFAULT_MESSAGE_TEMPLATES, MESSAGE_TEMPLATE_OPTIONS } from '../lib/messages';
+import { MESSAGE_TEMPLATE_KEYS, type MessageTemplateSet } from '../lib/messages';
 import { useStartup } from './StartupProvider';
 import { adhkarLibrary } from '../data/adhkar';
 import { verses } from '../data/verses';
@@ -20,6 +20,9 @@ import { useBrand } from './BrandProvider';
 import { slugifyAppName } from '../lib/brand';
 import { StartupPreferencesPanel } from './StartupPreferences';
 import ActivityLog from './ActivityLog';
+import { useTranslation } from 'react-i18next';
+import { formatDateTime, formatNumber, getDateLocale } from '../i18n/format';
+import i18n from '../i18n';
 
 interface SettingsProps {
   userProfile: UserProfile | null;
@@ -42,6 +45,7 @@ function getSettingsTabFromHash(hash: string): SettingsTab | null {
 // ── Carte "Mon code de sécurité" : chaque utilisateur peut changer son propre code à 4 chiffres.
 // Vérification obligatoire avant le changement : mot de passe du compte OU code reçu par email.
 function SecurityCodeCard({ userProfile }: { userProfile: UserProfile | null }) {
+  const { t } = useTranslation('settings');
   const [newCode, setNewCode] = useState('');
   const [confirmCode, setConfirmCode] = useState('');
   const [password, setPassword] = useState('');
@@ -54,11 +58,11 @@ function SecurityCodeCard({ userProfile }: { userProfile: UserProfile | null }) 
   const validateCodes = (): boolean => {
     setError('');
     if (!/^\d{4}$/.test(newCode)) {
-      setError('Le nouveau code doit contenir exactement 4 chiffres.');
+      setError(t('securityCode.invalid'));
       return false;
     }
     if (newCode !== confirmCode) {
-      setError('La confirmation ne correspond pas au nouveau code.');
+      setError(t('securityCode.mismatch'));
       return false;
     }
     return true;
@@ -68,7 +72,7 @@ function SecurityCodeCard({ userProfile }: { userProfile: UserProfile | null }) 
     if (!validateCodes()) return;
     if (!userProfile?.uid) return;
     if (!password) {
-      setError('Veuillez saisir votre mot de passe.');
+      setError(t('securityCode.passwordRequired'));
       return;
     }
     setSaving(true);
@@ -76,31 +80,31 @@ function SecurityCodeCard({ userProfile }: { userProfile: UserProfile | null }) 
     try {
       const currentUser = auth.currentUser;
       if (!currentUser || !currentUser.email) {
-        throw new Error('Session invalide. Veuillez vous reconnecter.');
+        throw new Error(t('securityCode.invalidSession'));
       }
       try {
         const credential = EmailAuthProvider.credential(currentUser.email, password);
         await reauthenticateWithCredential(currentUser, credential);
       } catch (authErr: any) {
         if (authErr?.code === 'auth/wrong-password' || authErr?.code === 'auth/invalid-credential' || authErr?.code === 'auth/invalid-login-credentials') {
-          throw new Error('Mot de passe incorrect.');
+          throw new Error(t('securityCode.wrongPassword'));
         }
         if (authErr?.code === 'auth/too-many-requests') {
-          throw new Error('Trop de tentatives. Veuillez réessayer plus tard.');
+          throw new Error(t('securityCode.tooManyAttempts'));
         }
-        throw new Error('Vérification du mot de passe impossible. Veuillez vous reconnecter et réessayer.');
+        throw new Error(t('securityCode.verificationFailed'));
       }
 
       // Vérification réussie : mise à jour du code de sécurité (autorisé par les règles Firestore : auto-modification)
       await updateDoc(doc(db, 'users', userProfile.uid), { securityCode: newCode });
 
-      setSuccessMsg('Votre code de sécurité a été modifié avec succès !');
+      setSuccessMsg(t('securityCode.changed'));
       setNewCode('');
       setConfirmCode('');
       setPassword('');
       setTimeout(() => setSuccessMsg(''), 5000);
     } catch (err: any) {
-      setError(err.message || 'Une erreur est survenue lors du changement de code.');
+      setError(err.message || t('securityCode.changeFailed'));
     } finally {
       setSaving(false);
     }
@@ -115,15 +119,15 @@ function SecurityCodeCard({ userProfile }: { userProfile: UserProfile | null }) 
           <KeyRound className="w-5 h-5" />
         </div>
         <div>
-          <h2 className="text-sm font-bold text-ds-text">Mon Code de Sécurité</h2>
-          <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">Code à 4 chiffres pour les actions protégées</p>
+          <h2 className="text-sm font-bold text-ds-text">{t('securityCode.title')}</h2>
+          <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">{t('securityCode.description')}</p>
         </div>
       </div>
 
       <div className="p-6 space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Input
-              label="Nouveau code (4 chiffres)"
+              label={t('securityCode.newCode')}
               type="password"
               inputMode="numeric"
               autoComplete="off"
@@ -134,7 +138,7 @@ function SecurityCodeCard({ userProfile }: { userProfile: UserProfile | null }) 
               placeholder="••••"
             />
           <Input
-              label="Confirmer le nouveau code"
+              label={t('securityCode.confirmCode')}
               type="password"
               inputMode="numeric"
               autoComplete="off"
@@ -148,14 +152,14 @@ function SecurityCodeCard({ userProfile }: { userProfile: UserProfile | null }) 
 
         <div className="space-y-1.5">
           <Input
-            label="Votre mot de passe"
+            label={t('securityCode.accountPassword')}
             type="password"
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Mot de passe de votre compte"
+            placeholder={t('securityCode.passwordPlaceholder')}
           />
-          <p className="text-sm font-medium text-ds-muted">Votre mot de passe est requis pour confirmer le changement de code.</p>
+          <p className="text-sm font-medium text-ds-muted">{t('securityCode.passwordHelp')}</p>
         </div>
 
         {error && (
@@ -176,7 +180,7 @@ function SecurityCodeCard({ userProfile }: { userProfile: UserProfile | null }) 
           className="w-full"
         >
           <ShieldCheck className="w-4 h-4" />
-          {saving ? 'Vérification...' : 'Changer mon code'}
+          {saving ? t('securityCode.verifying') : t('securityCode.change')}
         </Button>
       </div>
     </Card>
@@ -189,17 +193,18 @@ function InstallAppCard({
   isIOS,
   isStandalone,
 }: Pick<SettingsProps, 'deferredPrompt' | 'handleInstallApp' | 'isIOS' | 'isStandalone'>) {
+  const { t } = useTranslation('settings');
   if (isStandalone || (!deferredPrompt && !isIOS)) return null;
   return (
     <Card>
-      <h2 className="text-sm font-bold text-ds-text">Installer l'application</h2>
+      <h2 className="text-sm font-bold text-ds-text">{t('install.title')}</h2>
       {deferredPrompt ? (
         <Button type="button" onClick={handleInstallApp} className="mt-3">
-          Installer l'application
+          {t('install.action')}
         </Button>
       ) : (
         <p className="mt-2 text-sm leading-relaxed text-ds-muted">
-          Sur iPhone ou iPad : appuyez sur Partager, puis sur Sur l’écran d’accueil.
+          {t('install.iosHelp')}
         </p>
       )}
     </Card>
@@ -207,6 +212,7 @@ function InstallAppCard({
 }
 
 function AccountPasswordCard() {
+  const { t } = useTranslation('settings');
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmation, setConfirmation] = useState('');
@@ -218,40 +224,40 @@ function AccountPasswordCard() {
     /\d/.test(newPassword),
     /[^A-Za-z0-9]/.test(newPassword),
   ].filter(Boolean).length;
-  const strengthLabel = ['Très faible', 'Faible', 'Moyen', 'Bon', 'Fort'][strength];
+  const strengthLabel = t(`password.strength.${strength}`);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setMessage(null);
     if (newPassword.length < 8) {
-      setMessage({ text: 'Le nouveau mot de passe doit contenir au moins 8 caractères.', success: false });
+      setMessage({ text: t('password.errors.tooShort'), success: false });
       return;
     }
     if (newPassword !== confirmation) {
-      setMessage({ text: 'La confirmation ne correspond pas au nouveau mot de passe.', success: false });
+      setMessage({ text: t('password.errors.mismatch'), success: false });
       return;
     }
 
     setSaving(true);
     try {
       const currentUser = auth.currentUser;
-      if (!currentUser?.email) throw new Error('Session invalide. Veuillez vous reconnecter.');
+      if (!currentUser?.email) throw new Error(t('password.errors.invalidSession'));
       const credential = EmailAuthProvider.credential(currentUser.email, currentPassword);
       await reauthenticateWithCredential(currentUser, credential);
       await updatePassword(currentUser, newPassword);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmation('');
-      setMessage({ text: 'Votre mot de passe a été modifié.', success: true });
+      setMessage({ text: t('password.changed'), success: true });
     } catch (error) {
       const code = typeof error === 'object' && error !== null && 'code' in error ? error.code : '';
       const text = code === 'auth/wrong-password' || code === 'auth/invalid-credential'
-        ? 'Le mot de passe actuel est incorrect.'
+        ? t('password.errors.wrongPassword')
         : code === 'auth/weak-password'
-          ? 'Choisissez un mot de passe plus robuste.'
+          ? t('password.errors.weakPassword')
           : error instanceof Error
             ? error.message
-            : 'Impossible de modifier le mot de passe.';
+            : t('password.errors.changeFailed');
       setMessage({ text, success: false });
     } finally {
       setSaving(false);
@@ -263,23 +269,23 @@ function AccountPasswordCard() {
       <div className="flex items-center gap-3 border-b border-ds-border bg-ds-surface-2 p-6">
         <div className="rounded-ds-md bg-ds-brand-soft p-2 text-ds-brand"><Lock className="w-5 h-5" /></div>
         <div>
-          <h2 className="text-sm font-bold text-ds-text">Mon compte</h2>
-          <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">Changer mon mot de passe</p>
+          <h2 className="text-sm font-bold text-ds-text">{t('password.account')}</h2>
+          <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">{t('password.title')}</p>
         </div>
       </div>
       <form onSubmit={handleSubmit} className="p-6 space-y-4">
-        <Input label="Mot de passe actuel" type="password" autoComplete="current-password" required value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} />
-        <Input label="Nouveau mot de passe" type="password" autoComplete="new-password" required minLength={8} value={newPassword} onChange={event => setNewPassword(event.target.value)} />
+        <Input label={t('password.current')} type="password" autoComplete="current-password" required value={currentPassword} onChange={event => setCurrentPassword(event.target.value)} />
+        <Input label={t('password.new')} type="password" autoComplete="new-password" required minLength={8} value={newPassword} onChange={event => setNewPassword(event.target.value)} />
         <div aria-live="polite" className="space-y-1">
           <div className="flex gap-1" aria-hidden="true">
             {[1, 2, 3, 4].map(level => <span key={level} className={`h-1.5 flex-1 rounded-full ${strength >= level ? (strength <= 1 ? 'bg-ds-danger' : strength === 2 ? 'bg-ds-warning' : 'bg-ds-success') : 'bg-ds-surface-2'}`} />)}
           </div>
-          <p className="text-sm text-ds-muted">Force : {newPassword ? strengthLabel : '—'} · 8 caractères minimum</p>
+          <p className="text-sm text-ds-muted">{t('password.strengthLabel', { strength: newPassword ? strengthLabel : '—' })}</p>
         </div>
-        <Input label="Confirmer le nouveau mot de passe" type="password" autoComplete="new-password" required minLength={8} value={confirmation} onChange={event => setConfirmation(event.target.value)} />
+        <Input label={t('password.confirm')} type="password" autoComplete="new-password" required minLength={8} value={confirmation} onChange={event => setConfirmation(event.target.value)} />
         {message && <Badge variant={message.success ? 'success' : 'danger'} role={message.success ? 'status' : 'alert'} className="min-h-0 rounded-ds-md">{message.text}</Badge>}
         <Button type="submit" disabled={saving || !currentPassword || newPassword.length < 8 || newPassword !== confirmation}>
-          {saving ? 'Modification…' : 'Changer mon mot de passe'}
+          {saving ? t('password.saving') : t('password.change')}
         </Button>
       </form>
     </Card>
@@ -293,6 +299,18 @@ function SettingsContent({
   isIOS,
   isStandalone,
 }: SettingsProps) {
+  const { t } = useTranslation('settings');
+  const { t: commonT, i18n: commonI18n } = useTranslation('common');
+  const getLocalizedMessageTemplates = (): MessageTemplateSet => {
+    const localizedT = commonI18n.getFixedT(commonI18n.resolvedLanguage || 'fr', 'common');
+    return {
+      appareil_recu: localizedT('messageComposer.defaultTemplates.appareil_recu'),
+      en_attente_piece: localizedT('messageComposer.defaultTemplates.en_attente_piece'),
+      repare_pret: localizedT('messageComposer.defaultTemplates.repare_pret'),
+      rappel_paiement: localizedT('messageComposer.defaultTemplates.rappel_paiement'),
+    };
+  };
+  const defaultMessageLanguage = React.useRef(commonI18n.resolvedLanguage || 'fr');
   const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [success, setSuccess] = useState<string | null>(null);
@@ -336,10 +354,11 @@ function SettingsContent({
     address: '',
     phone: '',
     whatsappCountryCode: '216',
-    messageTemplates: { ...DEFAULT_MESSAGE_TEMPLATES },
+    messageTemplates: getLocalizedMessageTemplates(),
     tva: 0,
     tvaEnabled: false,
     sellerMentionMode: 'initial',
+    documentLanguage: 'fr',
     deleteCode: '',
     minStockAlert: 5
   });
@@ -356,6 +375,26 @@ function SettingsContent({
   const [activityLogLines, setActivityLogLines] = useState<string[]>([]);
   const [isLoadingActivityView, setIsLoadingActivityView] = useState(false);
   const startupAudioPreview = React.useRef<HTMLAudioElement>(null);
+  useEffect(() => {
+    const previousT = commonI18n.getFixedT(defaultMessageLanguage.current, 'common');
+    const nextDefaults = getLocalizedMessageTemplates();
+    const previousDefaults = {
+      appareil_recu: previousT('messageComposer.defaultTemplates.appareil_recu'),
+      en_attente_piece: previousT('messageComposer.defaultTemplates.en_attente_piece'),
+      repare_pret: previousT('messageComposer.defaultTemplates.repare_pret'),
+      rappel_paiement: previousT('messageComposer.defaultTemplates.rappel_paiement'),
+    };
+    setStoreFormData(current => ({
+      ...current,
+      messageTemplates: {
+        appareil_recu: current.messageTemplates.appareil_recu === previousDefaults.appareil_recu || current.messageTemplates.appareil_recu === nextDefaults.appareil_recu ? nextDefaults.appareil_recu : current.messageTemplates.appareil_recu,
+        en_attente_piece: current.messageTemplates.en_attente_piece === previousDefaults.en_attente_piece || current.messageTemplates.en_attente_piece === nextDefaults.en_attente_piece ? nextDefaults.en_attente_piece : current.messageTemplates.en_attente_piece,
+        repare_pret: current.messageTemplates.repare_pret === previousDefaults.repare_pret || current.messageTemplates.repare_pret === nextDefaults.repare_pret ? nextDefaults.repare_pret : current.messageTemplates.repare_pret,
+        rappel_paiement: current.messageTemplates.rappel_paiement === previousDefaults.rappel_paiement || current.messageTemplates.rappel_paiement === nextDefaults.rappel_paiement ? nextDefaults.rappel_paiement : current.messageTemplates.rappel_paiement,
+      },
+    }));
+    defaultMessageLanguage.current = commonI18n.resolvedLanguage || 'fr';
+  }, [commonI18n.resolvedLanguage]);
   const welcomeChoices = [
     ...verses.map((verse) => ({ id: `verse:${verse.title}`, ...verse })),
     ...adhkarLibrary.map((adhkar) => ({ id: `dhikr:${adhkar.section}:${adhkar.title}`, ...adhkar })),
@@ -396,19 +435,19 @@ function SettingsContent({
 
   const saveStartupSettings = async () => {
     if (!canManageStartup) {
-      setStartupMessage('Vous n’êtes pas autorisé à modifier ces réglages.');
+      setStartupMessage(t('embeddedStartup.denied'));
       return;
     }
     if (!ownerId) {
-      setStartupMessage('Propriétaire du magasin introuvable.');
+      setStartupMessage(t('embeddedStartup.ownerMissing'));
       return;
     }
     if (!welcomeTitle.trim() || !welcomeText.trim()) {
-      setStartupMessage('Le titre et le texte sont obligatoires.');
+      setStartupMessage(t('embeddedStartup.requiredContent'));
       return;
     }
     if (startupAudioUrl && !isDirectAudioUrl(startupAudioUrl)) {
-      setStartupMessage('Utilisez un lien HTTPS direct vers un fichier .mp3, .m4a, .ogg ou .wav.');
+      setStartupMessage(t('embeddedStartup.audioFormat'));
       return;
     }
 
@@ -425,10 +464,10 @@ function SettingsContent({
         audioUrl: startupAudioUrl.trim(),
         updatedAt: serverTimestamp(),
       }, { merge: true });
-      setStartupMessage('Réglages Coran & Adhkar enregistrés.');
+      setStartupMessage(t('embeddedStartup.saved'));
     } catch (saveError) {
       console.error('Unable to save startup settings:', saveError);
-      setStartupMessage('Impossible d’enregistrer les réglages. Vérifiez les permissions Firestore.');
+      setStartupMessage(t('embeddedStartup.saveError'));
     } finally {
       setStartupSaving(false);
     }
@@ -437,19 +476,19 @@ function SettingsContent({
   const testStartupAudio = () => {
     setStartupAudioTestMessage('');
     if (!isDirectAudioUrl(startupAudioUrl)) {
-      setStartupAudioTestMessage('Lien audio invalide : fournissez une URL HTTPS directe en .mp3, .m4a, .ogg ou .wav.');
+      setStartupAudioTestMessage(t('embeddedStartup.invalidAudio'));
       return;
     }
     const audio = startupAudioPreview.current;
     if (!audio) {
-      setStartupAudioTestMessage('Lecteur audio indisponible.');
+      setStartupAudioTestMessage(t('embeddedStartup.playerUnavailable'));
       return;
     }
     audio.currentTime = 0;
     void audio.play().then(() => {
-      setStartupAudioTestMessage('Lecture audio démarrée.');
+      setStartupAudioTestMessage(t('embeddedStartup.audioStarted'));
     }).catch(() => {
-      setStartupAudioTestMessage('Fichier illisible ou inaccessible. Vérifiez le lien direct et les autorisations CORS de l’hébergeur.');
+      setStartupAudioTestMessage(t('embeddedStartup.audioUnavailable'));
     });
   };
 
@@ -459,7 +498,7 @@ function SettingsContent({
     setActivityError('');
 
     if (!activityStartDate || !activityEndDate) {
-      setActivityError('Veuillez sélectionner une date de début et une date de fin.');
+      setActivityError(t('activity.errors.datesRequired'));
       return null;
     }
 
@@ -469,13 +508,13 @@ function SettingsContent({
     end.setHours(23, 59, 59, 999);
 
     if (end < start) {
-      setActivityError('La date de fin doit être postérieure ou égale à la date de début.');
+      setActivityError(t('activity.errors.dateOrder'));
       return null;
     }
 
     const diffDays = (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
     if (diffDays > 31) {
-      setActivityError('La période sélectionnée ne peut pas dépasser 1 mois (31 jours maximum).');
+      setActivityError(t('activity.errors.rangeLimit'));
       return null;
     }
 
@@ -502,7 +541,7 @@ function SettingsContent({
       ]);
     } catch (error) {
       console.error('Unable to load activity records:', error);
-      setFirestoreError('Impossible de charger le journal d’activité. Vérifiez vos autorisations Firestore.');
+      setFirestoreError(t('activity.errors.load'));
       throw error;
     }
 
@@ -533,7 +572,7 @@ function SettingsContent({
 
   const handleDownloadActivityLog = async () => {
     if (!isAdmin || !ownerId) {
-      setFirestoreError('Cette action est réservée à l’administrateur du magasin.');
+      setFirestoreError(t('activity.errors.adminOnly'));
       return;
     }
     const range = validateActivityRange();
@@ -545,12 +584,12 @@ function SettingsContent({
       const { salesInRange, invoicesInRange, auditLogsInRange } = await fetchActivityRecords(start, end);
 
       if (salesInRange.length === 0 && invoicesInRange.length === 0 && auditLogsInRange.length === 0) {
-        setActivityError('Aucune activité trouvée pour la période sélectionnée.');
+        setActivityError(t('activity.errors.empty'));
         setIsGeneratingActivity(false);
         return;
       }
 
-      const fmtDateTime = (dt: Date) => `${dt.toLocaleDateString('fr-FR')} ${dt.toLocaleTimeString('fr-FR')}`;
+      const fmtDateTime = (dt: Date) => `${dt.toLocaleDateString(getDateLocale())} ${dt.toLocaleTimeString(getDateLocale())}`;
 
       const journalOperations = auditLogsInRange.map(l => {
         const dt = toJsDate(l.timestamp);
@@ -609,7 +648,7 @@ function SettingsContent({
 
       const resume = [
         { 'Indicateur': 'Magasin', 'Valeur': storeFormData.storeName || 'Magasin' },
-        { 'Indicateur': 'Période', 'Valeur': `Du ${start.toLocaleDateString('fr-FR')} au ${end.toLocaleDateString('fr-FR')}` },
+        { 'Indicateur': 'Période', 'Valeur': `Du ${start.toLocaleDateString(getDateLocale())} au ${end.toLocaleDateString(getDateLocale())}` },
         { 'Indicateur': 'Nombre de ventes', 'Valeur': salesInRange.length },
         { 'Indicateur': 'Nombre de factures', 'Valeur': invoicesInRange.length },
         { 'Indicateur': 'Nombre d\'opérations (produits, suppressions...)', 'Valeur': auditLogsInRange.length },
@@ -636,11 +675,11 @@ function SettingsContent({
       const fileName = `${slugifyAppName(brand.storeName)}-journal-activite_${activityStartDate}_au_${activityEndDate}.xlsx`;
       XLSX.writeFile(wb, fileName);
 
-      setSuccess('Journal d\'activité téléchargé avec succès !');
+      setSuccess(t('activity.downloaded'));
       setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error('Unable to download activity records:', error);
-      setActivityError('Impossible de télécharger le journal d’activité. Vérifiez vos autorisations Firestore.');
+      setActivityError(t('activity.errors.download'));
     } finally {
       setIsGeneratingActivity(false);
     }
@@ -648,7 +687,7 @@ function SettingsContent({
 
   const handleViewActivityLog = async () => {
     if (!isAdmin || !ownerId) {
-      setFirestoreError('Cette action est réservée à l’administrateur du magasin.');
+      setFirestoreError(t('activity.errors.adminOnly'));
       return;
     }
     const range = validateActivityRange();
@@ -660,12 +699,12 @@ function SettingsContent({
       const { salesInRange, invoicesInRange, auditLogsInRange } = await fetchActivityRecords(start, end);
 
       if (salesInRange.length === 0 && invoicesInRange.length === 0 && auditLogsInRange.length === 0) {
-        setActivityError('Aucune activité trouvée pour la période sélectionnée.');
+        setActivityError(t('activity.errors.empty'));
         setIsLoadingActivityView(false);
         return;
       }
 
-      const fmtDateTime = (dt: Date) => `${dt.toLocaleDateString('fr-FR')} ${dt.toLocaleTimeString('fr-FR')}`;
+      const fmtDateTime = (dt: Date) => `${dt.toLocaleDateString(getDateLocale())} ${dt.toLocaleTimeString(getDateLocale())}`;
 
       type LogLine = { dt: Date; text: string };
       const lines: LogLine[] = [];
@@ -703,7 +742,7 @@ function SettingsContent({
       setShowActivityLogModal(true);
     } catch (error) {
       console.error('Unable to display activity records:', error);
-      setActivityError('Impossible d’afficher le journal d’activité. Vérifiez vos autorisations Firestore.');
+      setActivityError(t('activity.errors.display'));
     } finally {
       setIsLoadingActivityView(false);
     }
@@ -711,7 +750,7 @@ function SettingsContent({
 
   const handleExportExcel = async () => {
     if (!isAdmin || !ownerId) {
-      setFirestoreError('Cette action est réservée à l’administrateur du magasin.');
+      setFirestoreError(t('activity.errors.adminOnly'));
       return;
     }
     setIsExporting(true);
@@ -762,7 +801,7 @@ function SettingsContent({
         const d = doc.data();
         let formattedDate = '';
         if (d.date) {
-          if (d.date.toDate) formattedDate = d.date.toDate().toLocaleDateString('fr-FR') + ' ' + d.date.toDate().toLocaleTimeString('fr-FR');
+          if (d.date.toDate) formattedDate = d.date.toDate().toLocaleDateString(getDateLocale()) + ' ' + d.date.toDate().toLocaleTimeString(getDateLocale());
           else formattedDate = String(d.date);
         }
         const itemsString = d.items ? d.items.map((it: any) => `${it.name} (${it.quantity} x ${it.price} DT)`).join(', ') : '';
@@ -783,7 +822,7 @@ function SettingsContent({
         const d = doc.data();
         let formattedDate = '';
         if (d.date) {
-          if (d.date.toDate) formattedDate = d.date.toDate().toLocaleDateString('fr-FR') + ' ' + d.date.toDate().toLocaleTimeString('fr-FR');
+          if (d.date.toDate) formattedDate = d.date.toDate().toLocaleDateString(getDateLocale()) + ' ' + d.date.toDate().toLocaleTimeString(getDateLocale());
           else formattedDate = String(d.date);
         }
         const itemsString = d.items ? d.items.map((it: any) => `${it.name} (${it.quantity} x ${it.price} DT)`).join(', ') : '';
@@ -818,11 +857,11 @@ function SettingsContent({
       const fileName = `${slugifyAppName(brand.storeName)}-export-base_${(storeFormData.storeName || 'Magasin').replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`;
       XLSX.writeFile(wb, fileName);
 
-      setSuccess('Base de données exportée en fichier Excel avec succès !');
+      setSuccess(t('maintenance.exported'));
       setTimeout(() => setSuccess(null), 4000);
     } catch (error) {
       console.error('Erreur export :', error);
-      setFirestoreError('Impossible d’exporter les données. Vérifiez vos autorisations Firestore.');
+      setFirestoreError(t('maintenance.exportError'));
     } finally {
       setIsExporting(false);
     }
@@ -830,19 +869,18 @@ function SettingsContent({
 
   const handlePurgeDatabase = async () => {
     if (!isAdmin || !ownerId) {
-      setFirestoreError('Cette action est réservée à l’administrateur du magasin.');
+      setFirestoreError(t('maintenance.adminOnly'));
       return;
     }
     if (!purgeDate) {
-      alert("Veuillez sélectionner une date limite.");
+      alert(t('maintenance.dateRequired'));
       return;
     }
 
-    const limitDate = new Date(purgeDate);
-    limitDate.setHours(23, 59, 59, 999);
+    const limitDate = new Date(`${purgeDate}T23:59:59.999`);
 
     const checkConfirm = window.confirm(
-      `ATTENTION : Vous allez supprimer TOUTES les transactions antérieures au ${limitDate.toLocaleDateString('fr-FR')} incluse.\n\nCette action est irréversible et supprimera définitivement les données sélectionnées.\n\nÊtes-vous absolument sûr ?`
+      t('maintenance.purgeConfirmation', { date: formatDateTime(limitDate) })
     );
 
     if (!checkConfirm) {
@@ -850,11 +888,11 @@ function SettingsContent({
     }
 
     const confirmationInput = prompt(
-      `Pour confirmer la suppression et l'allègement de la base, veuillez écrire le mot PURGER en majuscules :`
+      t('maintenance.purgePrompt')
     );
 
     if (confirmationInput !== 'PURGER') {
-      alert("Purge annulée. La confirmation tapée est incorrecte.");
+      alert(t('maintenance.purgeConfirmationInvalid'));
       return;
     }
 
@@ -881,11 +919,15 @@ function SettingsContent({
         }
       }
 
-      setSuccess(`Purge complétée ! ${salesDeleted} ventes et ${invoicesDeleted} factures antérieures au ${limitDate.toLocaleDateString('fr-FR')} ont été définitivement nettoyées.`);
+      setSuccess(t('maintenance.purgeSuccess', {
+        sales: formatNumber(salesDeleted),
+        invoices: formatNumber(invoicesDeleted),
+        date: formatDateTime(limitDate),
+      }));
       setTimeout(() => setSuccess(null), 5000);
     } catch (error) {
       console.error('Erreur purge:', error);
-      setFirestoreError('Impossible de purger les données. Vérifiez vos autorisations Firestore.');
+      setFirestoreError(t('maintenance.purgeError'));
     } finally {
       setIsPurging(false);
     }
@@ -898,7 +940,7 @@ function SettingsContent({
     }
     if (!auth.currentUser || !ownerId) {
       setLoading(false);
-      setFirestoreError('Impossible d’identifier le magasin pour charger ses paramètres.');
+      setFirestoreError(t('store.errors.identify'));
       return;
     }
     setLoading(true);
@@ -916,10 +958,11 @@ function SettingsContent({
           address: data.address || '',
           phone: data.phone || '',
           whatsappCountryCode: data.whatsappCountryCode || '216',
-          messageTemplates: { ...DEFAULT_MESSAGE_TEMPLATES, ...data.messageTemplates },
+          messageTemplates: { ...getLocalizedMessageTemplates(), ...data.messageTemplates },
           tva: financialSettings.tva || 0,
           tvaEnabled: financialSettings.tvaEnabled === true,
           sellerMentionMode: data.sellerMentionMode || 'initial',
+          documentLanguage: data.documentLanguage || 'fr',
           deleteCode: data.deleteCode || '',
           minStockAlert: data.minStockAlert !== undefined ? data.minStockAlert : 5
         });
@@ -933,6 +976,7 @@ function SettingsContent({
           tva: 0,
           tvaEnabled: false,
           sellerMentionMode: 'initial',
+          documentLanguage: 'fr',
           minStockAlert: 5
         } as StoreSettings);
         setStoreFormData({
@@ -943,10 +987,11 @@ function SettingsContent({
           address: '',
           phone: '',
           whatsappCountryCode: '216',
-          messageTemplates: { ...DEFAULT_MESSAGE_TEMPLATES },
+          messageTemplates: getLocalizedMessageTemplates(),
           tva: 0,
           tvaEnabled: false,
           sellerMentionMode: 'initial',
+          documentLanguage: 'fr',
           deleteCode: '',
           minStockAlert: 5
         });
@@ -954,7 +999,7 @@ function SettingsContent({
       setLoading(false);
     }, (error) => {
       console.error('Unable to load store settings:', error);
-      setFirestoreError('Impossible de charger les paramètres du magasin. Vérifiez vos autorisations Firestore.');
+      setFirestoreError(t('store.errors.load'));
       setLoading(false);
     });
 
@@ -966,7 +1011,7 @@ function SettingsContent({
   const handleStoreSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!canAccessStoreSettings || !ownerId) {
-      setFirestoreError('Vous n’êtes pas autorisé à modifier les paramètres du magasin.');
+      setFirestoreError(t('store.errors.denied'));
       return;
     }
     setFirestoreError(null);
@@ -975,20 +1020,20 @@ function SettingsContent({
         ...storeFormData,
         tvaOptIn: storeFormData.tvaEnabled,
       }, { merge: true });
-      setSuccess('Paramètres du magasin enregistrés avec succès !');
+      setSuccess(t('store.saved'));
       setTimeout(() => setSuccess(null), 3000);
     } catch (error) {
       console.error('Unable to save store settings:', error);
-      setFirestoreError('Impossible d’enregistrer les paramètres du magasin. Vérifiez vos autorisations Firestore.');
+      setFirestoreError(t('store.errors.save'));
     }
   };
 
   const settingsTabs: { id: SettingsTab; label: string }[] = [
-    ...(canAccessStoreSettings ? [{ id: 'boutique' as const, label: 'Boutique' }] : []),
-    { id: 'coran-adhkar', label: 'Coran & Adhkar' },
-    { id: 'compte-securite', label: 'Compte & sécurité' },
-    ...(isAdmin ? [{ id: 'donnees' as const, label: 'Données' }] : []),
-    { id: 'application', label: 'Application' },
+    ...(canAccessStoreSettings ? [{ id: 'boutique' as const, label: t('tabs.store') }] : []),
+    { id: 'coran-adhkar', label: t('tabs.startup') },
+    { id: 'compte-securite', label: t('tabs.account') },
+    ...(isAdmin ? [{ id: 'donnees' as const, label: t('tabs.data') }] : []),
+    { id: 'application', label: t('tabs.application') },
   ];
 
   const selectSettingsTab = (tab: SettingsTab) => {
@@ -999,10 +1044,10 @@ function SettingsContent({
   return (
     <div className="mx-auto w-full min-w-0 max-w-4xl space-y-6">
       <PageHeader
-        title={canAccessStoreSettings ? 'Paramètres du Magasin' : 'Paramètres'}
+        title={canAccessStoreSettings ? t('page.storeTitle') : t('page.title')}
         description={canAccessStoreSettings
-          ? "Configurez les informations d'en-tête, la devise, les coordonnées de contact et la gestion de la TVA."
-          : 'Gérez votre compte et les paramètres de l’application.'}
+          ? t('page.storeDescription')
+          : t('page.description')}
       />
 
       {(firestoreError || brand.error) && (
@@ -1017,7 +1062,7 @@ function SettingsContent({
         </Card>
       ) : (
         <div className="min-w-0 space-y-6">
-          <div className="sticky top-16 z-20 -mx-3 min-w-0 max-w-full bg-ds-bg px-3 py-2 sm:-mx-4 sm:px-4" role="tablist" aria-label="Sections des paramètres">
+          <div className="sticky top-16 z-20 -mx-3 min-w-0 max-w-full bg-ds-bg px-3 py-2 sm:-mx-4 sm:px-4" role="tablist" aria-label={t('page.sections')}>
             <div className="flex min-w-0 max-w-full gap-2 overflow-x-auto rounded-ds-lg border border-ds-border bg-ds-surface p-1">
               {settingsTabs.map(({ id, label }) => (
                 <Button
@@ -1057,17 +1102,17 @@ function SettingsContent({
           >
             <Card className="mb-6 grid min-w-0 gap-4 p-5 sm:grid-cols-2 sm:items-end">
               <div className="min-w-0">
-                <h2 className="text-sm font-bold text-ds-text">Apparence</h2>
-                <p className="mt-1 text-sm text-ds-muted">Choisissez le thème clair, sombre ou celui de votre appareil.</p>
+                <h2 className="text-sm font-bold text-ds-text">{t('appearance.title')}</h2>
+                <p className="mt-1 text-sm text-ds-muted">{t('appearance.description')}</p>
               </div>
               <Select
-                label="Thème de l’application"
+                label={t('appearance.theme')}
                 value={theme}
                 onChange={(event) => setTheme(event.target.value as ThemePreference)}
               >
-                <option value="light">Clair</option>
-                <option value="dark">Sombre</option>
-                <option value="system">Système</option>
+                <option value="light">{t('appearance.light')}</option>
+                <option value="dark">{t('appearance.dark')}</option>
+                <option value="system">{t('appearance.system')}</option>
               </Select>
             </Card>
             <InstallAppCard deferredPrompt={deferredPrompt} handleInstallApp={handleInstallApp} isIOS={isIOS} isStandalone={isStandalone} />
@@ -1088,8 +1133,8 @@ function SettingsContent({
                 <Store className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-ds-text">Informations Générales</h2>
-                <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">Coordonnées de l'activité imprimées sur les reçus</p>
+                <h2 className="text-sm font-bold text-ds-text">{t('store.title')}</h2>
+                <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">{t('store.description')}</p>
               </div>
             </div>
 
@@ -1097,60 +1142,60 @@ function SettingsContent({
               <form onSubmit={handleStoreSubmit} className="space-y-5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
-                      label="Nom du Boutique / Magasin"
+                      label={t('store.name')}
                       type="text"
                       required
                       value={storeFormData.storeName}
                       onChange={(e) => setStoreFormData({ ...storeFormData, storeName: e.target.value })}
-                      placeholder="Nom de la boutique"
+                      placeholder={t('store.namePlaceholder')}
                     />
 
                   <Input
-                      label="Slogan de la boutique"
+                      label={t('store.tagline')}
                       type="text"
                       value={storeFormData.storeTagline}
                       onChange={(e) => setStoreFormData({ ...storeFormData, storeTagline: e.target.value })}
-                      placeholder="Slogan facultatif"
+                      placeholder={t('store.taglinePlaceholder')}
                     />
 
                   <Input
-                      label="URL du logo"
+                      label={t('store.logoUrl')}
                       type="url"
                       value={storeFormData.logo}
                       onChange={(e) => setStoreFormData({ ...storeFormData, logo: e.target.value })}
-                      placeholder="https://…"
+                      placeholder={t('store.logoUrlPlaceholder')}
                     />
 
                   <Input
-                      label="Devise du Magasin"
+                      label={t('store.currency')}
                       type="text"
                       required
                       value={storeFormData.currency}
                       onChange={(e) => setStoreFormData({ ...storeFormData, currency: e.target.value })}
-                      placeholder="Ex: DT"
+                      placeholder={t('store.currencyPlaceholder')}
                     />
 
                   <Input
-                      label="Adresse"
+                      label={t('store.address')}
                       type="text"
                       value={storeFormData.address}
                       onChange={(e) => setStoreFormData({ ...storeFormData, address: e.target.value })}
-                      placeholder="Ex: Avenue Habib Bourguiba, Tunis"
+                      placeholder={t('store.addressPlaceholder')}
                     />
 
                   <Input
-                      label="Téléphone du Magasin"
+                      label={t('store.phone')}
                       type="text"
                       value={storeFormData.phone}
                       onChange={(e) => setStoreFormData({ ...storeFormData, phone: e.target.value })}
-                      placeholder="Ex: 71 000 000 ou 22 123 456"
+                      placeholder={t('store.phonePlaceholder')}
                     />
                   {userProfile?.role === 'admin' && (
                     <div className="space-y-1.5">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-ds-muted">+</span>
                         <Input
-                          label="Indicatif téléphonique par défaut"
+                          label={t('store.countryCode')}
                           type="text"
                           inputMode="numeric"
                           required
@@ -1159,7 +1204,7 @@ function SettingsContent({
                           placeholder="216"
                         />
                       </div>
-                      <p className="text-sm text-ds-muted">Par défaut : Tunisie (+216). Un numéro déjà international est conservé.</p>
+                      <p className="text-sm text-ds-muted">{t('store.countryCodeHelp')}</p>
                     </div>
                   )}
                 </div>
@@ -1167,12 +1212,12 @@ function SettingsContent({
                 {userProfile?.role === 'admin' && (
                   <section className="space-y-3 rounded-ds-lg border border-ds-border bg-ds-surface-2 p-4">
                     <div>
-                      <h3 className="text-sm font-black uppercase tracking-wider text-ds-text">Modèles WhatsApp / SMS</h3>
-                      <p className="mt-1 text-sm text-ds-muted">Variables disponibles : {'{client}'}, {'{appareil}'}, {'{numero}'}, {'{montant_restant}'}, {'{nom_magasin}'}.</p>
+                      <h3 className="text-sm font-black uppercase tracking-wider text-ds-text">{t('store.messageTemplates')}</h3>
+                      <p className="mt-1 text-sm text-ds-muted">{t('store.messageTemplateVariables')} {'{client}'}, {'{appareil}'}, {'{numero}'}, {'{montant_restant}'}, {'{nom_magasin}'}.</p>
                     </div>
-                    {MESSAGE_TEMPLATE_OPTIONS.map(({ key, label }) => (
+                    {MESSAGE_TEMPLATE_KEYS.map((key) => (
                       <label key={key} className="block space-y-1 text-sm font-bold text-ds-text">
-                        {label}
+                        {commonT(`messageComposer.templates.${key}`)}
                         <textarea
                           value={storeFormData.messageTemplates[key]}
                           onChange={(e) => setStoreFormData({
@@ -1190,8 +1235,8 @@ function SettingsContent({
 
                 <label className="flex min-h-ds-touch-target items-center justify-between gap-3 rounded-ds-lg border border-ds-border bg-ds-surface-2 p-4 my-2">
                   <div>
-                    <span className="block text-sm font-bold text-ds-text">Facturation de la TVA</span>
-                    <span className="mt-0.5 block text-sm font-medium leading-tight text-ds-muted">Calculer et appliquer la taxe sur la valeur ajoutée sur les ventes</span>
+                    <span className="block text-sm font-bold text-ds-text">{t('store.vatEnabled')}</span>
+                    <span className="mt-0.5 block text-sm font-medium leading-tight text-ds-muted">{t('store.vatDescription')}</span>
                   </div>
                   <input 
                     type="checkbox"
@@ -1202,7 +1247,7 @@ function SettingsContent({
                 </label>
 
                 <label className="block space-y-1.5 text-sm font-bold text-ds-text">
-                  Mention du vendeur sur tickets et factures
+                  {t('sellerMention')}
                   <Select
                     value={storeFormData.sellerMentionMode}
                     onChange={event => setStoreFormData({
@@ -1211,14 +1256,30 @@ function SettingsContent({
                     })}
                     className="text-base sm:text-sm"
                   >
-                    <option value="none">Aucun</option>
-                    <option value="initial">Initiale</option>
-                    <option value="shortName">Nom court</option>
+                    <option value="none">{t('sellerNone')}</option>
+                    <option value="initial">{t('sellerInitial')}</option>
+                    <option value="shortName">{t('sellerShortName')}</option>
+                  </Select>
+                </label>
+
+                <label className="block space-y-1.5 text-sm font-bold text-ds-text">
+                  {t('documentLanguage')}
+                  <Select
+                    value={storeFormData.documentLanguage}
+                    onChange={event => setStoreFormData({
+                      ...storeFormData,
+                      documentLanguage: event.target.value as NonNullable<StoreSettings['documentLanguage']>,
+                    })}
+                    className="text-base sm:text-sm"
+                  >
+                    <option value="fr">{t('documentFrench')}</option>
+                    <option value="ar">{t('documentArabic')}</option>
+                    <option value="both">{t('documentBilingual')}</option>
                   </Select>
                 </label>
 
                 <Input
-                    label="Taux de TVA (%)"
+                    label={t('store.vatRate')}
                     type="number" 
                     disabled={!storeFormData.tvaEnabled}
                     value={storeFormData.tva}
@@ -1231,25 +1292,25 @@ function SettingsContent({
                     <AlertTriangle className="w-4 h-4 shrink-0 text-ds-warning" />
                     <div>
                       <label className="block text-sm font-bold text-ds-text">
-                        Seuil d'Alerte de Stock Minimum Global
+                        {t('store.minimumStockAlert')}
                       </label>
                       <span className="mt-0.5 block text-sm font-medium leading-tight text-ds-muted">
-                        Déclenche une notification et une bannière visuelle dans le tableau de bord lorsqu'un produit atteint ou passe sous ce seuil.
+                        {t('store.minimumStockAlertHelp')}
                       </span>
                     </div>
                   </div>
                   <div className="flex min-w-0 items-center gap-3 pt-1">
                     <Input
-                      aria-label="Seuil d'alerte de stock minimum"
+                      aria-label={t('store.minimumStockAlert')}
                       type="number"
                       min="0"
                       max="1000"
                       value={storeFormData.minStockAlert}
                       onChange={(e) => setStoreFormData({ ...storeFormData, minStockAlert: Math.max(0, parseInt(e.target.value) || 0) })}
                       className="max-w-28 font-mono font-black"
-                      placeholder="Ex: 5"
+                      placeholder={t('store.vatPlaceholder')}
                     />
-                    <span className="text-sm font-bold text-ds-muted">unités en stock</span>
+                    <span className="text-sm font-bold text-ds-muted">{t('store.stockUnits')}</span>
                   </div>
                 </div>
 
@@ -1259,7 +1320,7 @@ function SettingsContent({
                     className="w-full"
                   >
                     <Save className="w-4 h-4" />
-                    Enregistrer les modifications
+                    {t('store.save')}
                   </Button>
                 </div>
               </form>
@@ -1284,17 +1345,17 @@ function SettingsContent({
                 <Database className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-ds-text">Base de données & Maintenance</h2>
-                <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">Outils d'archivage et d'allègement du magasin</p>
+                <h2 className="text-sm font-bold text-ds-text">{t('maintenance.title')}</h2>
+                <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">{t('maintenance.description')}</p>
               </div>
             </div>
 
             {/* Rubrique 1: Sauvegarde Excel */}
             <div className="space-y-3">
               <div className="space-y-1">
-                <h3 className="text-sm font-black uppercase tracking-wider text-ds-text">1. Sauvegarde Complète (Excel)</h3>
+                <h3 className="text-sm font-black uppercase tracking-wider text-ds-text">{t('maintenance.backupTitle')}</h3>
                 <p className="text-sm font-medium leading-relaxed text-ds-muted">
-                  Générez un fichier Excel multi-feuille contenant l'intégralité de la base de données (produits en stock, liste complète des clients, historique des ventes et factures).
+                  {t('maintenance.backupDescription')}
                 </p>
               </div>
               <Button
@@ -1305,7 +1366,7 @@ function SettingsContent({
                 className="w-full"
               >
                 <Download className="h-4 w-4" />
-                {isExporting ? 'Exportation en cours...' : 'Exporter toute la base de données (.xlsx)'}
+                {isExporting ? t('maintenance.exporting') : t('maintenance.exportButton')}
               </Button>
             </div>
 
@@ -1314,22 +1375,22 @@ function SettingsContent({
             {/* Rubrique 2: Nettoyage et Allègement de l'historique */}
             <div className="space-y-4">
               <div className="space-y-1">
-                <h3 className="text-sm font-black uppercase tracking-wider text-ds-text">2. Nettoyage de l'historique</h3>
+                <h3 className="text-sm font-black uppercase tracking-wider text-ds-text">{t('maintenance.cleanupTitle')}</h3>
                 <p className="text-sm font-medium leading-relaxed text-ds-muted">
-                  Allégez la base de données en supprimant définitivement les rapports de transactions (ventes et factures) antérieurs à une date limite de votre choix.
+                  {t('maintenance.cleanupDescription')}
                 </p>
               </div>
 
               {/* Date limite */}
               <div className="space-y-1.5">
-                <label className="block text-sm font-bold text-ds-text">Transactions antérieures ou égales au :</label>
+                <label className="block text-sm font-bold text-ds-text">{t('maintenance.dateLabel')}</label>
                 <div className="relative">
-                  <Calendar className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-muted" />
+                  <Calendar className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-muted" />
                   <Input
                     type="date"
                     value={purgeDate}
                     onChange={(e) => setPurgeDate(e.target.value)}
-                    className="pl-10"
+                    className="ps-10"
                   />
                 </div>
               </div>
@@ -1343,7 +1404,7 @@ function SettingsContent({
                     onChange={(e) => setPurgeSales(e.target.checked)}
                     className="h-5 w-5 rounded border-ds-border accent-ds-danger"
                   />
-                  <span className="text-sm font-bold text-ds-text">Purger les Ventes</span>
+                  <span className="text-sm font-bold text-ds-text">{t('maintenance.purgeSales')}</span>
                 </label>
                 <label className="flex min-h-ds-touch-target items-center gap-2 rounded-ds-md border border-ds-border bg-ds-surface-2 p-3">
                   <input 
@@ -1352,7 +1413,7 @@ function SettingsContent({
                     onChange={(e) => setPurgeInvoices(e.target.checked)}
                     className="h-5 w-5 rounded border-ds-border accent-ds-danger"
                   />
-                  <span className="text-sm font-bold text-ds-text">Purger les Factures</span>
+                  <span className="text-sm font-bold text-ds-text">{t('maintenance.purgeInvoices')}</span>
                 </label>
               </div>
 
@@ -1361,8 +1422,8 @@ function SettingsContent({
                 <div className="flex items-start gap-2.5 rounded-ds-md border border-ds-danger/20 bg-ds-danger-soft p-3.5 text-sm leading-relaxed text-ds-danger animate-in fade-in duration-300">
                   <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
                   <div>
-                    <span className="block text-xs font-extrabold uppercase tracking-wide">Alerte : Suppression définitive !</span>
-                    Toutes les transactions correspondantes datées d'avant le <span className="font-bold underline">{new Date(purgeDate).toLocaleDateString('fr-FR')}</span> incluse seront définitivement supprimées afin d'alléger la base de données de caisse.
+                    <span className="block text-xs font-extrabold uppercase tracking-wide">{t('maintenance.warningTitle')}</span>
+                    {t('maintenance.warningDescription', { date: formatDateTime(new Date(`${purgeDate}T00:00:00`)) })}
                   </div>
                 </div>
               )}
@@ -1376,7 +1437,7 @@ function SettingsContent({
                 className="w-full"
               >
                 <Trash2 className="w-4 h-4 font-bold" />
-                {isPurging ? 'Purge et allègement en cours...' : 'Purger et alléger de la base'}
+                {isPurging ? t('maintenance.purging') : t('maintenance.purgeButton')}
               </Button>
             </div>
 
@@ -1385,9 +1446,9 @@ function SettingsContent({
             {/* Rubrique 3: Journal d'activité */}
             <div className="space-y-4">
               <div className="space-y-1">
-                <h3 className="text-sm font-black uppercase tracking-wider text-ds-text">3. Journal d'activité</h3>
+                <h3 className="text-sm font-black uppercase tracking-wider text-ds-text">{t('activity.title')}</h3>
                 <p className="text-sm font-medium leading-relaxed text-ds-muted">
-                  Téléchargez un fichier détaillé de l'historique d'activité (ventes, factures, créations/modifications/suppressions de produits) sur une période donnée. La période sélectionnée ne peut pas dépasser 1 mois.
+                  {t('activity.description')}
                 </p>
               </div>
 
@@ -1395,28 +1456,28 @@ function SettingsContent({
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-bold text-ds-text">Date de début</label>
+                  <label className="block text-sm font-bold text-ds-text">{t('activity.dateStart')}</label>
                   <div className="relative">
-                    <Calendar className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-muted" />
+                    <Calendar className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-muted" />
                     <Input
                       type="date"
                       value={activityStartDate}
                       max={todayStr}
                       onChange={(e) => { setActivityStartDate(e.target.value); setActivityError(''); }}
-                      className="pl-10"
+                      className="ps-10"
                     />
                   </div>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-bold text-ds-text">Date de fin</label>
+                  <label className="block text-sm font-bold text-ds-text">{t('activity.dateEnd')}</label>
                   <div className="relative">
-                    <Calendar className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-muted" />
+                    <Calendar className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-muted" />
                     <Input
                       type="date"
                       value={activityEndDate}
                       max={todayStr}
                       onChange={(e) => { setActivityEndDate(e.target.value); setActivityError(''); }}
-                      className="pl-10"
+                      className="ps-10"
                     />
                   </div>
                 </div>
@@ -1438,7 +1499,7 @@ function SettingsContent({
                   className="w-full"
                 >
                   <Eye className="w-4 h-4" />
-                  {isLoadingActivityView ? 'Chargement...' : 'Afficher dans l\'app'}
+                  {isLoadingActivityView ? t('activity.loading') : t('activity.show')}
                 </Button>
                 <Button
                   type="button"
@@ -1448,7 +1509,7 @@ function SettingsContent({
                   className="w-full"
                 >
                   <FileText className="w-4 h-4" />
-                  {isGeneratingActivity ? 'Génération...' : 'Télécharger (.xlsx)'}
+                  {isGeneratingActivity ? t('activity.generating') : t('activity.download')}
                 </Button>
               </div>
             </div>
@@ -1474,23 +1535,23 @@ function SettingsContent({
           <div className="flex items-center gap-3">
             <div className="rounded-ds-md bg-ds-brand-soft p-2 text-ds-brand"><Music2 className="h-5 w-5" /></div>
             <div>
-              <h2 className="text-sm font-bold text-ds-text">Coran &amp; Adhkar</h2>
-              <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">Écran d’accueil et récitation audio</p>
+              <h2 className="text-sm font-bold text-ds-text">{t('embeddedStartup.title')}</h2>
+              <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">{t('embeddedStartup.description')}</p>
             </div>
-            <label className="ml-auto flex min-h-ds-touch-target items-center gap-2 text-sm font-bold text-ds-text">
+            <label className="ms-auto flex min-h-ds-touch-target items-center gap-2 text-sm font-bold text-ds-text">
               <input
                 type="checkbox"
                 checked={startupEnabled}
                 onChange={(event) => setStartupEnabled(event.target.checked)}
                 className="h-5 w-5 rounded border-ds-border accent-ds-brand"
               />
-              Activer
+              {t('embeddedStartup.enable')}
             </label>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <Select
-                label="Choisir une āya ou un adhkar"
+                label={t('embeddedStartup.choiceLabel')}
                 value={selectedWelcomeChoice}
                 onChange={(event) => {
                   const choice = welcomeChoices.find((item) => item.id === event.target.value);
@@ -1500,13 +1561,13 @@ function SettingsContent({
                   setWelcomeSource(choice.source);
                 }}
               >
-                <option value="custom">Texte personnalisé</option>
+                <option value="custom">{t('embeddedStartup.customText')}</option>
                 {welcomeChoices.map((choice) => (
                   <option key={choice.id} value={choice.id}>{choice.title}</option>
                 ))}
               </Select>
             <Input
-                label="Titre"
+                label={t('embeddedStartup.titleLabel')}
                 value={welcomeTitle}
                 onChange={(event) => setWelcomeTitle(event.target.value)}
                 maxLength={200}
@@ -1514,7 +1575,7 @@ function SettingsContent({
           </div>
 
           <label className="block space-y-1 text-sm font-medium text-ds-text">
-            Texte affiché
+            {t('embeddedStartup.displayedText')}
             <textarea
               value={welcomeText}
               onChange={(event) => setWelcomeText(event.target.value)}
@@ -1522,11 +1583,11 @@ function SettingsContent({
               dir="rtl"
               lang="ar"
               rows={3}
-              className="w-full min-w-0 rounded-ds-md border border-ds-border bg-ds-surface px-3 py-2.5 text-right text-base font-arabic font-medium text-ds-text"
+              className="w-full min-w-0 rounded-ds-md border border-ds-border bg-ds-surface px-3 py-2.5 text-end text-base font-arabic font-medium text-ds-text"
             />
           </label>
           <label className="block space-y-1 text-sm font-medium text-ds-text">
-            Source (facultative)
+            {t('embeddedStartup.sourceLabel')}
             <Input
               value={welcomeSource}
               onChange={(event) => setWelcomeSource(event.target.value)}
@@ -1535,32 +1596,32 @@ function SettingsContent({
           </label>
 
           <label className="block space-y-1 text-sm font-medium text-ds-text">
-            رابط URL للمقطع الصوتي (HTTPS direct : .mp3, .m4a, .ogg ou .wav)
+            {t('embeddedStartup.audioUrlLabel')}
             <Input
               type="url"
               value={startupAudioUrl}
               onChange={(event) => setStartupAudioUrl(event.target.value)}
-              placeholder="https://…/recitation.mp3"
+              placeholder={t('embeddedStartup.audioUrlPlaceholder')}
             />
           </label>
           <div className="space-y-2">
             <Button type="button" variant="secondary" onClick={testStartupAudio}>
-              Tester la lecture
+              {t('embeddedStartup.testPlayback')}
             </Button>
             <audio
               ref={startupAudioPreview}
               controls
               preload="none"
               src={isDirectAudioUrl(startupAudioUrl) ? startupAudioUrl.trim() : undefined}
-              onError={() => setStartupAudioTestMessage('Fichier illisible ou inaccessible. Vérifiez le lien direct et les autorisations CORS de l’hébergeur.')}
+              onError={() => setStartupAudioTestMessage(t('embeddedStartup.audioUnavailable'))}
               className="w-full"
             />
             {startupAudioTestMessage && <Badge variant="danger" role="status" className="min-h-0 rounded-ds-md">{startupAudioTestMessage}</Badge>}
           </div>
           <aside className="rounded-ds-md border border-ds-info/20 bg-ds-accent-soft p-3 text-sm text-ds-text">
-            Hébergez gratuitement votre fichier audio avec le palier gratuit de Cloudflare R2 ou sur Internet Archive. Après l’envoi, copiez le lien public direct du fichier (et non la page de partage) ; l’hébergeur doit autoriser la lecture depuis le navigateur (CORS). Aucun fichier n’est téléversé dans Firebase.
+            {t('embeddedStartup.audioHostingHelp')}
           </aside>
-          <p className="text-sm text-ds-muted">L’audio ne démarre qu’après le bouton « دخول » de l’écran d’accueil.</p>
+          <p className="text-sm text-ds-muted">{t('embeddedStartup.audioConsentHelp')}</p>
           {startupMessage && <Badge variant="info" role="status" className="min-h-0 rounded-ds-md">{startupMessage}</Badge>}
           <Button
             type="button"
@@ -1568,7 +1629,7 @@ function SettingsContent({
             disabled={startupSaving}
           >
             <Save className="h-4 w-4" />
-            {startupSaving ? 'Enregistrement…' : 'Enregistrer Coran & Adhkar'}
+            {startupSaving ? t('embeddedStartup.saving') : t('embeddedStartup.save')}
           </Button>
         </Card>
         }
@@ -1584,9 +1645,9 @@ function SettingsContent({
                   <FileText className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-ds-text">Journal d'activité</h3>
+                  <h3 className="text-sm font-bold text-ds-text">{t('activity.modalTitle')}</h3>
                   <p className="text-xs font-bold uppercase tracking-wider text-ds-muted">
-                    Du {activityStartDate} au {activityEndDate} — {activityLogLines.length} entrée{activityLogLines.length > 1 ? 's' : ''}
+                    {t('activity.rangeSummary', { start: activityStartDate, end: activityEndDate, count: activityLogLines.length })}
                   </p>
                 </div>
               </div>
@@ -1594,7 +1655,7 @@ function SettingsContent({
                 type="button"
                 variant="ghost"
                 onClick={() => setShowActivityLogModal(false)}
-                aria-label="Fermer le journal d'activité"
+                aria-label={t('activity.close')}
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -1612,7 +1673,7 @@ function SettingsContent({
                 variant="secondary"
                 onClick={() => setShowActivityLogModal(false)}
               >
-                Fermer
+                {t('activity.close')}
               </Button>
             </div>
           </Card>
@@ -1621,9 +1682,9 @@ function SettingsContent({
 
       {/* Success Toast */}
       {success && (
-        <div className="fixed bottom-8 right-8 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed bottom-8 end-8 z-[100] animate-in fade-in slide-in-from-bottom-4 duration-300">
           <Badge variant="success" role="status" className="rounded-ds-md bg-ds-success p-4 text-ds-brand-contrast shadow-ds-md">
-            <CheckCircle2 className="mr-2 h-5 w-5 shrink-0" />
+            <CheckCircle2 className="me-2 h-5 w-5 shrink-0" />
             {success}
           </Badge>
         </div>
@@ -1650,8 +1711,8 @@ class SettingsErrorBoundary extends React.Component<
     if (this.state.hasError) {
       return (
         <div role="alert" className="mx-auto max-w-4xl rounded-ds-lg border border-ds-danger/20 bg-ds-danger-soft p-6 text-ds-danger">
-          <h1 className="text-lg font-bold">Paramètres indisponibles</h1>
-          <p className="mt-2 text-sm">Une erreur est survenue pendant l’affichage de cette page. Actualisez-la ou réessayez plus tard.</p>
+          <h1 className="text-lg font-bold">{i18n.t('settings:errorBoundary.title')}</h1>
+          <p className="mt-2 text-sm">{i18n.t('settings:errorBoundary.description')}</p>
         </div>
       );
     }

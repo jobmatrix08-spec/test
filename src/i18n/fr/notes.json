@@ -1,0 +1,33 @@
+{
+  "title": "Notes et mémos",
+  "description": "Ajoutez, planifiez et organisez les tâches et rappels importants du magasin.",
+  "add": "Ajouter un mémo",
+  "search": "Rechercher des mémos…",
+  "filter": {
+    "all": "Tous",
+    "today": "Aujourd’hui",
+    "upcoming": "À venir",
+    "past": "Passés"
+  },
+  "status": {
+    "today": "Aujourd’hui",
+    "upcoming": "À venir",
+    "past": "Passé",
+    "planned": "Rappel planifié"
+  },
+  "emptyTitle": "Aucun mémo trouvé",
+  "emptyDescription": "Commencez par ajouter un mémo ou une note planifiée.",
+  "edit": "Modifier",
+  "delete": "Supprimer",
+  "confirmDelete": "Voulez-vous vraiment supprimer ce mémo ?",
+  "modalEdit": "Modifier le mémo",
+  "modalNew": "Nouveau mémo / note",
+  "fieldTitle": "Titre du mémo",
+  "titlePlaceholder": "Ex. : Approvisionner les boissons, réunion…",
+  "fieldContent": "Description / note",
+  "contentPlaceholder": "Saisissez les détails de votre note…",
+  "fieldDate": "Date d’échéance / rappel",
+  "cancel": "Annuler",
+  "update": "Mettre à jour",
+  "submit": "Ajouter le mémo"
+}

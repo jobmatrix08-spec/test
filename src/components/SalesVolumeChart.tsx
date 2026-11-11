@@ -23,6 +23,8 @@ import {
   Activity
 } from 'lucide-react';
 import { Card } from './ui';
+import { formatNumber, getDateLocale } from '../i18n/format';
+import { useTranslation } from 'react-i18next';
 
 interface SalesVolumeChartProps {
   sales: Sale[];
@@ -32,6 +34,8 @@ interface SalesVolumeChartProps {
 }
 
 export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 'DT', showProfit = false }: SalesVolumeChartProps) {
+  const { t, i18n } = useTranslation('reports');
+  const isRtl = i18n.dir() === 'rtl';
   const [chartMode, setChartMode] = useState<'combined' | 'volume' | 'revenue'>('combined');
 
   // Safe date parser
@@ -65,8 +69,8 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
       const dateKey = `${year}-${month}-${day}`;
 
       const isToday = i === 0;
-      const dayName = d.toLocaleDateString('fr-FR', { weekday: 'short' });
-      const dayFormatted = d.toLocaleDateString('fr-FR', { 
+      const dayName = d.toLocaleDateString(getDateLocale(), { weekday: 'short' });
+      const dayFormatted = d.toLocaleDateString(getDateLocale(), {
         weekday: 'short', 
         day: 'numeric', 
         month: 'short' 
@@ -74,8 +78,8 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
 
       days.push({
         dateKey,
-        dayLabel: isToday ? "Aujourd'hui" : dayName.charAt(0).toUpperCase() + dayName.slice(1),
-        fullDateLabel: isToday ? `Aujourd'hui (${d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })})` : dayFormatted,
+        dayLabel: isToday ? t('salesVolume.today') : dayName.charAt(0).toUpperCase() + dayName.slice(1),
+        fullDateLabel: isToday ? `${t('salesVolume.today')} (${d.toLocaleDateString(getDateLocale(), { day: 'numeric', month: 'short' })})` : dayFormatted,
         volume: 0,
         revenue: 0,
         profit: 0,
@@ -124,7 +128,7 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
       avgDailyRevenue,
       peakDay
     };
-  }, [sales, saleCostSnapshots, showProfit]);
+  }, [sales, saleCostSnapshots, showProfit, t]);
 
   // Custom tooltips with styled Tailwind card
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -143,33 +147,33 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
             <div className="flex items-center justify-between gap-4">
               <span className="flex items-center gap-1.5 text-ds-muted">
                 <span className="h-2 w-2 rounded-full bg-ds-brand"></span>
-                Volume de ventes:
+                {t('salesVolume.salesVolume')}:
               </span>
               <span className="font-mono text-sm font-black text-ds-text">
-                {dataPoint.volume} <span className="font-sans text-[10px] font-semibold text-ds-muted">ventes</span>
+                {formatNumber(dataPoint.volume)} <span className="font-sans text-[10px] font-semibold text-ds-muted">{t('salesVolume.sales')}</span>
               </span>
             </div>
 
             <div className="flex items-center justify-between gap-4">
               <span className="flex items-center gap-1.5 text-ds-muted">
                 <span className="h-2 w-2 rounded-full bg-ds-accent"></span>
-                Chiffre d'affaires:
+                {t('salesVolume.revenue')}:
               </span>
               <span className="font-mono text-sm font-black text-ds-text">
-                {dataPoint.revenue.toFixed(3)} <span className="font-sans text-[10px] text-ds-muted">{currency}</span>
+                {formatNumber(dataPoint.revenue, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} <span className="font-sans text-[10px] text-ds-muted">{currency}</span>
               </span>
             </div>
 
             {showProfit && dataPoint.profit !== null && dataPoint.profit !== 0 && (
               <div className="flex items-center justify-between gap-4 border-t border-ds-border pt-1 text-[11px]">
-                <span className="text-ds-muted">Bénéfice brut:</span>
+                <span className="text-ds-muted">{t('cards.grossProfit')}:</span>
                 <span className={`font-mono font-bold ${dataPoint.profit < 0 ? 'text-ds-danger' : 'text-ds-success'}`}>
-                  {dataPoint.profit > 0 ? '+' : ''}{dataPoint.profit.toFixed(3)} {currency}
+                  {dataPoint.profit > 0 ? '+' : ''}{formatNumber(dataPoint.profit, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}
                 </span>
               </div>
             )}
             {showProfit && dataPoint.profitIncomplete && (
-              <p className="pt-1 text-[10px] font-semibold text-ds-danger">Coûts historiques incomplets ; bénéfice indisponible.</p>
+              <p className="pt-1 text-[10px] font-semibold text-ds-danger">{t('salesVolume.incompleteProfit')}</p>
             )}
           </div>
         </div>
@@ -189,19 +193,20 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
             </div>
             <div>
               <h2 className="font-display text-sm font-bold uppercase tracking-wider text-ds-text">
-                Volume des Ventes (7 Derniers Jours)
+                {t('salesVolume.title')}
               </h2>
               <p className="mt-0.5 text-[11px] font-semibold uppercase text-ds-muted">
-                Évolution journalière du nombre de transactions et des encaissements
+                {t('salesVolume.description')}
               </p>
             </div>
           </div>
         </div>
 
         {/* Mode Selector Tabs */}
-        <div className="flex max-w-full items-center gap-1 overflow-x-auto self-start rounded-full border border-ds-border bg-ds-surface-2 p-1 sm:self-auto">
+        <div role="group" aria-label={t('salesVolume.chartModeLabel')} className="flex max-w-full items-center gap-1 overflow-x-auto self-start rounded-full border border-ds-border bg-ds-surface-2 p-1 sm:self-auto">
           <button
             type="button"
+            aria-pressed={chartMode === 'combined'}
             onClick={() => setChartMode('combined')}
             className={`min-h-11 shrink-0 rounded-full px-4 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               chartMode === 'combined'
@@ -210,10 +215,11 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
-            <span>Vue Combinée</span>
+            <span>{t('salesVolume.combined')}</span>
           </button>
           <button
             type="button"
+            aria-pressed={chartMode === 'volume'}
             onClick={() => setChartMode('volume')}
             className={`min-h-11 shrink-0 rounded-full px-4 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               chartMode === 'volume'
@@ -222,10 +228,11 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
             }`}
           >
             <ShoppingCart className="w-3.5 h-3.5" />
-            <span>Volume seul</span>
+            <span>{t('salesVolume.volumeOnly')}</span>
           </button>
           <button
             type="button"
+            aria-pressed={chartMode === 'revenue'}
             onClick={() => setChartMode('revenue')}
             className={`min-h-11 shrink-0 rounded-full px-4 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
               chartMode === 'revenue'
@@ -234,7 +241,7 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
             }`}
           >
             <Coins className="w-3.5 h-3.5" />
-            <span>CA seul</span>
+            <span>{t('salesVolume.revenueOnly')}</span>
           </button>
         </div>
       </div>
@@ -247,10 +254,10 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
           </div>
           <div>
             <span className="block text-[9px] font-black uppercase tracking-wider text-ds-muted">
-              Volume Total (7j)
+              {t('salesVolume.totalVolume')}
             </span>
             <span className="block font-display text-base font-bold tabular-nums text-ds-text">
-              {chartData.totalVolume} <span className="font-sans text-xs font-bold text-ds-muted">ventes</span>
+              {formatNumber(chartData.totalVolume)} <span className="font-sans text-xs font-bold text-ds-muted">{t('salesVolume.sales')}</span>
             </span>
           </div>
         </div>
@@ -261,10 +268,10 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
           </div>
           <div>
             <span className="block text-[9px] font-black uppercase tracking-wider text-ds-muted">
-              Total CA (7j)
+              {t('salesVolume.totalRevenue')}
             </span>
             <span className="block font-display text-base font-bold tabular-nums text-ds-text">
-              {chartData.totalRevenue.toFixed(2)} <span className="font-sans text-xs font-bold text-ds-muted">{currency}</span>
+              {formatNumber(chartData.totalRevenue, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="font-sans text-xs font-bold text-ds-muted">{currency}</span>
             </span>
           </div>
         </div>
@@ -275,10 +282,10 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
           </div>
           <div>
             <span className="block text-[9px] font-black uppercase tracking-wider text-ds-muted">
-              Moyenne / Jour
+              {t('salesVolume.dailyAverage')}
             </span>
             <span className="block font-display text-base font-bold tabular-nums text-ds-text">
-              {chartData.avgDailyVolume} <span className="font-sans text-xs font-bold text-ds-muted">ventes/j</span>
+              {formatNumber(Number(chartData.avgDailyVolume), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} <span className="font-sans text-xs font-bold text-ds-muted">{t('salesVolume.salesPerDay')}</span>
             </span>
           </div>
         </div>
@@ -289,21 +296,21 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
           </div>
           <div>
             <span className="block text-[9px] font-black uppercase tracking-wider text-ds-muted">
-              Pic d'activité
+              {t('salesVolume.peakActivity')}
             </span>
             <span className="block truncate text-sm font-bold text-ds-text">
-              {chartData.peakDay.dayLabel} ({chartData.peakDay.volume} v.)
+              {t('salesVolume.peakDay', { day: chartData.peakDay.dayLabel, volume: formatNumber(chartData.peakDay.volume) })}
             </span>
           </div>
         </div>
       </div>
 
       {/* Recharts Chart Visualization */}
-      <div className="w-full h-72 sm:h-80 select-none">
+      <div className="w-full h-72 sm:h-80 select-none" role="img" aria-label={t('salesVolume.chartAccessibleLabel')}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={chartData.days}
-            margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
+            margin={{ top: 10, right: isRtl ? -15 : 10, left: isRtl ? 10 : -15, bottom: 0 }}
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--ds-border)" />
 
@@ -318,10 +325,12 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
             {/* Left YAxis for Volume */}
             <YAxis 
               yAxisId="left" 
+              orientation={isRtl ? 'right' : 'left'}
               allowDecimals={false}
               tickLine={false}
               axisLine={false}
               tick={{ fill: 'var(--ds-text-muted)', fontSize: 11, fontWeight: 600 }}
+              tickFormatter={(value) => formatNumber(Number(value))}
               width={35}
             />
 
@@ -329,11 +338,11 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
             {chartMode === 'combined' && (
               <YAxis 
                 yAxisId="right" 
-                orientation="right"
+                orientation={isRtl ? 'left' : 'right'}
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: 'var(--ds-text-muted)', fontSize: 10, fontWeight: 700 }}
-                tickFormatter={(val) => `${val}`}
+                tickFormatter={(val) => formatNumber(Number(val), { maximumFractionDigits: 2 })}
                 width={45}
               />
             )}
@@ -341,10 +350,11 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
             {chartMode === 'revenue' && (
               <YAxis 
                 yAxisId="left" 
+                orientation={isRtl ? 'right' : 'left'}
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: 'var(--ds-text-muted)', fontSize: 10, fontWeight: 700 }}
-                tickFormatter={(val) => `${val}`}
+                tickFormatter={(val) => formatNumber(Number(val), { maximumFractionDigits: 2 })}
                 width={45}
               />
             )}
@@ -353,11 +363,11 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
 
             <Legend 
               verticalAlign="top"
-              align="right"
+              align={isRtl ? 'left' : 'right'}
               wrapperStyle={{ paddingBottom: '10px', fontSize: '11px', fontWeight: 600 }}
               formatter={(value) => {
-                if (value === 'volume') return <span className="font-bold text-ds-brand">Nombre de ventes</span>;
-                if (value === 'revenue') return <span className="font-bold text-ds-accent">Chiffre d'affaires ({currency})</span>;
+                if (value === 'volume') return <span className="font-bold text-ds-brand">{t('salesVolume.salesCount')}</span>;
+                if (value === 'revenue') return <span className="font-bold text-ds-accent">{t('salesVolume.revenueWithCurrency', { currency })}</span>;
                 return value;
               }}
             />
@@ -397,10 +407,10 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-ds-border pt-3 text-[11px] font-semibold text-ds-muted">
         <span className="flex items-center gap-1.5">
           <TrendingUp className="h-3.5 w-3.5 text-ds-accent" />
-          Les barres bleues indiquent le volume de transactions enregistrées chaque jour.
+          {t('salesVolume.chartHelp')}
         </span>
         <span className="font-bold text-ds-muted">
-          Dernière mise à jour : temps réel
+          {t('salesVolume.lastUpdated')}
         </span>
       </div>
     </Card>
