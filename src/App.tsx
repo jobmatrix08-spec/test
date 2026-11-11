@@ -112,7 +112,6 @@ function getFirstAccessiblePath(userProfile: UserProfile | null): string {
 function CurrentPageTitle({ userProfile }: { userProfile: UserProfile | null }) {
   const { t } = useTranslation('nav');
   const location = useLocation();
-  const isRtl = i18n.dir() === 'rtl';
   const currentItem = getAccessibleNavigation(userProfile)
     .flatMap(section => section.items)
     .find(item => item.path === `${location.pathname}${location.hash}` || item.path === location.pathname);
@@ -245,10 +244,11 @@ function Sidebar({
   cashSession: CashSessionRecord | null;
   cashSessionLoading: boolean;
 }) {
-  const { t: navT } = useTranslation('nav');
+  const { t: navT, i18n } = useTranslation('nav');
   const { t } = useTranslation('common');
   const { storeName } = useBrand();
   const location = useLocation();
+  const isRtl = i18n.dir() === 'rtl';
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
   const navSections = getAccessibleNavigation(userProfile);
