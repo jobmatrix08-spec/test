@@ -18,7 +18,7 @@ import { addCashSessionTotals, requireOpenCashSession, useCashSession } from '..
 import { calculatePurchaseTotals, getPurchaseCancellationStock, getPurchasePaymentBalance, getPurchaseReceiptStock } from '../lib/purchaseAccounting';
 import { Badge, Button, Card, EmptyState, Input, PageHeader, Select } from './ui';
 import { useTranslation } from 'react-i18next';
-import { formatDateTime, formatDocumentDate, getDateLocale } from '../i18n/format';
+import { formatDateTime, formatDocumentDate, formatNumber, getDateLocale } from '../i18n/format';
 
 interface InvoicesProps {
   userProfile: UserProfile | null;
@@ -425,13 +425,13 @@ export default function Invoices({ userProfile }: InvoicesProps) {
     // Règle de paiement selon le type de client
     if (!selectedClient) {
       if (Math.abs(paidAmount - cartTotal) > 0.001) {
-        setError(invoiceT('ui.errors.walkInPayment', { amount: cartTotal.toFixed(3), currency: storeSettings?.currency || 'DT' }));
+        setError(invoiceT('ui.errors.walkInPayment', { amount: formatNumber(cartTotal, { minimumFractionDigits: 3, maximumFractionDigits: 3 }), currency: storeSettings?.currency || 'DT' }));
         setIsProcessing(false);
         return;
       }
     } else {
       if (paidAmount > cartTotal + 0.001) {
-        setError(invoiceT('ui.errors.paidExceedsTotal', { amount: cartTotal.toFixed(3), currency: storeSettings?.currency || 'DT' }));
+        setError(invoiceT('ui.errors.paidExceedsTotal', { amount: formatNumber(cartTotal, { minimumFractionDigits: 3, maximumFractionDigits: 3 }), currency: storeSettings?.currency || 'DT' }));
         setIsProcessing(false);
         return;
       }
@@ -1167,7 +1167,7 @@ export default function Invoices({ userProfile }: InvoicesProps) {
                       {invoice.clientCode && <div className="text-[10px] font-mono uppercase tracking-tighter text-ds-muted">{invoiceT('ui.code')}: {invoice.clientCode}</div>}
                       {invoice.clientPhone && <div className="text-xs text-ds-text-muted">{invoice.clientPhone}</div>}
                     </td>
-                    <td data-label={invoiceT('ui.total')} className="px-6 py-4 font-mono font-black text-ds-text">{invoice.total.toFixed(3)} {storeSettings?.currency || 'DT'}</td>
+                    <td data-label={invoiceT('ui.total')} className="px-6 py-4 font-mono font-black text-ds-text">{formatNumber(invoice.total, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}</td>
                     <td data-label={invoiceT('ui.actions')} className="px-6 py-4 text-end">
                       <div className="flex items-center justify-end gap-2">
                         <Button type="button" variant="ghost" size="sm" onClick={() => setSelectedInvoice(invoice)} aria-label={invoiceT('ui.viewInvoice')}>
@@ -1213,8 +1213,8 @@ export default function Invoices({ userProfile }: InvoicesProps) {
                         <td data-label={invoiceT('ui.purchaseNumber')} className="px-6 py-4 font-bold text-ds-text">{number}</td>
                         <td data-label={invoiceT('ui.date')} className="px-6 py-4">{purchaseDate ? formatDateTime(purchaseDate, { dateStyle: 'medium' }) : invoiceT('ui.unknownDate')}</td>
                         <td data-label={invoiceT('ui.supplier')} className="px-6 py-4">{purchase.supplierName || purchase.supplierId || invoiceT('ui.supplierNotProvided')}</td>
-                        <td data-label={invoiceT('ui.total')} className="px-6 py-4 text-end font-mono font-bold">{total.toFixed(3)} {storeSettings?.currency || 'DT'}</td>
-                        <td data-label={invoiceT('ui.due')} className="px-6 py-4 text-end font-mono font-bold text-ds-warning">{debt.toFixed(3)} {storeSettings?.currency || 'DT'}</td>
+                        <td data-label={invoiceT('ui.total')} className="px-6 py-4 text-end font-mono font-bold">{formatNumber(total, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}</td>
+                        <td data-label={invoiceT('ui.due')} className="px-6 py-4 text-end font-mono font-bold text-ds-warning">{formatNumber(debt, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}</td>
                         <td data-label={invoiceT('ui.status')} className="px-6 py-4"><Badge variant={purchase.status === 'cancelled' ? 'danger' : 'success'}>{purchase.status === 'cancelled' ? invoiceT('ui.cancelled') : invoiceT('ui.received')}</Badge></td>
                         <td data-label={invoiceT('ui.actions')} className="px-6 py-4 text-end">
                           <Button type="button" variant="secondary" size="sm" onClick={() => { setSelectedPurchase(purchase); setSupplierPaymentAmount(''); setPurchaseError(''); }}>{invoiceT('ui.detailsPay')}</Button>
@@ -1273,8 +1273,8 @@ export default function Invoices({ userProfile }: InvoicesProps) {
                           <tr key={`${line.itemCollection}:${line.itemId}`}>
                             <td className="py-2 font-semibold">{line.nameSnapshot} <span className="text-[10px] text-ds-muted">{line.itemCollection === 'parts' ? invoiceT('ui.part') : invoiceT('ui.item')}</span></td>
                             <td>{line.quantity}</td>
-                            <td className="font-mono">{(line.unitCostMilli / 1000).toFixed(3)} DT</td>
-                            <td className="text-end font-mono font-bold">{(line.quantity * line.unitCostMilli / 1000).toFixed(3)} DT</td>
+                            <td className="font-mono">{formatNumber(line.unitCostMilli / 1000, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} DT</td>
+                            <td className="text-end font-mono font-bold">{formatNumber(line.quantity * line.unitCostMilli / 1000, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} DT</td>
                             <td className="text-end"><Button type="button" variant="ghost" size="sm" onClick={() => setPurchaseLines(current => current.filter((_, itemIndex) => itemIndex !== index))} aria-label={invoiceT('ui.removeItem', { name: line.nameSnapshot })}><Trash2 className="h-4 w-4 text-ds-danger" /></Button></td>
                           </tr>
                         ))}
@@ -1290,8 +1290,8 @@ export default function Invoices({ userProfile }: InvoicesProps) {
                   {Number(purchasePaidAmount.replace(',', '.')) > 0 && !cashSession && <p className="text-sm font-medium text-ds-warning">{cashSessionLoading ? invoiceT('ui.cashChecking') : invoiceT('ui.cashRequiredPayment')}</p>}
                 </div>
                 <div className="rounded-ds-md bg-ds-surface-2 p-3 text-sm text-ds-text">
-                  <div className="flex justify-between"><span>{invoiceT('ui.calculatedTotal')}</span><strong className="font-mono">{(purchaseTotalMilli / 1000).toFixed(3)} DT</strong></div>
-                  <div className="mt-2 flex justify-between text-ds-warning"><span>{invoiceT('ui.remainingToPay')}</span><strong className="font-mono">{(purchaseDebtMilli / 1000).toFixed(3)} DT</strong></div>
+                  <div className="flex justify-between"><span>{invoiceT('ui.calculatedTotal')}</span><strong className="font-mono">{formatNumber(purchaseTotalMilli / 1000, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} DT</strong></div>
+                  <div className="mt-2 flex justify-between text-ds-warning"><span>{invoiceT('ui.remainingToPay')}</span><strong className="font-mono">{formatNumber(purchaseDebtMilli / 1000, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} DT</strong></div>
                 </div>
                 <label className="grid gap-1.5 text-sm font-medium text-ds-text sm:col-span-2">
                   {invoiceT('ui.note')}
@@ -1328,16 +1328,16 @@ export default function Invoices({ userProfile }: InvoicesProps) {
             </header>
             <div className="space-y-4 overflow-y-auto p-5">
               <div className="grid gap-3 sm:grid-cols-3">
-                <Card className="bg-ds-surface-2 p-3"><p className="text-[10px] font-bold uppercase text-ds-muted">{invoiceT('ui.total')}</p><p className="mt-1 font-mono font-black text-ds-text">{((Number(selectedPurchase.totalMilli) || 0) / 1000).toFixed(3)} DT</p></Card>
-                <Card className="bg-ds-success-soft p-3"><p className="text-[10px] font-bold uppercase text-ds-success">{invoiceT('ui.paid')}</p><p className="mt-1 font-mono font-black text-ds-success">{((Number(selectedPurchase.paidMilli) || 0) / 1000).toFixed(3)} DT</p></Card>
-                <Card className="bg-ds-warning-soft p-3"><p className="text-[10px] font-bold uppercase text-ds-warning">{invoiceT('ui.due')}</p><p className="mt-1 font-mono font-black text-ds-warning">{((Number(selectedPurchase.debtMilli) || 0) / 1000).toFixed(3)} DT</p></Card>
+                <Card className="bg-ds-surface-2 p-3"><p className="text-[10px] font-bold uppercase text-ds-muted">{invoiceT('ui.total')}</p><p className="mt-1 font-mono font-black text-ds-text">{formatNumber((Number(selectedPurchase.totalMilli) || 0) / 1000, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} DT</p></Card>
+                <Card className="bg-ds-success-soft p-3"><p className="text-[10px] font-bold uppercase text-ds-success">{invoiceT('ui.paid')}</p><p className="mt-1 font-mono font-black text-ds-success">{formatNumber((Number(selectedPurchase.paidMilli) || 0) / 1000, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} DT</p></Card>
+                <Card className="bg-ds-warning-soft p-3"><p className="text-[10px] font-bold uppercase text-ds-warning">{invoiceT('ui.due')}</p><p className="mt-1 font-mono font-black text-ds-warning">{formatNumber((Number(selectedPurchase.debtMilli) || 0) / 1000, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} DT</p></Card>
               </div>
 
               <div className="overflow-x-auto rounded-ds-md border border-ds-border">
                 <table className="w-full min-w-[400px] text-start text-sm">
                   <thead className="bg-ds-surface-2 text-[10px] uppercase text-ds-muted"><tr><th className="p-3">{invoiceT('ui.item')}</th><th>{invoiceT('ui.quantity')}</th><th className="text-end">{invoiceT('ui.unitCost')}</th></tr></thead>
                   <tbody className="divide-y divide-ds-border text-ds-text">
-                    {(selectedPurchase.items || []).map((line, index) => <tr key={`${line.itemCollection}:${line.itemId}:${index}`}><td className="p-3 font-semibold">{line.nameSnapshot}</td><td>{line.quantity}</td><td className="p-3 text-end font-mono">{(line.unitCostMilli / 1000).toFixed(3)} DT</td></tr>)}
+                    {(selectedPurchase.items || []).map((line, index) => <tr key={`${line.itemCollection}:${line.itemId}:${index}`}><td className="p-3 font-semibold">{line.nameSnapshot}</td><td>{formatNumber(line.quantity)}</td><td className="p-3 text-end font-mono">{formatNumber(line.unitCostMilli / 1000, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} DT</td></tr>)}
                   </tbody>
                 </table>
               </div>
@@ -1365,7 +1365,7 @@ export default function Invoices({ userProfile }: InvoicesProps) {
                       const amount = (Number(payment.amountMilli) || 0) / 1000;
                       return <li key={payment.id} className="flex flex-wrap justify-between gap-2 p-3 text-xs">
                         <span className="text-ds-text-muted">{date ? formatDateTime(date, { dateStyle: 'short', timeStyle: 'short' }) : invoiceT('ui.unknownDate')} · {payment.type === 'purchase_cancellation_credit' ? invoiceT('ui.cancellationCredit') : payment.type === 'purchase_initial_payment' ? invoiceT('ui.initialPayment') : invoiceT('ui.payment')}</span>
-                        <strong className={`font-mono ${amount < 0 ? 'text-ds-warning' : 'text-ds-success'}`}>{amount < 0 ? '+' : '−'}{Math.abs(amount).toFixed(3)} DT</strong>
+                        <strong className={`font-mono ${amount < 0 ? 'text-ds-warning' : 'text-ds-success'}`}>{amount < 0 ? '+' : '−'}{formatNumber(Math.abs(amount), { minimumFractionDigits: 3, maximumFractionDigits: 3 })} DT</strong>
                       </li>;
                     })}
                   </ul>
@@ -1449,7 +1449,7 @@ export default function Invoices({ userProfile }: InvoicesProps) {
                         </div>
                         <div className="mt-auto flex w-full shrink-0 flex-col gap-0.5 border-t border-ds-border pt-1.5 leading-tight">
                           <div className="truncate text-[11px] font-bold font-mono text-ds-text-muted sm:text-xs">
-                            {product.sellPrice.toFixed(3)} {storeSettings?.currency || 'DT'}
+                            {formatNumber(product.sellPrice, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}
                           </div>
                           <div className={cn(
                             "text-[8px] font-extrabold uppercase tracking-wider sm:text-[10px]",
@@ -1507,7 +1507,7 @@ export default function Invoices({ userProfile }: InvoicesProps) {
                         <div key={item.productId} className="flex items-center justify-between rounded-ds-md border border-ds-border bg-ds-surface-2 p-3">
                           <div className="flex-1 min-w-0 pe-4">
                             <div className="truncate text-xs font-extrabold text-ds-text">{item.name}</div>
-                            <div className="mt-0.5 text-[10px] font-mono text-ds-muted">{item.price.toFixed(3)} {storeSettings?.currency || 'DT'} x {item.quantity}</div>
+                            <div className="mt-0.5 text-[10px] font-mono text-ds-muted">{formatNumber(item.price, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'} x {formatNumber(item.quantity)}</div>
                           </div>
                           <div className="flex items-center gap-1.5 sm:gap-2">
                             <Button variant="secondary" size="sm" aria-label={invoiceT('ui.decreaseQuantity')} onClick={() => updateQuantity(item.productId, -1)} className="min-h-11 w-11 p-0">
@@ -1532,18 +1532,18 @@ export default function Invoices({ userProfile }: InvoicesProps) {
                     {storeSettings?.tvaEnabled === true && (
                       <div className="flex justify-between text-xs sm:text-sm">
                         <span className="font-semibold text-ds-muted">{invoiceT('ui.subtotal')}</span>
-                        <span className="font-mono font-bold">{subtotal.toFixed(3)} {storeSettings?.currency || 'DT'}</span>
+                        <span className="font-mono font-bold">{formatNumber(subtotal, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}</span>
                       </div>
                     )}
                     {storeSettings?.tvaEnabled === true && (
                       <div className="flex justify-between text-xs sm:text-sm">
                         <span className="font-semibold text-ds-muted">{invoiceT('ui.vat', { rate: storeSettings?.tva || 0 })}</span>
-                        <span className="font-mono font-bold">{tvaAmount.toFixed(3)} {storeSettings?.currency || 'DT'}</span>
+                        <span className="font-mono font-bold">{formatNumber(tvaAmount, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}</span>
                       </div>
                     )}
                     <div className="flex justify-between border-t border-ds-border pt-1.5 text-base sm:text-lg">
                       <span className="font-black text-ds-text">{invoiceT('ui.grandTotal')}</span>
-                      <span className="font-black text-ds-brand font-mono">{cartTotal.toFixed(3)} {storeSettings?.currency || 'DT'}</span>
+                      <span className="font-black text-ds-brand font-mono">{formatNumber(cartTotal, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}</span>
                     </div>
                   </div>
 
@@ -1577,14 +1577,14 @@ export default function Invoices({ userProfile }: InvoicesProps) {
                   {/* Reste à payer / Dette */}
                   <Badge variant={remainingDebt > 0 ? 'warning' : 'success'} className="w-full justify-between rounded-ds-md font-mono text-sm">
                     <span className="font-sans text-xs font-semibold uppercase tracking-wider">{invoiceT('ui.remaining')}</span>
-                    {remainingDebt.toFixed(3)} {storeSettings?.currency || 'DT'}
+                    {formatNumber(remainingDebt, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}
                   </Badge>
 
                   {/* Warning de paiement pour client passager */}
                   {!selectedClient && Math.abs(paidAmount - cartTotal) > 0.001 && (
                     <div className="flex items-center gap-1.5 rounded-ds-md border border-ds-danger/20 bg-ds-danger-soft p-3 text-sm font-semibold text-ds-danger animate-in fade-in duration-200">
                       <AlertCircle className="w-4 h-4 shrink-0" />
-                      <span>{invoiceT('ui.walkInPaymentWarning', { amount: cartTotal.toFixed(3), currency: storeSettings?.currency || 'DT' })}</span>
+                      <span>{invoiceT('ui.walkInPaymentWarning', { amount: formatNumber(cartTotal, { minimumFractionDigits: 3, maximumFractionDigits: 3 }), currency: storeSettings?.currency || 'DT' })}</span>
                     </div>
                   )}
 
@@ -1686,8 +1686,8 @@ export default function Invoices({ userProfile }: InvoicesProps) {
                             {formatProductDetails(item.attributes, item.serialNumber) && <div className="mt-1 text-[10px] font-normal text-ds-muted">{formatProductDetails(item.attributes, item.serialNumber)}</div>}
                           </td>
                           <td className="px-4 py-2.5 sm:px-6 sm:py-3 text-center font-mono">{item.quantity}</td>
-                          <td className="px-4 py-2.5 sm:px-6 sm:py-3 text-end font-mono">{item.price.toFixed(3)}</td>
-                          <td className="px-4 py-2.5 text-end font-mono font-black text-ds-brand sm:px-6 sm:py-3">{item.total.toFixed(3)} {storeSettings?.currency || 'DT'}</td>
+                          <td className="px-4 py-2.5 sm:px-6 sm:py-3 text-end font-mono">{formatNumber(item.price, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</td>
+                          <td className="px-4 py-2.5 text-end font-mono font-black text-ds-brand sm:px-6 sm:py-3">{formatNumber(item.total, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -1699,27 +1699,27 @@ export default function Invoices({ userProfile }: InvoicesProps) {
                 {selectedInvoice.tvaEnabled === true && selectedInvoice.tva > 0 && (
                   <div className="flex justify-between items-center opacity-70">
                     <span className="text-xs uppercase tracking-widest font-bold">{invoiceT('ui.subtotal')}</span>
-                    <span className="font-mono text-xs sm:text-sm">{(selectedInvoice.subtotal ?? selectedInvoice.total - selectedInvoice.tva).toFixed(3)} {storeSettings?.currency || 'DT'}</span>
+                    <span className="font-mono text-xs sm:text-sm">{formatNumber(selectedInvoice.subtotal ?? selectedInvoice.total - selectedInvoice.tva, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}</span>
                   </div>
                 )}
                 {selectedInvoice.tvaEnabled === true && selectedInvoice.tva > 0 && (
                   <div className="flex justify-between items-center opacity-70">
                     <span className="text-xs uppercase tracking-widest font-bold">{invoiceT('ui.vat', { rate: storeSettings?.tva || 0 })}</span>
-                    <span className="font-mono text-xs sm:text-sm">{selectedInvoice.tva.toFixed(3)} {storeSettings?.currency || 'DT'}</span>
+                    <span className="font-mono text-xs sm:text-sm">{formatNumber(selectedInvoice.tva, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center pt-2 border-t border-white/10">
                   <span className="text-xs uppercase tracking-widest font-bold">{invoiceT('ui.generalTotal')}</span>
-                  <span className="text-base font-black font-mono text-ds-brand sm:text-2xl">{selectedInvoice.total.toFixed(3)} {storeSettings?.currency || 'DT'}</span>
+                  <span className="text-base font-black font-mono text-ds-brand sm:text-2xl">{formatNumber(selectedInvoice.total, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}</span>
                 </div>
                 <div className="flex justify-between items-center opacity-70">
                   <span className="text-xs uppercase tracking-widest font-bold">{invoiceT('ui.paid')}</span>
-                  <span className="font-mono text-xs sm:text-sm">{selectedInvoice.paid.toFixed(3)} {storeSettings?.currency || 'DT'}</span>
+                  <span className="font-mono text-xs sm:text-sm">{formatNumber(selectedInvoice.paid, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}</span>
                 </div>
                 {selectedInvoice.debt > 0 && (
                   <div className="flex justify-between items-center border-t border-ds-border pt-2 text-ds-warning">
                     <span className="text-xs font-bold uppercase tracking-widest">{invoiceT('ui.remaining')}</span>
-                    <span className="text-base sm:text-xl font-black font-mono">{selectedInvoice.debt.toFixed(3)} {storeSettings?.currency || 'DT'}</span>
+                    <span className="text-base sm:text-xl font-black font-mono">{formatNumber(selectedInvoice.debt, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}</span>
                   </div>
                 )}
               </Card>

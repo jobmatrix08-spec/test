@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Volume2 } from 'lucide-react';
 import type { StartupContentKind, StartupContentMode } from '../lib/startupRotation';
 import { Button, Card, Select } from './ui';
+import { useTranslation } from 'react-i18next';
 
 export type StartupReciter = 'ar.alafasy' | 'ar.abdurrahmaansudais' | 'ar.husary' | 'ar.minshawi';
 
@@ -84,15 +85,16 @@ export function StartupPreferencesPanel({
   preferences: StartupPreferences;
   onChange: (updates: Partial<StartupPreferences>) => void;
 }) {
+  const { t } = useTranslation('settings');
   return (
     <Card className="space-y-5">
       <div>
-        <h2 className="text-sm font-bold text-ds-text">Mes préférences personnelles</h2>
-        <p className="mt-1 text-sm text-ds-muted">Ces choix s’appliquent uniquement à votre compte sur cet appareil.</p>
+        <h2 className="text-sm font-bold text-ds-text">{t('startup.preferences.title')}</h2>
+        <p className="mt-1 text-sm text-ds-muted">{t('startup.preferences.description')}</p>
       </div>
 
       <label className="flex min-h-11 items-center justify-between gap-3 rounded-ds-md border border-ds-border bg-ds-surface-2 p-3 text-sm font-semibold text-ds-text">
-        Afficher l’écran au démarrage
+        {t('startup.preferences.enabled')}
         <input
           type="checkbox"
           checked={preferences.enabled}
@@ -102,21 +104,21 @@ export function StartupPreferencesPanel({
       </label>
 
       <Select
-        label="Contenu affiché"
+        label={t('startup.preferences.content')}
         value={preferences.mode}
         onChange={(event) => {
           const value = event.target.value;
           if (value === 'verse' || value === 'dhikr' || value === 'both') onChange({ mode: value });
         }}
       >
-        <option value="verse">Versets</option>
-        <option value="dhikr">Adhkar</option>
-        <option value="both">Versets et adhkar</option>
+        <option value="verse">{t('startup.preferences.verses')}</option>
+        <option value="dhikr">{t('startup.preferences.adhkar')}</option>
+        <option value="both">{t('startup.preferences.both')}</option>
       </Select>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Select
-          label="Récitateur"
+          label={t('startup.preferences.reciter')}
           value={preferences.reciter}
           onChange={(event) => {
             const reciter = RECITERS.find((option) => option.value === event.target.value);
@@ -126,7 +128,7 @@ export function StartupPreferencesPanel({
           {RECITERS.map((reciter) => <option key={reciter.value} value={reciter.value}>{reciter.label}</option>)}
         </Select>
         <label className="flex min-h-11 items-center justify-between gap-3 rounded-ds-md border border-ds-border bg-ds-surface-2 px-3 text-sm font-semibold text-ds-text">
-          Activer la lecture audio
+          {t('startup.preferences.audioEnabled')}
           <input
             type="checkbox"
             checked={preferences.audioEnabled}
@@ -138,7 +140,7 @@ export function StartupPreferencesPanel({
 
       <label className="block space-y-2 text-sm font-semibold text-ds-text">
         <span className="flex items-center justify-between gap-2">
-          <span className="flex items-center gap-2"><Volume2 className="h-4 w-4 text-ds-brand" /> Volume</span>
+          <span className="flex items-center gap-2"><Volume2 className="h-4 w-4 text-ds-brand" /> {t('startup.preferences.volume')}</span>
           <span>{Math.round(preferences.volume * 100)} %</span>
         </span>
         <input
@@ -154,7 +156,7 @@ export function StartupPreferencesPanel({
 
       <label className="block space-y-2 text-sm font-semibold text-ds-text">
         <span className="flex items-center justify-between gap-2">
-          <span>Taille du texte arabe</span>
+          <span>{t('startup.preferences.arabicTextSize')}</span>
           <span>{preferences.fontSize} px</span>
         </span>
         <input
@@ -180,6 +182,7 @@ export function StartupAudioButton({
   url: string | null;
   volume: number;
 }) {
+  const { t } = useTranslation('settings');
   const [message, setMessage] = useState('');
   const [playing, setPlaying] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -203,7 +206,7 @@ export function StartupAudioButton({
   const play = async () => {
     if (!enabled) return;
     if (!url || !audioRef.current) {
-      setMessage('Audio indisponible hors ligne ou pour ce contenu.');
+      setMessage(t('startup.audio.unavailable'));
       return;
     }
     setLoading(true);
@@ -222,7 +225,7 @@ export function StartupAudioButton({
         return;
       } catch (error) {
         if (error instanceof Error && error.name === 'NotAllowedError') {
-          setMessage('Touchez à nouveau Écouter pour autoriser la lecture audio.');
+          setMessage(t('startup.audio.retryPermission'));
           break;
         }
         if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 500 * (2 ** attempt)));
@@ -230,19 +233,19 @@ export function StartupAudioButton({
     }
     manualPlayAttempt.current = false;
     setLoading(false);
-    setMessage((previous) => previous || 'Lecture indisponible. Réessayez lorsque le réseau sera rétabli.');
+    setMessage((previous) => previous || t('startup.audio.unavailableRetry'));
   };
 
   const retryPlayback = () => {
     if (manualPlayAttempt.current || retryTimer.current !== null) return;
     setPlaying(false);
     if (!enabled || !url || retryCount.current >= 3) {
-      setMessage('Lecture indisponible. Réessayez lorsque le réseau sera rétabli.');
+      setMessage(t('startup.audio.unavailableRetry'));
       return;
     }
     const delay = 500 * (2 ** retryCount.current);
     retryCount.current += 1;
-    setMessage(`Nouvelle tentative audio (${retryCount.current}/3)…`);
+    setMessage(t('startup.audio.retrying', { count: retryCount.current }));
     retryTimer.current = window.setTimeout(() => {
       retryTimer.current = null;
       const audio = audioRef.current;
@@ -280,7 +283,7 @@ export function StartupAudioButton({
           void play();
         }
       }}>
-        {loading ? 'Connexion…' : playing ? 'Arrêter l’audio' : 'Écouter'}
+        {loading ? t('startup.audio.connecting') : playing ? t('startup.audio.stop') : t('startup.audio.listen')}
       </Button>
       {message && <p role="status" className="text-center text-xs text-ds-muted">{message}</p>}
     </div>

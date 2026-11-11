@@ -18,7 +18,8 @@ import {
 import { cn, isSparePart, decodeAzertyBarcode } from '../lib/utils';
 import { getRepairStockChanges, getRepairStockMovementId } from '../lib/repairInventory';
 import { computeTotals, normalizeFinancialSettings } from '../lib/financial';
-import { format } from 'date-fns';
+import { formatDateTime, formatNumber } from '../i18n/format';
+import type { TFunction } from 'i18next';
 import { RepairTicket } from './RepairTicket';
 import { can } from '../lib/permissions';
 import { apiFetch } from '../lib/api';
@@ -76,13 +77,16 @@ function getRepairMessageTemplate(repair: Repair): MessageTemplateKey {
   return repair.debt > 0 ? 'rappel_paiement' : 'appareil_recu';
 }
 
-async function logRepairMessage(repair: Repair, channel: string, userLabel: string): Promise<void> {
+async function logRepairMessage(repair: Repair, channel: string, userLabel: string, t: TFunction<'repairs'>): Promise<void> {
   const sentAt = new Date();
-  const formattedDate = format(sentAt, 'dd/MM/yyyy HH:mm');
   await updateDoc(doc(db, 'repairs', repair.id), {
     logs: arrayUnion({
       date: sentAt.toISOString(),
-      note: `Message envoyé le ${formattedDate} par ${userLabel} via ${channel} (ouverture de l’application, envoi non confirmé).`,
+      note: t('logs.messageSent', {
+        date: formatDateTime(sentAt, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }),
+        user: userLabel,
+        channel,
+      }),
       by: userLabel,
     } satisfies RepairLog),
   });
@@ -110,14 +114,15 @@ async function applyRepairStockChanges(
     stockVersion: number;
     movementType: 'repair_part_adjustment' | 'repair_delete_return';
     userLabel: string;
-  }
+  },
+  t: TFunction<'repairs'>
 ): Promise<number> {
   const changes = getRepairStockChanges(args.previousParts, args.nextParts);
   if (changes.length === 0) return args.stockVersion;
 
   const version = args.stockVersion + 1;
   const userId = auth.currentUser?.uid;
-  if (!userId) throw new Error('Session utilisateur absente : impossible d’enregistrer le mouvement de stock.');
+  if (!userId) throw new Error(t('errors.stockSessionMissing'));
 
   const productRefs = new Map(changes.map(change => [
     `${change.inventoryCollection}:${change.productId}`,
@@ -143,29 +148,29 @@ async function applyRepairStockChanges(
     const key = `${change.inventoryCollection}:${change.productId}`;
     const productSnapshot = productSnapshots.get(key)!;
     if (!productSnapshot.exists()) {
-      throw new Error(`La pièce "${change.name}" n’existe plus dans le stock.`);
+      throw new Error(t('errors.stockPartMissing', { name: change.name }));
     }
     const product = productSnapshot.data();
-    if (!product) throw new Error(`Impossible de lire le stock de "${change.name}".`);
+    if (!product) throw new Error(t('errors.stockUnavailableRead', { name: change.name }));
     const currentStock = Number(product.stock);
     if (!Number.isInteger(currentStock) || currentStock < 0) {
-      throw new Error(`Le stock de "${change.name}" est invalide.`);
+      throw new Error(t('errors.stockInvalid', { name: change.name }));
     }
     if ((product.ownerId || args.ownerId) !== args.ownerId) {
-      throw new Error(`La pièce "${change.name}" n’appartient pas à ce magasin.`);
+      throw new Error(t('errors.stockWrongStore', { name: change.name }));
     }
     if (currentStock + change.delta < 0) {
-      throw new Error(`Stock insuffisant pour "${change.name}" : ${currentStock} disponible(s).`);
+      throw new Error(t('errors.stockInsufficient', { name: change.name, count: formatNumber(currentStock) }));
     }
     if (movementSnapshots.get(key)!.exists()) {
-      throw new Error('Un mouvement de stock existe déjà pour cette version. Rechargez la fiche avant de réessayer.');
+      throw new Error(t('errors.duplicateStockMovement'));
     }
   }
 
   for (const change of changes) {
     const key = `${change.inventoryCollection}:${change.productId}`;
     const product = productSnapshots.get(key)!.data();
-    if (!product) throw new Error(`Impossible de lire le stock de "${change.name}".`);
+    if (!product) throw new Error(t('errors.stockUnavailableRead', { name: change.name }));
     const movementRef = movementRefs.get(key)!;
     const movementId = movementRef.id;
     transaction.update(productRefs.get(key)!, {
@@ -207,7 +212,7 @@ export async function generateNextRepairNumber(ownerId: string): Promise<string>
 
 // Suppression d'une réparation + restitution du stock des pièces utilisées,
 // partagée entre le module Réparations et son Historique.
-export async function deleteRepairAndRestoreStock(r: Repair): Promise<void> {
+export async function deleteRepairAndRestoreStock(r: Repair, t: TFunction<'repairs'>): Promise<void> {
   await runTransaction(db, async (tx) => {
     const repairRef = doc(db, 'repairs', r.id);
     const repairSnap = await tx.get(repairRef);
@@ -222,17 +227,18 @@ export async function deleteRepairAndRestoreStock(r: Repair): Promise<void> {
       nextParts: [],
       stockVersion: Number(current.stockVersion) || 0,
       movementType: 'repair_delete_return',
-      userLabel: auth.currentUser?.email || 'Administrateur',
-    });
+      userLabel: auth.currentUser?.email || t('common.admin'),
+    }, t);
     tx.delete(repairRef);
   });
 }
 
 export default function Repairs({ userProfile }: RepairsProps) {
-  const { t } = useTranslation('repairs');
+  const { t, i18n } = useTranslation('repairs');
+  const isRtl = i18n.dir() === 'rtl';
   const brand = useBrand();
   const ownerId = userProfile?.ownerId || userProfile?.uid || 'no_user_auth';
-  const currentUserLabel = userProfile?.name || userProfile?.email || 'Utilisateur';
+  const currentUserLabel = userProfile?.name || userProfile?.email || t('common.user');
   const isAdmin = userProfile?.role === 'admin';
   const canViewProductBuyPrice = can(userProfile, 'products', 'viewBuyPrice');
   const canViewPartBuyPrice = can(userProfile, 'pieces', 'viewBuyPrice');
@@ -543,14 +549,14 @@ export default function Repairs({ userProfile }: RepairsProps) {
   const generateRepairNumber = async (): Promise<string> => generateNextRepairNumber(ownerId);
 
   const handleDelete = async (r: Repair) => {
-    if (userProfile?.role !== 'admin') { setError("Seul un administrateur peut supprimer une réparation."); return; }
-    if (!window.confirm(`Supprimer la réparation ${r.number} ? Les pièces utilisées seront restituées au stock.`)) return;
+    if (userProfile?.role !== 'admin') { setError(t('errors.adminDeleteOnly')); return; }
+    if (!window.confirm(t('confirmations.deleteRepair', { number: r.number }))) return;
     try {
-      await deleteRepairAndRestoreStock(r);
-      setSuccess(`Réparation ${r.number} supprimée, stock restitué.`);
+      await deleteRepairAndRestoreStock(r, t);
+      setSuccess(t('notifications.repairDeleted', { number: r.number }));
       setDetailRepair(null);
     } catch (e: any) {
-      setError("Échec de la suppression : " + (e.message || e));
+      setError(t('errors.deleteFailed', { message: e.message || e }));
     }
   };
 
@@ -559,9 +565,7 @@ export default function Repairs({ userProfile }: RepairsProps) {
   const separateLegacyRepairCosts = async () => {
     if (!isAdmin || migratingCosts || legacyRepairsNeedingCostSeparation.length === 0) return;
     const count = legacyRepairsNeedingCostSeparation.length;
-    if (!window.confirm(
-      `Archiver les coûts des ${count} anciennes fiches dans repair_costs et retirer les prix d’achat des fiches lisibles par l’atelier ? Les montants seront conservés dans la collection protégée.`
-    )) return;
+    if (!window.confirm(t('confirmations.separateLegacyCosts', { count: formatNumber(count) }))) return;
     setMigratingCosts(true);
     setError(null);
     let completed = 0;
@@ -601,9 +605,12 @@ export default function Repairs({ userProfile }: RepairsProps) {
         });
         completed += 1;
       }
-      setSuccess(`Séparation terminée : ${completed} fiche(s) traitée(s). Les coûts archivés restent réservés à l’administration.`);
+      setSuccess(t('notifications.costSeparationComplete', { count: formatNumber(completed) }));
     } catch (issue) {
-      setError(`Séparation interrompue après ${completed} fiche(s) : ${issue instanceof Error ? issue.message : String(issue)}. Vous pouvez relancer l’opération; elle est idempotente.`);
+      setError(t('errors.costSeparationInterrupted', {
+        count: formatNumber(completed),
+        message: issue instanceof Error ? issue.message : String(issue),
+      }));
     } finally {
       setMigratingCosts(false);
     }
@@ -628,7 +635,7 @@ export default function Repairs({ userProfile }: RepairsProps) {
           { label: t('stats.active'), value: stats.active, icon: Clock },
           { label: t('stats.ready'), value: stats.ready, icon: CheckCircle },
           { label: t('stats.todayCount'), value: todayCount, icon: Package, onClick: () => setStatsModal('count') },
-          { label: t('stats.todayProfit'), value: todayProfit === null ? '—' : `${todayProfit.toFixed(3)} ${currency}`, icon: DollarSign, onClick: () => setStatsModal('profit'), profit: true },
+          { label: t('stats.todayProfit'), value: todayProfit === null ? '—' : `${formatNumber(todayProfit, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ${currency}`, icon: DollarSign, onClick: () => setStatsModal('profit'), profit: true },
         ].filter((s: any) => canViewCosts || s.label !== t('stats.todayProfit')).map((s: any, i) => {
           const Icon = s.icon;
           return (
@@ -715,7 +722,10 @@ export default function Repairs({ userProfile }: RepairsProps) {
           <div>
             <p className="font-bold text-ds-warning">{t('costMigration.title')}</p>
             <p className="mt-1 text-sm text-ds-warning">
-              {t('costMigration.description', { count: legacyRepairsNeedingCostSeparation.length })}
+              {t('costMigration.description', {
+                count: legacyRepairsNeedingCostSeparation.length,
+                countFormatted: formatNumber(legacyRepairsNeedingCostSeparation.length),
+              })}
             </p>
           </div>
           <button onClick={() => void separateLegacyRepairCosts()} disabled={migratingCosts} className="min-h-11 shrink-0 rounded-full bg-ds-brand px-5 text-sm font-bold text-ds-brand-contrast transition-colors hover:bg-ds-brand-hover disabled:opacity-50">
@@ -752,7 +762,7 @@ export default function Repairs({ userProfile }: RepairsProps) {
                   <span className="font-mono text-sm font-bold text-ds-text">{r.number}</span>
                   <RepairStatusBadge status={r.status} />
                   {r.warrantyUntil && new Date(r.warrantyUntil) > new Date() && (
-                    <span className="flex items-center gap-1 text-[10px] font-black text-ds-text-muted"><Shield className="h-3 w-3" /> Garantie</span>
+                    <span className="flex items-center gap-1 text-[10px] font-black text-ds-text-muted"><Shield className="h-3 w-3" /> {t('detail.warranty')}</span>
                   )}
                 </div>
                 <p className="mt-0.5 truncate text-sm font-bold text-ds-text">
@@ -760,26 +770,26 @@ export default function Repairs({ userProfile }: RepairsProps) {
                 </p>
                 <div className="mt-1 flex items-center gap-3 text-xs font-medium text-ds-text-muted">
                   <span className="flex items-center gap-1"><User className="w-3 h-3" /> {r.clientName || t('list.noClient')}</span>
-                  {r.date?.toDate && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {format(r.date.toDate(), 'dd/MM/yyyy HH:mm')}</span>}
+                  {r.date?.toDate && <span className="flex items-center gap-1"><Calendar className="w-3 h-3" />                   {formatDateTime(r.date.toDate(), { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>}
                 </div>
                 <div className="mt-2">
                   <MessageComposer
                     phone={r.clientPhone}
-                    clientName={r.clientName || 'Client'}
+                    clientName={r.clientName || t('form.client')}
                     appareil={`${r.deviceBrand || ''} ${r.deviceModel || ''}`.trim()}
                     numero={r.number}
-                    montantRestant={`${(Number(r.debt) || 0).toFixed(3)} ${currency}`}
+                    montantRestant={`${formatNumber(Number(r.debt) || 0, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ${currency}`}
                     nomMagasin={settings?.storeName || brand.storeName}
                     indicatif={settings?.whatsappCountryCode || '216'}
                     templates={settings?.messageTemplates}
                     defaultTemplate={getRepairMessageTemplate(r)}
-                    onLog={(channel) => logRepairMessage(r, channel, currentUserLabel)}
+                    onLog={(channel) => logRepairMessage(r, channel, currentUserLabel, t)}
                   />
                 </div>
               </div>
               <div className="flex w-full min-w-0 items-center justify-between gap-2 sm:w-auto sm:shrink-0 sm:justify-start">
-                <p className="font-display font-bold tabular-nums text-ds-text">{(r.total || 0).toFixed(3)} {currency}</p>
-                {r.debt > 0 && <p className="text-[11px] font-bold text-ds-warning">{t('list.remaining', { amount: r.debt.toFixed(3) })}</p>}
+                <p className="font-display font-bold tabular-nums text-ds-text">{formatNumber(r.total || 0, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</p>
+                {r.debt > 0 && <p className="text-[11px] font-bold text-ds-warning">{t('list.remaining', { amount: formatNumber(r.debt, { minimumFractionDigits: 3, maximumFractionDigits: 3 }) })}</p>}
                 <div className="flex items-center justify-end gap-1 mt-1">
                   {userProfile?.role === 'admin' && (
                     <button
@@ -790,7 +800,7 @@ export default function Repairs({ userProfile }: RepairsProps) {
                       <Trash2 className="w-4 h-4" />
                     </button>
                   )}
-                  <ChevronRight className="h-4 w-4 text-ds-text-muted transition-colors" />
+                  <ChevronRight className={`h-4 w-4 text-ds-text-muted transition-colors ${isRtl ? 'rotate-180' : ''}`} />
                 </div>
               </div>
             </div>
@@ -810,7 +820,7 @@ export default function Repairs({ userProfile }: RepairsProps) {
                 <History className="h-5 w-5 text-ds-text-muted" />
                 {statsModal === 'count' ? t('stats.byDay') : t('stats.profitByDay')}
               </h3>
-              <button onClick={() => setStatsModal(null)} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ds-text-muted hover:bg-ds-surface-2"><X className="h-5 w-5" /></button>
+              <button onClick={() => setStatsModal(null)} aria-label={t('accessibility.closeStats')} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ds-text-muted hover:bg-ds-surface-2"><X className="h-5 w-5" /></button>
             </div>
             <div className="overflow-x-auto overflow-y-auto p-4">
               {statsModal === 'count' ? (
@@ -827,15 +837,15 @@ export default function Repairs({ userProfile }: RepairsProps) {
                     <tbody>
                       {dailyRepairCounts.map(d => (
                         <tr key={d.dateStr} className="border-b border-ds-border last:border-0">
-                          <td className="py-2 font-semibold text-ds-text">{format(new Date(d.dateStr), 'dd/MM/yyyy')}</td>
-                          <td className="py-2 text-end font-bold text-ds-text">{d.count}</td>
+                          <td className="py-2 font-semibold text-ds-text">{formatDateTime(new Date(d.dateStr), { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
+                          <td className="py-2 text-end font-bold text-ds-text">{formatNumber(d.count)}</td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
                       <tr className="border-t border-ds-border">
                         <td className="py-2 text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('ticket.total')}</td>
-                        <td className="py-2 text-end font-bold text-ds-text">{stats.total}</td>
+                        <td className="py-2 text-end font-bold text-ds-text">{formatNumber(stats.total)}</td>
                       </tr>
                     </tfoot>
                   </table>
@@ -857,11 +867,11 @@ export default function Repairs({ userProfile }: RepairsProps) {
                     <tbody>
                       {dailyNetProfit.map(d => (
                         <tr key={d.dateStr} className="border-b border-ds-border last:border-0">
-                          <td className="py-2 font-semibold text-ds-text">{format(new Date(d.dateStr), 'dd/MM/yyyy')}</td>
-                          <td className="py-2 text-end text-ds-text-muted">{d.count}</td>
-                          <td className="py-2 text-end text-ds-text-muted">{d.revenue.toFixed(3)}</td>
-                          <td className="py-2 text-end text-ds-text-muted">{d.complete ? d.partsCost.toFixed(3) : '—'}</td>
-                          <td className={cn("py-2 text-end font-bold", !d.complete ? 'text-ds-text-muted' : d.profit < 0 ? 'text-ds-danger' : 'text-ds-success')}>{d.complete ? d.profit.toFixed(3) : t('stats.costsMissing')}</td>
+                          <td className="py-2 font-semibold text-ds-text">{formatDateTime(new Date(d.dateStr), { day: '2-digit', month: '2-digit', year: 'numeric' })}</td>
+                          <td className="py-2 text-end text-ds-text-muted">{formatNumber(d.count)}</td>
+                          <td className="py-2 text-end text-ds-text-muted">{formatNumber(d.revenue, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</td>
+                          <td className="py-2 text-end text-ds-text-muted">{d.complete ? formatNumber(d.partsCost, { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : '—'}</td>
+                          <td className={cn("py-2 text-end font-bold", !d.complete ? 'text-ds-text-muted' : d.profit < 0 ? 'text-ds-danger' : 'text-ds-success')}>{d.complete ? formatNumber(d.profit, { minimumFractionDigits: 3, maximumFractionDigits: 3 }) : t('stats.costsMissing')}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -870,7 +880,7 @@ export default function Repairs({ userProfile }: RepairsProps) {
                         <td className="py-2 text-xs font-black uppercase tracking-wider text-ds-text-muted" colSpan={4}>{t('ticket.total')}</td>
                         <td className="py-2 text-end font-bold text-ds-text">
                           {dailyNetProfit.every(d => d.complete)
-                            ? `${dailyNetProfit.reduce((s, d) => s + d.profit, 0).toFixed(3)} ${currency}`
+                            ? `${formatNumber(dailyNetProfit.reduce((s, d) => s + d.profit, 0), { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ${currency}`
                             : t('stats.historicalCostsMissing')}
                         </td>
                       </tr>
@@ -1036,7 +1046,7 @@ export function RepairForm({
     // la quantité totale disponible pour cette pièce est donc stock + déjà réservé.
     const maxAvailable = (p.stock || 0) + (isEdit ? currentQty : 0);
     if (maxAvailable <= currentQty) {
-      showError(`Stock épuisé pour "${p.name}" — impossible d'ajouter cette pièce.`);
+      showError(t('errors.stockExhaustedForPart', { name: p.name }));
       return;
     }
     if (existing) {
@@ -1060,7 +1070,10 @@ export function RepairForm({
     const currentQty = existing ? existing.quantity : 0;
     const maxAvailable = product ? (product.stock || 0) + (isEdit ? currentQty : 0) : Infinity;
     if (qty > maxAvailable) {
-      showError(`Stock insuffisant pour "${product?.name || 'cette pièce'}" — maximum disponible : ${maxAvailable}.`);
+      showError(t('errors.stockInsufficientForPart', {
+        name: product?.name || t('form.genericPart'),
+        count: formatNumber(maxAvailable),
+      }));
       setParts(parts.map(p => p.productId === id ? { ...p, quantity: maxAvailable, total: maxAvailable * p.unitPrice } : p));
       return;
     }
@@ -1097,29 +1110,29 @@ export function RepairForm({
           setClientId(newClientRef.id);
           setClientSearch('');
         } catch (e: any) {
-          showError("Impossible de créer le client : " + (e.message || e));
+          showError(t('errors.clientCreateFailed', { message: e.message || e }));
           return;
         }
       }
     }
     if (!effectiveClientId) {
       showError(clientSearch.trim()
-        ? "Plusieurs clients correspondent — cliquez sur le bon client dans la liste de résultats."
-        : "Sélectionnez un client.");
+        ? t('errors.multipleClients')
+        : t('errors.selectClient'));
       return;
     }
     if (status === 'livre' && repair?.status !== 'livre' && !canCash) {
-      showError("La livraison et l'encaissement sont réservés à l'administrateur ou à la vendeuse.");
+      showError(t('errors.deliveryCashPermission'));
       return;
     }
     if (!isEdit && paidValue > 0 && !cashSession) {
       showError(cashSessionLoading
-        ? 'Vérification de la caisse en cours…'
-        : 'Aucune caisse ouverte. Ouvrez une session avant d’encaisser cette réparation.');
+        ? t('errors.checkingCashSession')
+        : t('errors.noCashSession'));
       return;
     }
-    if (!deviceBrand.trim()) { showError("Indiquez la marque de l'appareil."); return; }
-    if (!deviceModel.trim()) { showError("Indiquez le modèle de l'appareil."); return; }
+    if (!deviceBrand.trim()) { showError(t('errors.enterDeviceBrand')); return; }
+    if (!deviceModel.trim()) { showError(t('errors.enterDeviceModel')); return; }
     setSaving(true);
     try {
       const client = clients.find(c => c.id === effectiveClientId);
@@ -1143,8 +1156,8 @@ export function RepairForm({
       const newLog: RepairLog = {
         date: now,
         note: isEdit
-          ? (statusChanged ? `Statut → ${REPAIR_STATUS_LABELS[status]}` : 'Modification de la fiche')
-          : 'Réparation créée',
+          ? (statusChanged ? t('logs.statusChanged', { status: t(`status.${status}`) }) : t('logs.repairUpdated'))
+          : t('logs.repairCreated'),
         by: currentUserLabel,
       };
       // On n'ajoute le champ status au log que s'il a changé (Firestore refuse undefined).
@@ -1208,9 +1221,9 @@ export function RepairForm({
         await runTransaction(db, async (tx) => {
           const repairRef = doc(db, 'repairs', repair.id);
           const repairSnap = await tx.get(repairRef);
-          if (!repairSnap.exists()) throw new Error('La réparation n’existe plus.');
+          if (!repairSnap.exists()) throw new Error(t('errors.repairMissing'));
           const current = repairSnap.data();
-          if ((current.ownerId || ownerId) !== ownerId) throw new Error('Cette réparation appartient à un autre magasin.');
+          if ((current.ownerId || ownerId) !== ownerId) throw new Error(t('errors.repairWrongStore'));
           const additionalPaid = Math.max(0, (Number(payload.paid) || 0) - (Number(current.paid) || 0));
           const activeSession = additionalPaid > 0
             ? await requireOpenCashSession(tx, userProfile?.uid || auth.currentUser?.uid || '', ownerId)
@@ -1224,7 +1237,7 @@ export function RepairForm({
             stockVersion: Number(current.stockVersion) || 0,
             movementType: 'repair_part_adjustment',
             userLabel: currentUserLabel,
-          });
+          }, t);
           tx.update(repairRef, {
             ...payload,
             ...(activeSession ? { sessionId: activeSession.id } : {}),
@@ -1237,11 +1250,11 @@ export function RepairForm({
             });
           }
         });
-        let message = `Réparation ${repair.number} mise à jour.`;
+        let message = t('notifications.repairUpdated', { number: repair.number });
         try {
           await apiFetch(`/financial/repairs/${encodeURIComponent(repair.id)}/costs`, { method: 'POST' });
         } catch {
-          message += " Attention : le coût d'achat n'a pas pu être figé.";
+          message += ` ${t('notifications.costSnapshotWarning')}`;
         }
         onSaved(message);
       } else {
@@ -1250,7 +1263,7 @@ export function RepairForm({
         await runTransaction(db, async (tx) => {
           const existingRepair = await tx.get(repairRef);
           if (existingRepair.exists()) {
-            throw new Error('Cette demande a déjà été enregistrée. Rechargez la liste des réparations.');
+            throw new Error(t('errors.duplicateRepairSave'));
           }
           const activeSession = paidValue > 0
             ? await requireOpenCashSession(tx, userProfile?.uid || auth.currentUser?.uid || '', ownerId)
@@ -1264,7 +1277,7 @@ export function RepairForm({
             stockVersion: 0,
             movementType: 'repair_part_adjustment',
             userLabel: currentUserLabel,
-          });
+          }, t);
           tx.set(repairRef, {
             ...payload,
             ...(activeSession ? { sessionId: activeSession.id } : {}),
@@ -1282,13 +1295,13 @@ export function RepairForm({
         try {
           await apiFetch(`/financial/repairs/${encodeURIComponent(repairRef.id)}/costs`, { method: 'POST' });
         } catch {
-          showError("Réparation enregistrée, mais le coût d'achat des pièces n'a pas pu être figé.");
+          showError(t('errors.costSnapshotFailed'));
         }
         // Ouvre le bon de dépôt pour impression immédiate (au lieu de fermer directement).
         setPrintingRepair({ ...payload, id: repairRef.id, number, date: { toDate: () => new Date() } } as Repair);
       }
     } catch (e: any) {
-      showError("Erreur d'enregistrement : " + (e.message || e));
+      showError(t('errors.saveFailed', { message: e.message || e }));
     } finally {
       setSaving(false);
     }
@@ -1302,7 +1315,7 @@ export function RepairForm({
             <Wrench className="h-5 w-5 text-ds-text" />
             {isEdit ? t('form.editTitle', { number: repair?.number }) : t('page.newRepair')}
           </h2>
-          <button onClick={onClose} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ds-text-muted hover:bg-ds-surface-2"><X className="h-5 w-5" /></button>
+          <button onClick={onClose} aria-label={t('accessibility.closeForm')} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ds-text-muted hover:bg-ds-surface-2"><X className="h-5 w-5" /></button>
         </div>
 
         {localError && (
@@ -1352,7 +1365,7 @@ export function RepairForm({
             <div>
               <label className="mb-2 block text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('form.brand')}</label>
               <input list="repair-device-brands" value={deviceBrand} onChange={event => setDeviceBrand(event.target.value)}
-                placeholder="Samsung, Apple"
+                placeholder={t('form.brandExample')}
                 className="min-h-11 w-full rounded-xl border border-ds-border bg-ds-surface-2 px-4 py-2.5 text-base outline-none focus:border-ds-brand focus:ring-2 focus:ring-ds-brand/20" />
               <datalist id="repair-device-brands">
                 {['Samsung', 'Apple', 'Huawei', 'Xiaomi', 'Oppo', 'Infinix', 'Nokia'].map(brand => <option key={brand} value={brand} />)}
@@ -1361,7 +1374,7 @@ export function RepairForm({
             <div>
               <label className="mb-2 block text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('form.model')}</label>
               <input list="repair-device-models" value={deviceModel} onChange={event => setDeviceModel(event.target.value)}
-                placeholder="Galaxy S21, iPhone 12"
+                placeholder={t('form.modelExample')}
                 className="min-h-11 w-full rounded-xl border border-ds-border bg-ds-surface-2 px-4 py-2.5 text-base outline-none focus:border-ds-brand focus:ring-2 focus:ring-ds-brand/20" />
               <datalist id="repair-device-models">
                 {['Galaxy S21', 'iPhone 12'].map(model => <option key={model} value={model} />)}
@@ -1435,7 +1448,7 @@ export function RepairForm({
                         }`}>
                         <span className={`font-bold ${outOfStock ? 'text-ds-danger' : 'text-ds-text'}`}>{p.name}</span>
                         <span className={`text-xs ${outOfStock ? 'font-bold text-ds-danger' : 'text-ds-text-muted'}`}>
-                          {outOfStock ? t('form.outOfStock') : t('form.stock', { count: p.stock })} · {p.sellPrice.toFixed(3)} {currency}
+                          {outOfStock ? t('form.outOfStock') : t('form.stock', { count: formatNumber(p.stock) })} · {formatNumber(p.sellPrice, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}
                         </span>
                       </button>
                     );
@@ -1456,8 +1469,8 @@ export function RepairForm({
                       onChange={(e) => updatePartPrice(p.productId, parseFloat(e.target.value) || 0)}
                       disabled={p.inventoryCollection === 'parts' ? !canEditPartSellPrice : !canEditProductSellPrice}
                       className="min-h-11 w-20 rounded-lg border border-ds-border bg-ds-surface px-2 py-1 text-end text-base" />
-                    <span className="w-20 text-end text-sm font-black tabular-nums text-ds-text">{p.total.toFixed(3)}</span>
-                    <button onClick={() => updatePartQty(p.productId, 0)} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ds-danger hover:bg-ds-danger-soft"><Trash2 className="h-4 w-4" /></button>
+                    <span className="w-20 text-end text-sm font-black tabular-nums text-ds-text">{formatNumber(p.total, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</span>
+                    <button onClick={() => updatePartQty(p.productId, 0)} aria-label={t('accessibility.removePart', { name: p.name })} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ds-danger hover:bg-ds-danger-soft"><Trash2 className="h-4 w-4" /></button>
                   </div>
                 ))}
               </div>
@@ -1466,31 +1479,31 @@ export function RepairForm({
 
           {/* Coûts */}
           <section className="grid grid-cols-1 gap-3 rounded-[20px] bg-ds-surface-2 p-4 sm:grid-cols-2">
-            <Field label={t('form.labor')} value={laborCost} onChange={setLaborCost} type="number" placeholder="0" full disabled={!canEditProductSellPrice} />
+            <Field label={t('form.labor')} value={laborCost} onChange={setLaborCost} type="number" placeholder={formatNumber(0)} full disabled={!canEditProductSellPrice} />
             {parts.length > 0 && (
               <div className="col-span-full flex items-center justify-between border-t border-ds-border pt-3 text-sm">
                 <span className="font-semibold text-ds-text-muted">{t('stats.partsCost')}</span>
-                <span className="font-black tabular-nums text-ds-text">{partsTotal.toFixed(3)} {currency}</span>
+                <span className="font-black tabular-nums text-ds-text">{formatNumber(partsTotal, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
               </div>
             )}
             <div className="col-span-full flex items-center justify-between border-t border-ds-border pt-3">
               <span className="font-black text-ds-text">{t('ticket.total').toLocaleUpperCase()}</span>
-              <span className="font-display text-lg font-bold tabular-nums text-ds-text">{total.toFixed(3)} {currency}</span>
+              <span className="font-display text-lg font-bold tabular-nums text-ds-text">{formatNumber(total, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
             </div>
             {financialSettings?.tvaEnabled === true && (
               <div className="col-span-full flex items-center justify-between text-xs text-ds-text-muted">
-                <span>{t('form.vat', { rate: financialSettings.tva || 0 })}</span>
-                <span>{repairTotals.tva.toFixed(3)} {currency}</span>
+                <span>{t('form.vat', { rate: formatNumber(financialSettings.tva || 0) })}</span>
+                <span>{formatNumber(repairTotals.tva, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
               </div>
             )}
-            <Field label={t('form.paidAdvance')} value={canCash ? paid : String(paidValue)} onChange={setPaid} type="number" placeholder="0" disabled={!canCash} />
+            <Field label={t('form.paidAdvance')} value={canCash ? paid : String(paidValue)} onChange={setPaid} type="number" placeholder={formatNumber(0)} disabled={!canCash} />
             <div>
               <label className="mb-2 block text-xs font-black uppercase tracking-wider text-ds-text-muted">{t('ticket.remaining')}</label>
               <div className={cn("min-h-11 rounded-xl px-4 py-2.5 text-sm font-black tabular-nums", debt > 0 ? "bg-ds-warning-soft text-ds-warning" : "bg-ds-surface-2 text-ds-text-muted")}>
-                {debt.toFixed(3)} {currency}
+                {formatNumber(debt, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}
               </div>
             </div>
-            <Field label={t('form.warrantyDays')} value={warrantyDays} onChange={setWarrantyDays} type="number" placeholder="30" />
+            <Field label={t('form.warrantyDays')} value={warrantyDays} onChange={setWarrantyDays} type="number" placeholder={formatNumber(30)} />
           </section>
         </div>
 
@@ -1510,7 +1523,7 @@ export function RepairForm({
             <CheckCircle className="mx-auto mb-3 h-12 w-12 text-ds-text-muted" />
             <h3 className="text-lg font-bold text-ds-text">{t('form.created')}</h3>
             <p className="mt-1 text-sm text-ds-text-muted">
-              N° <span className="font-mono font-bold text-ds-text">{printingRepair.number}</span>
+              {t('form.ticketNumber')} <span className="font-mono font-bold text-ds-text">{printingRepair.number}</span>
             </p>
             <p className="mt-2 text-xs text-ds-text-muted">{t('form.printing')}</p>
             <div className="flex gap-2 mt-5">
@@ -1518,10 +1531,10 @@ export function RepairForm({
                 onClick={() => window.print()}
                 className="min-h-11 flex-1 rounded-full border border-ds-border bg-ds-surface py-2.5 text-sm font-bold text-ds-text transition-colors hover:bg-ds-surface-2"
               >
-                Réimprimer
+                {t('form.reprint')}
               </button>
               <button
-                onClick={() => onSaved(`Réparation ${printingRepair.number} créée.`)}
+                onClick={() => onSaved(t('notifications.repairCreated', { number: printingRepair.number }))}
                 className="min-h-11 flex-1 rounded-full bg-ds-brand py-2.5 text-sm font-bold text-ds-brand-contrast transition-colors hover:bg-ds-brand-hover"
               >
                 {t('form.finish')}
@@ -1610,15 +1623,15 @@ export function RepairDetail({
           : movement.createdAt?.toDate?.().getTime() || 0;
       return dateOf(b) - dateOf(a);
     })),
-    error => setLocalError(`Impossible de charger l’historique des mouvements : ${error.message}`)
-  ), [ownerId, repair.id]);
+    error => setLocalError(t('errors.loadStockHistoryFailed', { message: error.message }))
+  ), [ownerId, repair.id, t]);
 
   const repairClient = clients.find(c => c.id === repair.clientId) || null;
 
   const changeStatus = async (newStatus: RepairStatus) => {
     if (newStatus === repair.status && !quickNote.trim()) return;
     if (newStatus === 'livre' && repair.status !== 'livre' && !canCash) {
-      showError("La livraison et l'encaissement sont réservés à l'administrateur ou à la vendeuse.");
+      showError(t('errors.deliveryCashPermission'));
       return;
     }
     // La livraison passe systématiquement par la caisse (encaissement/remise/crédit).
@@ -1632,7 +1645,7 @@ export function RepairDetail({
       const log: RepairLog = {
         date: now,
         status: newStatus !== repair.status ? newStatus : undefined,
-        note: quickNote.trim() || `Statut → ${REPAIR_STATUS_LABELS[newStatus]}`,
+        note: quickNote.trim() || t('logs.statusChanged', { status: t(`status.${newStatus}`) }),
         by: currentUserLabel,
       };
       await updateDoc(doc(db, 'repairs', repair.id), {
@@ -1640,9 +1653,9 @@ export function RepairDetail({
         logs: [...(repair.logs || []), log],
       });
       setQuickNote('');
-      onSuccess(`Statut mis à jour : ${REPAIR_STATUS_LABELS[newStatus]}`);
+      onSuccess(t('notifications.statusUpdated', { status: t(`status.${newStatus}`) }));
     } catch (e: any) {
-      showError("Échec de la mise à jour : " + (e.message || e));
+      showError(t('errors.statusUpdateFailed', { message: e.message || e }));
     } finally { setUpdating(false); }
   };
 
@@ -1654,9 +1667,7 @@ export function RepairDetail({
     setUpdating(true);
     try {
       if (paidNow > 0 && !cashSession) {
-        throw new Error(cashSessionLoading
-          ? 'Vérification de la caisse en cours…'
-          : 'Aucune caisse ouverte. Ouvrez une session avant d’encaisser cette réparation.');
+        throw new Error(t(cashSessionLoading ? 'errors.checkingCashSession' : 'errors.noCashSession'));
       }
       const now = new Date().toISOString();
       const days = repair.warrantyDays || settings?.defaultWarrantyDays || 0;
@@ -1677,12 +1688,22 @@ export function RepairDetail({
       const newPaid = Math.round((repair.paid + paidNow) * 1000) / 1000;
 
       if (restAfterPaidNow > 0 && !repairClient) {
-        throw new Error("Un client doit être enregistré sur la fiche pour livrer une réparation avec un reste dû.");
+        throw new Error(t('errors.clientRequiredForCredit'));
       }
 
-      let note = `Livré — Encaissé ${paidNow.toFixed(3)} ${currency}`;
-      if (actualDiscount > 0) note += `, remise ${actualDiscount.toFixed(3)} ${currency}`;
-      if (restAfterPaidNow > 0) note += `, ${restAfterPaidNow.toFixed(3)} ${currency} crédités au compte de ${repairClient?.name}`;
+      const note = t('logs.delivery', {
+        paid: formatNumber(paidNow, { minimumFractionDigits: 3, maximumFractionDigits: 3 }),
+        currency,
+        discount: actualDiscount > 0 ? t('logs.deliveryDiscount', {
+          amount: formatNumber(actualDiscount, { minimumFractionDigits: 3, maximumFractionDigits: 3 }),
+          currency,
+        }) : '',
+        credit: restAfterPaidNow > 0 ? t('logs.deliveryCredit', {
+          amount: formatNumber(restAfterPaidNow, { minimumFractionDigits: 3, maximumFractionDigits: 3 }),
+          currency,
+          client: repairClient?.name,
+        }) : '',
+      });
 
       const log: RepairLog = { date: now, status: 'livre', note, by: currentUserLabel };
       const logs = [...(repair.logs || []), log];
@@ -1690,10 +1711,10 @@ export function RepairDetail({
       await runTransaction(db, async tx => {
         const repairRef = doc(db, 'repairs', repair.id);
         const repairSnapshot = await tx.get(repairRef);
-        if (!repairSnapshot.exists()) throw new Error('La réparation n’existe plus.');
+        if (!repairSnapshot.exists()) throw new Error(t('errors.repairMissing'));
         const currentRepair = repairSnapshot.data();
         if (currentRepair.status === 'livre' || Number(currentRepair.paid || 0) !== Number(repair.paid || 0)) {
-          throw new Error('La réparation a été modifiée. Rechargez-la avant de la livrer.');
+          throw new Error(t('errors.repairChangedBeforeDelivery'));
         }
         const activeSession = paidNow > 0
           ? await requireOpenCashSession(tx, userProfile?.uid || auth.currentUser?.uid || '', ownerId)
@@ -1702,7 +1723,7 @@ export function RepairDetail({
           ? doc(db, 'clients', repairClient.id)
           : null;
         const clientSnapshot = clientRef ? await tx.get(clientRef) : null;
-        if (clientSnapshot && !clientSnapshot.exists()) throw new Error('Client introuvable.');
+        if (clientSnapshot && !clientSnapshot.exists()) throw new Error(t('errors.clientMissing'));
 
         tx.update(repairRef, {
           status: 'livre',
@@ -1743,9 +1764,9 @@ export function RepairDetail({
       });
 
       setShowDeliveryCaisse(false);
-      onSuccess('Réparation livrée et encaissement enregistré.');
+      onSuccess(t('notifications.repairDelivered'));
     } catch (e: any) {
-      showError("Échec de l'encaissement : " + (e.message || e));
+      showError(t('errors.deliveryFailed', { message: e.message || e }));
     } finally { setUpdating(false); }
   };
 
@@ -1773,15 +1794,15 @@ export function RepairDetail({
               <RepairStatusBadge status={repair.status} />
               {repair.date?.toDate && (
                 <span className="flex items-center gap-1 text-[10px] font-bold text-ds-text-muted">
-                  <Calendar className="h-3 w-3" /> {t('detail.createdAt', { date: format(repair.date.toDate(), 'dd/MM/yyyy HH:mm') })}
+                  <Calendar className="h-3 w-3" /> {t('detail.createdAt', { date: formatDateTime(repair.date.toDate(), { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) })}
                 </span>
               )}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={onEdit} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ds-text hover:bg-ds-surface-2" title="Modifier"><Edit3 className="h-4 w-4" /></button>
-            {canDelete && <button onClick={onDelete} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ds-danger hover:bg-ds-danger-soft" title="Supprimer"><Trash2 className="h-4 w-4" /></button>}
-            <button onClick={onClose} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ds-text-muted hover:bg-ds-surface-2"><X className="h-5 w-5" /></button>
+            <button onClick={onEdit} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ds-text hover:bg-ds-surface-2" title={t('detail.edit')} aria-label={t('detail.edit')}><Edit3 className="h-4 w-4" /></button>
+            {canDelete && <button onClick={onDelete} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ds-danger hover:bg-ds-danger-soft" title={t('detail.delete')} aria-label={t('detail.delete')}><Trash2 className="h-4 w-4" /></button>}
+            <button onClick={onClose} aria-label={t('accessibility.closeDetail')} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ds-text-muted hover:bg-ds-surface-2"><X className="h-5 w-5" /></button>
           </div>
         </div>
 
@@ -1814,7 +1835,7 @@ export function RepairDetail({
                 {repair.parts.map((p, i) => (
                   <div key={i} className="flex justify-between rounded-lg border border-ds-border bg-ds-surface px-3 py-2 text-sm">
                     <span className="text-ds-text">{p.name} × {p.quantity}</span>
-                    <span className="font-bold tabular-nums text-ds-text">{p.total.toFixed(3)} {currency}</span>
+                    <span className="font-bold tabular-nums text-ds-text">{formatNumber(p.total, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
                   </div>
                 ))}
               </div>
@@ -1832,7 +1853,7 @@ export function RepairDetail({
             <div className={cn("flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold",
               new Date(repair.warrantyUntil) > new Date() ? "bg-ds-surface-2 text-ds-text" : "bg-ds-surface-2 text-ds-text-muted")}>
               <Shield className="w-4 h-4" />
-              {t('detail.warrantyUntil', { date: format(new Date(repair.warrantyUntil), 'dd/MM/yyyy') })}
+              {t('detail.warrantyUntil', { date: formatDateTime(new Date(repair.warrantyUntil), { day: '2-digit', month: '2-digit', year: 'numeric' }) })}
               {new Date(repair.warrantyUntil) < new Date() && ` (${t('detail.expired')})`}
             </div>
           )}
@@ -1877,7 +1898,7 @@ export function RepairDetail({
                     <div className="flex-1 -mt-0.5">
                       <p className="text-sm font-medium text-ds-text">{log.note}</p>
                       <p className="text-[11px] font-medium text-ds-text-muted">
-                        {format(new Date(log.date), 'dd/MM/yyyy HH:mm')}{log.by ? ` · ${log.by}` : ''}
+                        {formatDateTime(new Date(log.date), { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}{log.by ? ` · ${log.by}` : ''}
                       </p>
                     </div>
                   </div>
@@ -1900,12 +1921,12 @@ export function RepairDetail({
                       <div>
                         <p className="font-semibold text-ds-text">{movement.productName} · {movement.delta > 0 ? t('detail.returned') : t('detail.removed')}</p>
                         <p className="text-[11px] text-ds-text-muted">
-                          {date && !Number.isNaN(date.getTime()) ? format(date, 'dd/MM/yyyy HH:mm') : t('detail.dateUnavailable')}
+                          {date && !Number.isNaN(date.getTime()) ? formatDateTime(date, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : t('detail.dateUnavailable')}
                           {movement.userLabel ? ` · ${movement.userLabel}` : ''}
                         </p>
                       </div>
                       <span className="font-black tabular-nums text-ds-text">
-                        {movement.delta > 0 ? '+' : ''}{movement.delta}
+                        {movement.delta > 0 ? '+' : ''}{formatNumber(movement.delta)}
                       </span>
                     </div>
                   );
@@ -1959,7 +1980,11 @@ function DeliveryCaisseModal({
 }) {
   const { t } = useTranslation('repairs');
   const [discountInput, setDiscountInput] = useState('0');
-  const [paidInput, setPaidInput] = useState(repair.debt.toFixed(3));
+  const [paidInput, setPaidInput] = useState(formatNumber(repair.debt, {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
+    useGrouping: false,
+  }));
   const [formError, setFormError] = useState<string | null>(null);
 
   const discount = Math.max(0, parseFloat(discountInput.replace(',', '.')) || 0);
@@ -1968,10 +1993,10 @@ function DeliveryCaisseModal({
   const restDue = Math.max(0, Math.round((dueAfterDiscount - paidNow) * 1000) / 1000);
 
   const handleLivrer = () => {
-    if (discount > repair.debt + 0.001) { setFormError("La remise ne peut pas dépasser le reste dû."); return; }
-    if (paidNow > dueAfterDiscount + 0.001) { setFormError("Le montant encaissé ne peut pas dépasser le montant dû après remise."); return; }
+    if (discount > repair.debt + 0.001) { setFormError(t('errors.discountExceedsDue')); return; }
+    if (paidNow > dueAfterDiscount + 0.001) { setFormError(t('errors.paymentExceedsDue')); return; }
     if (restDue > 0.001 && !client) {
-      setFormError("Un client doit être enregistré sur la fiche pour livrer avec un reste dû : le montant restant sera automatiquement ajouté à sa dette (menu Clients).");
+      setFormError(t('errors.clientRequiredForCredit'));
       return;
     }
     setFormError(null);
@@ -1985,7 +2010,7 @@ function DeliveryCaisseModal({
           <h2 className="flex items-center gap-2 text-lg font-bold text-ds-text">
             <DollarSign className="h-5 w-5 text-ds-text" /> {t('delivery.title')}
           </h2>
-          <button onClick={onClose} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ds-text-muted hover:bg-ds-surface-2"><X className="h-5 w-5" /></button>
+          <button onClick={onClose} aria-label={t('accessibility.closeDelivery')} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-ds-text-muted hover:bg-ds-surface-2"><X className="h-5 w-5" /></button>
         </div>
 
         <div className="p-5 space-y-4">
@@ -2025,7 +2050,7 @@ function DeliveryCaisseModal({
             <span className="text-xs font-black uppercase tracking-wider text-ds-text-muted">
               {restDue > 0 ? t('delivery.creditRemaining') : t('delivery.remainingAfterPayment')}
             </span>
-            <span className={cn("text-sm font-bold tabular-nums", restDue > 0 ? "text-ds-warning" : "text-ds-text")}>{restDue.toFixed(3)} {currency}</span>
+            <span className={cn("text-sm font-bold tabular-nums", restDue > 0 ? "text-ds-warning" : "text-ds-text")}>{formatNumber(restDue, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
           </div>
 
           {formError && (
@@ -2066,7 +2091,7 @@ function MoneyBlock({ label, value, currency, accent, warning }: { label: string
     <div className={cn("rounded-ds-md border border-ds-border p-3 text-center", accent ? "bg-ds-brand" : warning ? "bg-ds-warning-soft" : "bg-ds-surface-2")}>
       <p className={cn("text-[10px] font-black uppercase tracking-wider", accent ? "text-ds-brand-contrast/75" : "text-ds-text-muted")}>{label}</p>
       <p className={cn("mt-0.5 font-display text-sm font-bold tabular-nums", accent ? "text-ds-brand-contrast" : warning ? "text-ds-warning" : "text-ds-text")}>
-        {(value || 0).toFixed(3)} {currency}
+        {formatNumber(value || 0, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}
       </p>
     </div>
   );

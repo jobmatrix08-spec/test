@@ -10,7 +10,8 @@ import { cn, decodeAzertyBarcode, isSparePart } from '../lib/utils';
 import { can } from '../lib/permissions';
 import { slugifyAppName } from '../lib/brand';
 import { useBrand } from './BrandProvider';
-import { getDateLocale } from '../i18n/format';
+import { useTranslation } from 'react-i18next';
+import { formatDateTime, formatNumber, getDateLocale } from '../i18n/format';
 
 interface SparePart {
   id: string;
@@ -48,6 +49,12 @@ interface PartsProps {
 
 const BRANDS = ['HONOR', 'Huawei', 'Infinix', 'Iphone', 'Itel', 'Nokia', 'Oppo', 'Poco', 'Realme', 'Redmi', 'Samsung', 'Standard', 'Techno', 'Tout-Standard'];
 const CATEGORIES = ['AFF JK', 'Afficheur TFT', 'SUB', 'Batterie'];
+const PART_CATEGORY_KEYS: Record<string, string> = {
+  'AFF JK': 'affJk',
+  'Afficheur TFT': 'tftDisplay',
+  SUB: 'sub',
+  Batterie: 'battery',
+};
 const BARCODE_L = ['0001101', '0011001', '0010011', '0111101', '0100011', '0110001', '0101111', '0111011', '0110111', '0001011'];
 const BARCODE_G = ['0100111', '0110011', '0011011', '0100001', '0011101', '0111001', '0000101', '0010001', '0001001', '0010111'];
 const BARCODE_R = ['1110010', '1100110', '1101100', '1000010', '1011100', '1001110', '1010000', '1000100', '1001000', '1110100'];
@@ -85,7 +92,11 @@ function ean13Svg(value: string): string {
 }
 
 function money(value: number): string {
-  return `${(Math.round(value * 1000) / 1000).toFixed(3)} DT`;
+  return `${new Intl.NumberFormat(getDateLocale(), {
+    numberingSystem: 'latn',
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
+  }).format(Math.round(value * 1000) / 1000)} DT`;
 }
 
 function inferBrand(name: string): string {
@@ -95,6 +106,7 @@ function inferBrand(name: string): string {
 }
 
 export default function Parts({ userProfile }: PartsProps) {
+  const { t, i18n } = useTranslation('parts');
   const brand = useBrand();
   const ownerId = userProfile?.ownerId || userProfile?.uid || '';
   const isAdmin = userProfile?.role === 'admin';
@@ -105,6 +117,10 @@ export default function Parts({ userProfile }: PartsProps) {
   const canDelete = can(userProfile, 'pieces', 'delete');
   const canManage = canAddEdit || canAdjustStock || canDelete;
   const userId = auth.currentUser?.uid;
+  const categoryLabel = (category: string) => {
+    const key = PART_CATEGORY_KEYS[category];
+    return key ? t(`defaultCategories.${key}`) : category;
+  };
   const [parts, setParts] = useState<SparePart[]>([]);
   const [costs, setCosts] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
@@ -157,7 +173,8 @@ export default function Parts({ userProfile }: PartsProps) {
         setLoading(false);
       },
       issue => {
-        setError(`Impossible de charger les pièces : ${issue.message}`);
+        console.error('Unable to load spare parts.', issue);
+        setError(t('errors.loadParts'));
         setLoading(false);
       }
     );
@@ -170,7 +187,10 @@ export default function Parts({ userProfile }: PartsProps) {
           .filter(Boolean);
         setPartCategories([...new Set([...CATEGORIES, ...saved])]);
       },
-      issue => setError(`Impossible de charger les catégories : ${issue.message}`)
+      issue => {
+        console.error('Unable to load spare-parts categories.', issue);
+        setError(t('errors.loadCategories'));
+      }
     );
     if (!canViewBuyPrice) {
       setCosts({});
@@ -184,14 +204,17 @@ export default function Parts({ userProfile }: PartsProps) {
       snapshot => setCosts(Object.fromEntries(
         snapshot.docs.map(item => [item.id, Number(item.data().buyPrice) || 0])
       )),
-      issue => setError(`Impossible de charger les coûts : ${issue.message}`)
+      issue => {
+        console.error('Unable to load spare-part costs.', issue);
+        setError(t('errors.loadCosts'));
+      }
     );
     return () => {
       unsubscribeParts();
       unsubscribeCategories();
       unsubscribeCosts();
     };
-  }, [ownerId, isAdmin, canViewBuyPrice]);
+  }, [ownerId, isAdmin, canViewBuyPrice, t]);
 
   const visibleParts = useMemo(() => parts
     .filter(part => part.active !== false)
@@ -242,15 +265,15 @@ export default function Parts({ userProfile }: PartsProps) {
     const stock = Number(form.stock);
     const lowStockAlert = Number(form.lowStockAlert);
     if (!Number.isFinite(sellPrice) || sellPrice < 0 || (isAdmin && (!Number.isFinite(buyPrice) || buyPrice < 0))) {
-      setError('Les prix doivent être des nombres positifs.');
+      setError(t('errors.positivePrices'));
       return;
     }
     if (!Number.isInteger(stock) || stock < 0 || !Number.isInteger(lowStockAlert) || lowStockAlert < 0) {
-      setError('Le stock et le seuil d’alerte doivent être des entiers positifs.');
+      setError(t('errors.positiveStock'));
       return;
     }
     if (isAdmin && sellPrice < buyPrice) {
-      setError('Le prix de vente doit être supérieur ou égal au prix d’achat.');
+      setError(t('errors.sellPriceBelowBuy'));
       return;
     }
     setSaving(true);
@@ -276,10 +299,10 @@ export default function Parts({ userProfile }: PartsProps) {
         await runTransaction(db, async transaction => {
           const ref = doc(db, 'parts', editing.id);
           const currentSnapshot = await transaction.get(ref);
-          if (!currentSnapshot.exists()) throw new Error('Cette pièce n’existe plus.');
+          if (!currentSnapshot.exists()) throw new Error(t('errors.partMissing'));
           const currentStock = Number(currentSnapshot.data().stock);
           if (stock !== currentStock) {
-            throw new Error('Le stock doit être ajusté avec les boutons + / − pour conserver l’historique des mouvements.');
+            throw new Error(t('errors.adjustStockOnly'));
           }
           transaction.update(ref, partData);
           if (isAdmin) {
@@ -290,7 +313,7 @@ export default function Parts({ userProfile }: PartsProps) {
             });
           }
         });
-        setSuccess('Pièce modifiée.');
+        setSuccess(t('success.updated'));
       } else {
         const partRef = doc(collection(db, 'parts'));
         const costRef = doc(db, 'part_costs', partRef.id);
@@ -325,13 +348,18 @@ export default function Parts({ userProfile }: PartsProps) {
             });
           }
         });
-        setSuccess('Pièce créée et stock initial enregistré.');
+        setSuccess(t('success.created'));
       }
       setEditing(null);
       setForm(emptyForm);
       setIsModalOpen(false);
     } catch (issue) {
-      setError(issue instanceof Error ? issue.message : String(issue));
+      console.error('Unable to save spare part.', issue);
+      setError(issue instanceof Error && issue.message === t('errors.partMissing')
+        ? issue.message
+        : issue instanceof Error && issue.message === t('errors.adjustStockOnly')
+          ? issue.message
+          : t('errors.savePart'));
     } finally {
       setSaving(false);
     }
@@ -350,11 +378,11 @@ export default function Parts({ userProfile }: PartsProps) {
           transaction.get(partRef),
           transaction.get(movementRef),
         ]);
-        if (!partSnapshot.exists()) throw new Error('Cette pièce n’existe plus.');
-        if (movementSnapshot.exists()) throw new Error('Cette opération a déjà été enregistrée.');
+        if (!partSnapshot.exists()) throw new Error(t('errors.partMissing'));
+        if (movementSnapshot.exists()) throw new Error(t('errors.movementExists'));
         const current = partSnapshot.data();
         const nextStock = Number(current.stock) + delta;
-        if (!Number.isInteger(nextStock) || nextStock < 0) throw new Error('Le stock ne peut pas être négatif.');
+        if (!Number.isInteger(nextStock) || nextStock < 0) throw new Error(t('errors.negativeStock'));
         transaction.update(partRef, {
           stock: nextStock,
           stockVersion: version,
@@ -375,19 +403,24 @@ export default function Parts({ userProfile }: PartsProps) {
           createdAt: serverTimestamp(),
         });
       });
-      setSuccess(`Stock de « ${part.name} » mis à jour.`);
+      setSuccess(t('success.stockUpdated', { name: part.name }));
     } catch (issue) {
-      setError(issue instanceof Error ? issue.message : String(issue));
+      console.error('Unable to adjust spare-part stock.', issue);
+      const message = issue instanceof Error ? issue.message : '';
+      setError([
+        t('errors.partMissing'), t('errors.movementExists'), t('errors.negativeStock'),
+      ].includes(message) ? message : t('errors.adjust'));
     }
   };
 
   const archivePart = async (part: SparePart) => {
-    if (!canDelete || !window.confirm(`Supprimer « ${part.name} » ? La fiche et son historique seront conservés.`)) return;
+    if (!canDelete || !window.confirm(t('confirmDelete', { name: part.name }))) return;
     try {
       await updateDoc(doc(db, 'parts', part.id), { active: false, updatedAt: serverTimestamp() });
-      setSuccess('Pièce archivée sans supprimer ses données.');
+      setSuccess(t('success.archived'));
     } catch (issue) {
-      setError(issue instanceof Error ? issue.message : String(issue));
+      console.error('Unable to archive spare part.', issue);
+      setError(t('errors.archive'));
     }
   };
 
@@ -400,7 +433,8 @@ export default function Parts({ userProfile }: PartsProps) {
       setForm(current => ({ ...current, category: name }));
       setNewCategoryName('');
     } catch (issue) {
-      setError(`Impossible d’ajouter la catégorie : ${issue instanceof Error ? issue.message : String(issue)}`);
+      console.error('Unable to add spare-part category.', issue);
+      setError(t('errors.addCategory'));
     }
   };
 
@@ -415,7 +449,8 @@ export default function Parts({ userProfile }: PartsProps) {
       await Promise.all(matches.map(item => deleteDoc(item.ref)));
       setDeletingCategory(null);
     } catch (issue) {
-      setError(`Impossible de supprimer la catégorie : ${issue instanceof Error ? issue.message : String(issue)}`);
+      console.error('Unable to delete spare-part category.', issue);
+      setError(t('errors.deleteCategory'));
     }
   };
 
@@ -432,23 +467,24 @@ export default function Parts({ userProfile }: PartsProps) {
       }));
       await batch.commit();
     } catch (issue) {
-      setError(`Impossible de réinitialiser les catégories : ${issue instanceof Error ? issue.message : String(issue)}`);
+      console.error('Unable to reset spare-part categories.', issue);
+      setError(t('errors.resetCategories'));
     }
   };
 
   const printBarcode = () => {
     const ean = form.barcode.trim();
     if (!/^\d{13}$/.test(ean)) {
-      setError('Saisissez ou générez un code-barres EAN-13 valide avant impression.');
+      setError(t('errors.invalidBarcode'));
       return;
     }
     const printWindow = window.open('', '_blank', 'width=420,height=320');
     if (!printWindow) {
-      setError('La fenêtre d’impression a été bloquée par le navigateur.');
+      setError(t('errors.printBlocked'));
       return;
     }
     printWindow.document.open();
-    printWindow.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>Code-barres</title><style>@page{margin:8mm}body{font-family:Arial,sans-serif;text-align:center;padding:12px}.label{width:70mm;margin:auto}svg{width:100%;height:44mm}.text{font:13px monospace;letter-spacing:2px}</style></head><body><main class="label">${ean13Svg(ean)}<div class="text">${ean}</div></main></body></html>`);
+    printWindow.document.write(`<!doctype html><html lang="${i18n.resolvedLanguage || 'fr'}" dir="${i18n.dir()}"><head><meta charset="utf-8"><title>${t('printBarcodeTitle')}</title><style>@page{margin:8mm}body{font-family:Arial,sans-serif;text-align:center;padding:12px}.label{width:70mm;margin:auto}svg{width:100%;height:44mm}.text{font:13px monospace;letter-spacing:2px}</style></head><body><main class="label">${ean13Svg(ean)}<div class="text">${ean}</div></main></body></html>`);
     printWindow.document.close();
     printWindow.onafterprint = () => printWindow.close();
     printWindow.setTimeout(() => {
@@ -484,7 +520,7 @@ export default function Parts({ userProfile }: PartsProps) {
         if (barcode.length >= 3) {
           playScanBeep();
           setForm(current => ({ ...current, barcode }));
-          setSuccess(`Code détecté avec succès : ${barcode}`);
+          setSuccess(t('success.barcodeDetected', { barcode }));
           window.setTimeout(() => setSuccess(''), 4500);
           event.preventDefault();
           event.stopPropagation();
@@ -493,7 +529,7 @@ export default function Parts({ userProfile }: PartsProps) {
     };
     window.addEventListener('keydown', handleKeyDown, true);
     return () => window.removeEventListener('keydown', handleKeyDown, true);
-  }, [isModalOpen]);
+  }, [isModalOpen, t]);
 
   const openHistory = async (part: SparePart) => {
     setHistoryPart(part);
@@ -514,7 +550,8 @@ export default function Parts({ userProfile }: PartsProps) {
         }))
         .sort((a, b) => (b.createdAt?.toDate?.().getTime() || 0) - (a.createdAt?.toDate?.().getTime() || 0)));
     } catch (issue) {
-      setError(issue instanceof Error ? `Historique indisponible : ${issue.message}` : `Historique indisponible : ${String(issue)}`);
+      console.error('Unable to load spare-part history.', issue);
+      setError(t('errors.history'));
     } finally {
       setHistoryLoading(false);
     }
@@ -549,9 +586,10 @@ export default function Parts({ userProfile }: PartsProps) {
           !importedLegacyIds.has(product.id));
       setLegacyPreview(candidates);
       setLegacyBackupDownloaded(false);
-      setSuccess(`${candidates.length} pièce(s) à importer. Aucun document n’a été modifié.`);
+      setSuccess(t('success.preview', { count: formatNumber(candidates.length) }));
     } catch (issue) {
-      setError(issue instanceof Error ? `Aperçu impossible : ${issue.message}` : `Aperçu impossible : ${String(issue)}`);
+      console.error('Unable to preview spare-part migration.', issue);
+      setError(t('errors.preview'));
     } finally {
       setImporting(false);
     }
@@ -577,7 +615,7 @@ export default function Parts({ userProfile }: PartsProps) {
     if (!isAdmin || importing || !legacyBackupDownloaded || legacyPreview.length === 0) return;
     const userId = auth.currentUser?.uid;
     if (!userId) {
-      setError('Session utilisateur absente : impossible d’importer les pièces.');
+      setError(t('errors.noUser'));
       return;
     }
     setError('');
@@ -592,7 +630,7 @@ export default function Parts({ userProfile }: PartsProps) {
       const candidates = legacyPreview.filter(product =>
         !existingIds.has(product.id) && !importedLegacyIds.has(product.id)
       );
-      const userLabel = userProfile?.name || userProfile?.email || 'Administrateur';
+      const userLabel = userProfile?.name || userProfile?.email || t('adminUser');
       let importedCount = 0;
 
       for (let start = 0; start < candidates.length; start += 150) {
@@ -600,7 +638,7 @@ export default function Parts({ userProfile }: PartsProps) {
         const chunk = candidates.slice(start, start + 150);
         chunk.forEach(product => {
           const brand = product.brand?.trim() || inferBrand(product.name || '');
-          const category = product.category?.trim() || 'Pièce importée';
+          const category = product.category?.trim() || t('importedPart');
           const partName = `${brand} ${category}`;
           const stockValue = Number(product.stock);
           const stock = Number.isFinite(stockValue) ? Math.max(0, Math.floor(stockValue)) : 0;
@@ -660,9 +698,10 @@ export default function Parts({ userProfile }: PartsProps) {
       }
 
       setLegacyPreview([]);
-      setSuccess(`${importedCount} pièce(s) importée(s) dans le catalogue. Les produits d’origine sont conservés.`);
+      setSuccess(t('success.imported', { count: formatNumber(importedCount) }));
     } catch (issue) {
-      setError(issue instanceof Error ? `Import interrompu : ${issue.message}` : `Import interrompu : ${String(issue)}`);
+      console.error('Unable to import legacy spare parts.', issue);
+      setError(t('errors.import'));
     } finally {
       setImporting(false);
     }
@@ -674,13 +713,13 @@ export default function Parts({ userProfile }: PartsProps) {
         <div>
           <h1 className="mt-1 flex items-center gap-3 text-3xl font-black text-slate-900">
             <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-600 text-white"><Boxes /></span>
-            Pièces détachées
+            {t('title')}
           </h1>
-          <p className="mt-1 text-xs font-black uppercase tracking-wider text-slate-500">PIÈCES UTILISÉES POUR LES RÉPARATIONS (ATELIER)</p>
+          <p className="mt-1 text-xs font-black uppercase tracking-wider text-slate-500">{t('subtitle')}</p>
         </div>
         {(canAddEdit || isAdmin) && <div className="flex flex-wrap gap-2">
-          {isAdmin && <button onClick={() => void previewLegacyImport()} disabled={importing} className="inline-flex items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-white px-4 py-3 text-sm font-bold text-indigo-700 hover:bg-indigo-50 disabled:opacity-50"><ArrowDownToLine size={17} /> Importer depuis Articles</button>}
-          {canAddEdit && <button onClick={openNew} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold uppercase text-white hover:bg-indigo-700"><PackagePlus size={17} /> + NOUVELLE PIÈCE</button>}
+          {isAdmin && <button onClick={() => void previewLegacyImport()} disabled={importing} className="inline-flex items-center justify-center gap-2 rounded-xl border border-indigo-200 bg-white px-4 py-3 text-sm font-bold text-indigo-700 hover:bg-indigo-50 disabled:opacity-50"><ArrowDownToLine size={17} /> {t('importLegacy')}</button>}
+          {canAddEdit && <button onClick={openNew} className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-bold uppercase text-white hover:bg-indigo-700"><PackagePlus size={17} /> {t('newPart')}</button>}
         </div>}
       </header>
 
@@ -688,58 +727,58 @@ export default function Parts({ userProfile }: PartsProps) {
 
       {isAdmin && legacyPreview.length > 0 && <section className="space-y-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div><h2 className="font-black text-amber-900">Aperçu de l’import</h2><p className="text-xs text-amber-800">{legacyPreview.length} produit(s)-pièce absent(s) de « Pièces Détachées ».</p></div>
+          <div><h2 className="font-black text-amber-900">{t('previewTitle')}</h2><p className="text-xs text-amber-800">{t('previewDescription', { count: formatNumber(legacyPreview.length) })}</p></div>
           <div className="flex flex-wrap gap-2">
-            <button onClick={downloadLegacyImportBackup} className="rounded-xl border border-amber-300 bg-white px-4 py-2.5 text-sm font-bold text-amber-800">Télécharger la sauvegarde JSON</button>
-            <button onClick={() => void confirmLegacyImport()} disabled={importing || !legacyBackupDownloaded} className="rounded-xl bg-ds-brand px-4 py-2.5 text-sm font-bold text-ds-brand-contrast hover:bg-ds-brand-hover disabled:opacity-50">{importing ? 'Import en cours…' : 'Confirmer l’import'}</button>
+            <button onClick={downloadLegacyImportBackup} className="rounded-xl border border-amber-300 bg-white px-4 py-2.5 text-sm font-bold text-amber-800">{t('downloadBackup')}</button>
+            <button onClick={() => void confirmLegacyImport()} disabled={importing || !legacyBackupDownloaded} className="rounded-xl bg-ds-brand px-4 py-2.5 text-sm font-bold text-ds-brand-contrast hover:bg-ds-brand-hover disabled:opacity-50">{importing ? t('importing') : t('confirmImport')}</button>
           </div>
         </div>
         <ul className="max-h-48 space-y-1 overflow-y-auto text-xs text-amber-950">
-          {legacyPreview.map(product => <li key={product.id} className="rounded-lg bg-white/70 px-3 py-2">{product.name || product.category || product.id} · Stock {Number.isFinite(Number(product.stock)) ? Math.max(0, Math.floor(Number(product.stock))) : 0}</li>)}
+          {legacyPreview.map(product => <li key={product.id} className="rounded-lg bg-white/70 px-3 py-2">{product.name || product.category || product.id} · {t('columns.stock')} {formatNumber(Number.isFinite(Number(product.stock)) ? Math.max(0, Math.floor(Number(product.stock))) : 0)}</li>)}
         </ul>
       </section>}
 
       <section className="grid gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:grid-cols-[1fr_220px_220px]">
         <label className="relative">
           <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-          <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Rechercher une pièce..." className="w-full rounded-xl border border-slate-200 py-2.5 ps-10 pe-3 text-sm outline-none focus:border-indigo-400" />
+          <input value={search} onChange={event => setSearch(event.target.value)} placeholder={t('search')} className="w-full rounded-xl border border-slate-200 py-2.5 ps-10 pe-3 text-sm outline-none focus:border-indigo-400" />
         </label>
         <select value={categoryFilter} onChange={event => setCategoryFilter(event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
-          <option value="">Toutes les catégories</option>{availableCategories.map(category => <option key={category}>{category}</option>)}
+          <option value="">{t('allCategories')}</option>{availableCategories.map(category => <option key={category} value={category}>{categoryLabel(category)}</option>)}
         </select>
         <select value={brandFilter} onChange={event => setBrandFilter(event.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">
-          <option value="">Toutes les marques</option>{availableBrands.map(brand => <option key={brand}>{brand}</option>)}
+          <option value="">{t('allBrands')}</option>{availableBrands.map(brand => <option key={brand}>{brand}</option>)}
         </select>
       </section>
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h2 className="font-black text-slate-800">Stock des pièces</h2><span className="text-xs font-bold text-slate-400">{visibleParts.length} référence(s)</span>
+          <h2 className="font-black text-slate-800">{t('inventory')}</h2><span className="text-xs font-bold text-slate-400">{t('referenceCount', { count: formatNumber(visibleParts.length) })}</span>
         </div>
         <div className="overflow-x-auto">
           <table className="responsive-card-table w-full text-start text-sm">
             <thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500"><tr>
-              <th className="px-5 py-3">PIÈCE</th><th className="px-4 py-3">CATÉGORIE</th>{canViewBuyPrice && <th className="px-4 py-3 text-end">PRIX ACHAT</th>}<th className="px-4 py-3 text-end">PRIX VENTE</th><th className="px-4 py-3 text-center">STOCK</th>{canManage && <th className="px-5 py-3 text-end">ACTIONS</th>}
+              <th className="px-5 py-3">{t('columns.part')}</th><th className="px-4 py-3">{t('columns.category')}</th>{canViewBuyPrice && <th className="px-4 py-3 text-end">{t('columns.buyPrice')}</th>}<th className="px-4 py-3 text-end">{t('columns.sellPrice')}</th><th className="px-4 py-3 text-center">{t('columns.stock')}</th>{canManage && <th className="px-5 py-3 text-end">{t('columns.actions')}</th>}
             </tr></thead>
             <tbody className="divide-y divide-slate-100">
-              {loading ? <tr><td colSpan={4 + (canViewBuyPrice ? 1 : 0) + (canManage ? 1 : 0)} className="px-5 py-12 text-center text-slate-400">Chargement...</td></tr>
-                : visibleParts.length === 0 ? <tr><td colSpan={4 + (canViewBuyPrice ? 1 : 0) + (canManage ? 1 : 0)} className="px-5 py-12 text-center text-slate-400">Aucune pièce ne correspond à la recherche.</td></tr>
+              {loading ? <tr><td colSpan={4 + (canViewBuyPrice ? 1 : 0) + (canManage ? 1 : 0)} className="px-5 py-12 text-center text-slate-400">{t('loading')}</td></tr>
+                : visibleParts.length === 0 ? <tr><td colSpan={4 + (canViewBuyPrice ? 1 : 0) + (canManage ? 1 : 0)} className="px-5 py-12 text-center text-slate-400">{t('empty')}</td></tr>
                 : visibleParts.map(part => <tr key={part.id} className="hover:bg-slate-50/70">
-                  <td data-label="Pièce" className="px-5 py-4"><p className="font-bold text-slate-800">{part.description || part.name}</p><p className="mt-1 text-xs text-slate-400">{part.reference || part.barcode ? `REF: ${part.reference || part.barcode}` : ''}</p><p className="mt-1 text-xs text-slate-500">{part.compatibleModels.join(', ') || '—'}</p></td>
-                  <td data-label="Catégorie" className="px-4 py-4"><span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">{part.category}</span></td>
-                  {canViewBuyPrice && <td data-label="Prix achat" className="px-4 py-4 text-end font-mono text-xs">{money(costs[part.id] || 0)}</td>}
-                  <td data-label="Prix vente" className="px-4 py-4 text-end font-mono font-bold">{money(part.sellPrice)}</td>
-                  <td data-label="Stock" className="px-4 py-4 text-center"><span className={cn('rounded-lg px-2.5 py-1 font-black tabular-nums', part.stock <= 0 ? 'bg-ds-danger-soft text-ds-danger' : part.stock <= part.lowStockAlert ? 'bg-ds-warning-soft text-ds-warning' : 'bg-ds-success-soft text-ds-success')}>{part.stock}</span>{part.stock <= part.lowStockAlert && <p className="mt-1 text-[10px] font-bold text-ds-warning">Stock bas</p>}
+                  <td data-label={t('columns.part')} className="px-5 py-4"><p className="font-bold text-slate-800">{part.description || part.name}</p><p className="mt-1 text-xs text-slate-400">{part.reference || part.barcode ? `REF: ${part.reference || part.barcode}` : ''}</p><p className="mt-1 text-xs text-slate-500">{part.compatibleModels.join(', ') || '—'}</p></td>
+                  <td data-label={t('columns.category')} className="px-4 py-4"><span className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-bold text-indigo-700">{categoryLabel(part.category)}</span></td>
+                  {canViewBuyPrice && <td data-label={t('columns.buyPrice')} className="px-4 py-4 text-end font-mono text-xs">{money(costs[part.id] || 0)}</td>}
+                  <td data-label={t('columns.sellPrice')} className="px-4 py-4 text-end font-mono font-bold">{money(part.sellPrice)}</td>
+                  <td data-label={t('columns.stock')} className="px-4 py-4 text-center"><span className={cn('rounded-lg px-2.5 py-1 font-black tabular-nums', part.stock <= 0 ? 'bg-ds-danger-soft text-ds-danger' : part.stock <= part.lowStockAlert ? 'bg-ds-warning-soft text-ds-warning' : 'bg-ds-success-soft text-ds-success')}>{part.stock}</span>{part.stock <= part.lowStockAlert && <p className="mt-1 text-[10px] font-bold text-ds-warning">{t('lowStock')}</p>}
                     {canAdjustStock && <div className="mt-2 flex items-center justify-center gap-1.5">
-                    <button title="Retirer une unité" aria-label="Retirer une unité" onClick={() => void adjustStock(part, -1)} disabled={part.stock <= 0} className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-100 disabled:opacity-40"><Minus size={14} /></button>
-                    <button title="Ajouter une unité" onClick={() => void adjustStock(part, 1)} className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-100"><Plus size={14} /></button>
-                    <button title="+ À STOCK" onClick={() => void adjustStock(part, 1)} className="inline-flex items-center gap-1 rounded-lg border border-emerald-150 bg-emerald-50 px-2 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100">+ À STOCK</button>
+                    <button title={t('removeUnit')} aria-label={t('removeUnit')} onClick={() => void adjustStock(part, -1)} disabled={part.stock <= 0} className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-100 disabled:opacity-40"><Minus size={14} /></button>
+                    <button title={t('addUnit')} aria-label={t('addUnit')} onClick={() => void adjustStock(part, 1)} className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-100"><Plus size={14} /></button>
+                    <button title={t('restock')} onClick={() => void adjustStock(part, 1)} className="inline-flex items-center gap-1 rounded-lg border border-emerald-150 bg-emerald-50 px-2 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100">+ {t('restock')}</button>
                     </div>}
                   </td>
-                  {canManage && <td data-label="Actions" className="px-5 py-4"><div className="flex justify-end gap-1.5">
-                    <button title="Historique" onClick={() => void openHistory(part)} className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-100"><History size={14} /></button>
-                    {canAddEdit && <button title="Modifier" onClick={() => openEdit(part)} className="rounded-lg border border-indigo-100 p-2 text-indigo-600 hover:bg-indigo-50"><Pencil size={14} /></button>}
-                    {canDelete && <button title="Supprimer" onClick={() => void archivePart(part)} className="rounded-lg border border-rose-100 p-2 text-rose-500 hover:bg-rose-50"><Trash2 size={14} /></button>}
+                  {canManage &&                   <td data-label={t('columns.actions')} className="px-5 py-4"><div className="flex justify-end gap-1.5">
+                    <button title={t('history')} aria-label={t('history')} onClick={() => void openHistory(part)} className="rounded-lg border border-slate-200 p-2 text-slate-500 hover:bg-slate-100"><History size={14} /></button>
+                    {canAddEdit && <button title={t('edit')} aria-label={t('edit')} onClick={() => openEdit(part)} className="rounded-lg border border-indigo-100 p-2 text-indigo-600 hover:bg-indigo-50"><Pencil size={14} /></button>}
+                    {canDelete && <button title={t('delete')} aria-label={t('delete')} onClick={() => void archivePart(part)} className="rounded-lg border border-rose-100 p-2 text-rose-500 hover:bg-rose-50"><Trash2 size={14} /></button>}
                   </div></td>}
                 </tr>)}
             </tbody>
@@ -751,37 +790,37 @@ export default function Parts({ userProfile }: PartsProps) {
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/50 p-4" onMouseDown={event => { if (event.target === event.currentTarget) { setEditing(null); setForm(emptyForm); setIsModalOpen(false); } }}>
           <form onSubmit={savePart} className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-3xl bg-white shadow-2xl">
             <div className="sticky top-0 flex items-center justify-between border-b border-slate-100 bg-white px-6 py-5">
-              <h2 className="text-xl font-black text-slate-900">{editing ? 'Modifier la pièce' : 'Nouvelle Pièce'}</h2>
-              <button type="button" onClick={() => { setEditing(null); setForm(emptyForm); setIsModalOpen(false); }} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X /></button>
+              <h2 className="text-xl font-black text-slate-900">{editing ? t('edit') : t('newPart')}</h2>
+              <button type="button" onClick={() => { setEditing(null); setForm(emptyForm); setIsModalOpen(false); }} aria-label={t('close')} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X /></button>
             </div>
             <div className="space-y-3 px-6 pt-5">
               <div className="flex items-center justify-between gap-2">
-                <label className="text-xs font-black uppercase tracking-wider text-slate-700">RÉFÉRENCE / CODE À BARRE</label>
-                <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">Scanner Douchette Prêt</span>
+                <label className="text-xs font-black uppercase tracking-wider text-slate-700">{t('referenceBarcode')}</label>
+                <span className="rounded-full border border-emerald-100 bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">{t('scannerReady')}</span>
               </div>
               <div className="relative flex gap-2">
                 <Barcode className="absolute start-3 top-3 h-4 w-4 text-indigo-500" />
-                <input value={form.barcode} onChange={event => setForm({ ...form, barcode: event.target.value })} placeholder="Pointez votre douchette et flashez" className="min-w-0 flex-1 rounded-xl border border-slate-200 py-2.5 ps-10 pe-3 font-mono text-sm" />
-                <button type="button" onClick={() => setForm(current => ({ ...current, barcode: makeEan13() }))} className="rounded-lg bg-slate-100 px-3 text-xs font-black uppercase text-slate-700">GÉNÉRER</button>
-                <button type="button" onClick={printBarcode} className="rounded-lg bg-indigo-600 px-3 text-xs font-black uppercase text-white">IMPRIMER</button>
+                <input value={form.barcode} onChange={event => setForm({ ...form, barcode: event.target.value })} placeholder={t('barcodePlaceholder')} className="min-w-0 flex-1 rounded-xl border border-slate-200 py-2.5 ps-10 pe-3 font-mono text-sm" />
+                <button type="button" onClick={() => setForm(current => ({ ...current, barcode: makeEan13() }))} className="rounded-lg bg-slate-100 px-3 text-xs font-black uppercase text-slate-700">{t('generate')}</button>
+                <button type="button" onClick={printBarcode} className="rounded-lg bg-indigo-600 px-3 text-xs font-black uppercase text-white">{t('print')}</button>
               </div>
-              <p className="text-[10px] leading-relaxed text-slate-500">Vous pouvez scanner directement le produit à tout moment pendant que ce formulaire est ouvert. La douchette remplira automatiquement ce champ et émettra un signal sonore.</p>
+              <p className="text-[10px] leading-relaxed text-slate-500">{t('scanHelp')}</p>
             </div>
             <div className="grid gap-4 p-6 sm:grid-cols-2">
-              <label className="space-y-1 text-xs font-bold text-slate-600 sm:col-span-2">Description<input required value={form.description} onChange={event => setForm({ ...form, description: event.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm" /></label>
-              <label className="space-y-1 text-xs font-bold text-slate-600">Marque<div className="flex gap-2"><select required value={form.brand} onChange={event => setForm({ ...form, brand: event.target.value })} className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm">{availableBrands.map(brand => <option key={brand}>{brand}</option>)}</select><button type="button" aria-label="Ajouter une marque" onClick={() => setBrandInputOpen(value => !value)} className="rounded-xl border border-slate-200 px-3 text-lg text-indigo-600">+</button></div>{brandInputOpen && <span className="flex gap-2 pt-2"><input value={newBrand} onChange={event => setNewBrand(event.target.value)} placeholder="Nouvelle marque" className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm" /><button type="button" onClick={() => { const value = newBrand.trim(); if (value) setForm(current => ({ ...current, brand: value })); setNewBrand(''); setBrandInputOpen(false); }} className="rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white">+</button></span>}</label>
-              <label className="space-y-1 text-xs font-bold text-slate-600">Catégorie<div className="flex gap-2"><select required value={form.category} onChange={event => setForm({ ...form, category: event.target.value })} className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm">{availableCategories.map(category => <option key={category}>{category}</option>)}</select><button type="button" aria-label="Gérer les catégories" onClick={() => setCategoryModalOpen(true)} className="rounded-xl border border-slate-200 px-3 text-lg text-indigo-600">+</button></div></label>
-              <label className="space-y-1 text-xs font-bold text-slate-600">Stock initial<input required min="0" step="1" type="number" value={form.stock} onChange={event => setForm({ ...form, stock: event.target.value })} disabled={!!editing} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm disabled:bg-slate-50" />{editing && <span className="block text-[10px] font-medium text-slate-400">Ajustez le stock depuis les boutons + / − du tableau.</span>}</label>
-              <label className="space-y-1 text-xs font-bold text-slate-600">Alerte stock faible<input required min="0" step="1" type="number" value={form.lowStockAlert} onChange={event => setForm({ ...form, lowStockAlert: event.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm" /></label>
-              {canViewBuyPrice && <label className="space-y-1 text-xs font-bold text-slate-600">Prix achat (DT)<input required min="0" step="0.001" type="number" value={form.buyPrice} onChange={event => setForm({ ...form, buyPrice: event.target.value })} readOnly={!isAdmin} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm read-only:bg-slate-100" /></label>}
-              <label className="space-y-1 text-xs font-bold text-slate-600">Prix vente (DT)<input required min="0" step="0.001" type="number" value={form.sellPrice} onChange={event => setForm({ ...form, sellPrice: event.target.value })} readOnly={!canEditSellPrice} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm read-only:bg-slate-100" /></label>
-              <label className="space-y-1 text-xs font-bold text-slate-600 sm:col-span-2">Modèles compatibles<textarea value={form.compatibleModels} onChange={event => setForm({ ...form, compatibleModels: event.target.value })} placeholder="Ex: iPhone 12, 12 Pro" rows={2} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm" /></label>
-              <label className="space-y-1 text-xs font-bold text-slate-600">Référence<input value={form.reference} onChange={event => setForm({ ...form, reference: event.target.value })} placeholder="Ex: REF-001" className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm" /></label>
+              <label className="space-y-1 text-xs font-bold text-slate-600 sm:col-span-2">{t('description')}<input required value={form.description} onChange={event => setForm({ ...form, description: event.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm" /></label>
+              <label className="space-y-1 text-xs font-bold text-slate-600">{t('brand')}<div className="flex gap-2"><select required value={form.brand} onChange={event => setForm({ ...form, brand: event.target.value })} className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm">{availableBrands.map(brand => <option key={brand}>{brand}</option>)}</select><button type="button" aria-label={t('addBrand')} onClick={() => setBrandInputOpen(value => !value)} className="rounded-xl border border-slate-200 px-3 text-lg text-indigo-600">+</button></div>{brandInputOpen && <span className="flex gap-2 pt-2"><input value={newBrand} onChange={event => setNewBrand(event.target.value)} placeholder={t('newBrand')} className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm" /><button type="button" aria-label={t('addBrand')} onClick={() => { const value = newBrand.trim(); if (value) setForm(current => ({ ...current, brand: value })); setNewBrand(''); setBrandInputOpen(false); }} className="rounded-xl bg-indigo-600 px-3 text-xs font-bold text-white">+</button></span>}</label>
+              <label className="space-y-1 text-xs font-bold text-slate-600">{t('category')}<div className="flex gap-2"><select required value={form.category} onChange={event => setForm({ ...form, category: event.target.value })} className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm">{availableCategories.map(category => <option key={category} value={category}>{categoryLabel(category)}</option>)}</select><button type="button" aria-label={t('manageCategories')} onClick={() => setCategoryModalOpen(true)} className="rounded-xl border border-slate-200 px-3 text-lg text-indigo-600">+</button></div></label>
+              <label className="space-y-1 text-xs font-bold text-slate-600">{t('initialStock')}<input required min="0" step="1" type="number" value={form.stock} onChange={event => setForm({ ...form, stock: event.target.value })} disabled={!!editing} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm disabled:bg-slate-50" />{editing && <span className="block text-[10px] font-medium text-slate-400">{t('stockEditHelp')}</span>}</label>
+              <label className="space-y-1 text-xs font-bold text-slate-600">{t('lowStockAlert')}<input required min="0" step="1" type="number" value={form.lowStockAlert} onChange={event => setForm({ ...form, lowStockAlert: event.target.value })} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm" /></label>
+              {canViewBuyPrice && <label className="space-y-1 text-xs font-bold text-slate-600">{t('buyPrice')}<input required min="0" step="0.001" type="number" value={form.buyPrice} onChange={event => setForm({ ...form, buyPrice: event.target.value })} readOnly={!isAdmin} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm read-only:bg-slate-100" /></label>}
+              <label className="space-y-1 text-xs font-bold text-slate-600">{t('sellPrice')}<input required min="0" step="0.001" type="number" value={form.sellPrice} onChange={event => setForm({ ...form, sellPrice: event.target.value })} readOnly={!canEditSellPrice} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm read-only:bg-slate-100" /></label>
+              <label className="space-y-1 text-xs font-bold text-slate-600 sm:col-span-2">{t('compatibleModels')}<textarea value={form.compatibleModels} onChange={event => setForm({ ...form, compatibleModels: event.target.value })} placeholder={t('compatibleModelsPlaceholder')} rows={2} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm" /></label>
+              <label className="space-y-1 text-xs font-bold text-slate-600">{t('reference')}<input value={form.reference} onChange={event => setForm({ ...form, reference: event.target.value })} placeholder={t('referencePlaceholder')} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm" /></label>
             </div>
             {error && <p className="mx-6 rounded-xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{error}</p>}
             <div className="flex justify-end gap-3 border-t border-slate-100 p-6">
-              <button type="button" onClick={() => { setEditing(null); setForm(emptyForm); setIsModalOpen(false); }} className="rounded-xl px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-100">Annuler</button>
-              <button disabled={saving} className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50">{saving ? 'Enregistrement...' : editing ? 'Enregistrer' : 'Ajouter'}</button>
+              <button type="button" onClick={() => { setEditing(null); setForm(emptyForm); setIsModalOpen(false); }} className="rounded-xl px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-100">{t('cancel')}</button>
+              <button disabled={saving} className="rounded-xl bg-indigo-600 px-5 py-3 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-50">{saving ? t('saving') : editing ? t('save') : t('add')}</button>
             </div>
           </form>
         </div>
@@ -789,28 +828,28 @@ export default function Parts({ userProfile }: PartsProps) {
 
       {canAddEdit && categoryModalOpen && <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4" onMouseDown={event => { if (event.target === event.currentTarget) setCategoryModalOpen(false); }}>
         <section className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl">
-          <header className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><h2 className="text-sm font-black uppercase tracking-wider text-slate-800">GÉRER LES CATÉGORIES</h2><button onClick={() => setCategoryModalOpen(false)} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X size={18} /></button></header>
+          <header className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><h2 className="text-sm font-black uppercase tracking-wider text-slate-800">{t('manageCategoriesTitle')}</h2><button onClick={() => setCategoryModalOpen(false)} aria-label={t('close')} className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><X size={18} /></button></header>
           <form onSubmit={event => void addCategory(event)} className="space-y-2 p-5">
-            <label className="block text-xs font-black uppercase tracking-wider text-slate-600">NOUVEAU NOM DE CATÉGORIE</label>
-            <div className="flex gap-2"><input required value={newCategoryName} onChange={event => setNewCategoryName(event.target.value)} className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm" /><button className="rounded-xl bg-indigo-600 px-3 py-2 text-xs font-black uppercase text-white">+ AJOUTER</button></div>
+            <label className="block text-xs font-black uppercase tracking-wider text-slate-600">{t('newCategory')}</label>
+            <div className="flex gap-2"><input required value={newCategoryName} onChange={event => setNewCategoryName(event.target.value)} className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm" /><button className="rounded-xl bg-indigo-600 px-3 py-2 text-xs font-black uppercase text-white">+ {t('add')}</button></div>
           </form>
-          <div className="px-5 pb-4"><h3 className="mb-2 border-b border-slate-100 pb-2 text-xs font-black uppercase tracking-wider text-slate-600">CATÉGORIES EXISTANTES ({availableCategories.length})</h3><ul className="max-h-48 space-y-1 overflow-y-auto">{availableCategories.map(category => <li key={category} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm"><span>{category}</span>{deletingCategory === category ? <span className="flex gap-2"><button onClick={() => setDeletingCategory(null)} className="text-xs">Non</button><button onClick={() => void removeCategory(category)} className="text-xs font-bold text-rose-600">Oui</button></span> : <button title={`Supprimer la catégorie ${category}`} onClick={() => setDeletingCategory(category)} className="text-slate-400 hover:text-rose-600"><Trash2 size={15} /></button>}</li>)}</ul></div>
-          <footer className="flex items-center justify-between border-t border-slate-100 bg-slate-50/70 px-5 py-3"><button onClick={() => void resetPartCategories()} className="text-[10px] font-black uppercase tracking-wider text-slate-500 underline">RÉINIT. DÉFAUTS</button><button onClick={() => setCategoryModalOpen(false)} className="rounded-lg bg-slate-200 px-4 py-2 text-xs font-black uppercase text-slate-700">FERMER</button></footer>
+          <div className="px-5 pb-4"><h3 className="mb-2 border-b border-slate-100 pb-2 text-xs font-black uppercase tracking-wider text-slate-600">{t('existingCategories', { count: formatNumber(availableCategories.length) })}</h3><ul className="max-h-48 space-y-1 overflow-y-auto">{availableCategories.map(category => <li key={category} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm"><span>{categoryLabel(category)}</span>{deletingCategory === category ? <span className="flex gap-2"><button onClick={() => setDeletingCategory(null)} className="text-xs">{t('no')}</button><button onClick={() => void removeCategory(category)} className="text-xs font-bold text-rose-600">{t('yes')}</button></span> : <button title={t('deleteCategoryTitle', { category: categoryLabel(category) })} aria-label={t('deleteCategoryTitle', { category: categoryLabel(category) })} onClick={() => setDeletingCategory(category)} className="text-slate-400 hover:text-rose-600"><Trash2 size={15} /></button>}</li>)}</ul></div>
+          <footer className="flex items-center justify-between border-t border-slate-100 bg-slate-50/70 px-5 py-3"><button onClick={() => void resetPartCategories()} className="text-[10px] font-black uppercase tracking-wider text-slate-500 underline">{t('resetDefaults')}</button><button onClick={() => setCategoryModalOpen(false)} className="rounded-lg bg-slate-200 px-4 py-2 text-xs font-black uppercase text-slate-700">{t('close')}</button></footer>
         </section>
       </div>}
 
       {historyPart && <div className="fixed inset-0 z-[90] flex items-center justify-center bg-slate-950/50 p-4" onMouseDown={event => { if (event.target === event.currentTarget) setHistoryPart(null); }}>
         <section className="max-h-[85vh] w-full max-w-2xl overflow-hidden rounded-3xl bg-white shadow-2xl">
           <header className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
-            <div><p className="text-xs font-black uppercase tracking-widest text-indigo-600">Mouvements de stock</p><h2 className="text-lg font-black text-slate-900">{historyPart.name}</h2></div>
-            <button onClick={() => setHistoryPart(null)} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X /></button>
+            <div><p className="text-xs font-black uppercase tracking-widest text-indigo-600">{t('historyTitle')}</p><h2 className="text-lg font-black text-slate-900">{historyPart.name}</h2></div>
+            <button onClick={() => setHistoryPart(null)} aria-label={t('close')} className="rounded-xl p-2 text-slate-400 hover:bg-slate-100"><X /></button>
           </header>
           <div className="max-h-[65vh] overflow-y-auto p-6">
-            {historyLoading ? <p className="py-8 text-center text-sm text-slate-400">Chargement de l’historique…</p>
-              : historyRows.length === 0 ? <p className="py-8 text-center text-sm text-slate-400">Aucun mouvement enregistré.</p>
+            {historyLoading ? <p className="py-8 text-center text-sm text-slate-400">{t('historyLoading')}</p>
+              : historyRows.length === 0 ? <p className="py-8 text-center text-sm text-slate-400">{t('noMovements')}</p>
               : <ul className="space-y-2">{historyRows.map(row => <li key={row.id} className="flex items-center justify-between gap-4 rounded-xl border border-slate-100 px-4 py-3">
-                <div><p className="text-sm font-bold text-slate-700">{row.type.replaceAll('_', ' ')}</p><p className="text-xs text-slate-400">{row.createdAt?.toDate?.().toLocaleString(getDateLocale()) || 'Date inconnue'}</p></div>
-                <span className={cn('font-mono font-black', row.delta > 0 ? 'text-emerald-600' : 'text-rose-600')}>{row.delta > 0 ? '+' : ''}{row.delta}</span>
+                <div><p className="text-sm font-bold text-slate-700">{t(`movementTypes.${row.type}`, { defaultValue: row.type.replaceAll('_', ' ') })}</p><p className="text-xs text-slate-400">{row.createdAt?.toDate?.() ? formatDateTime(row.createdAt.toDate()) : t('dateUnknown')}</p></div>
+                <span className={cn('font-mono font-black', row.delta > 0 ? 'text-emerald-600' : 'text-rose-600')}>{row.delta > 0 ? '+' : ''}{formatNumber(row.delta)}</span>
               </li>)}</ul>}
           </div>
         </section>

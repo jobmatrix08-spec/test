@@ -125,7 +125,9 @@
     "chooseCategory": "-- Choisir une catégorie --",
     "storeIdMissing": "Impossible d’enregistrer les modèles sans identifiant de {{shopName}}.",
     "attributesSaveFailed": "Impossible d’enregistrer les modèles de caractéristiques.",
-    "restockFailed": "Échec de l'approvisionnement. Réessayez."
+    "restockFailed": "Échec de l'approvisionnement. Réessayez.",
+    "barcodeLabelTitle": "Étiquette code-barres",
+    "articleFallback": "Article"
   },
   "attributes": {
     "type": "Type de caractéristiques",

@@ -3,6 +3,7 @@ import { selectStartupContent, fetchRandomVerse, type StartupContent } from '../
 import type { StartupPreferences } from './StartupPreferences';
 import { StartupAudioButton } from './StartupPreferences';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 export function StartupDailyOverlay({
   preferences,
@@ -13,6 +14,7 @@ export function StartupDailyOverlay({
   onPreferencesChange: (updates: Partial<StartupPreferences>) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation('settings');
   const [content, setContent] = useState<StartupContent>(() => selectStartupContent({
     mode: preferences.mode,
     lastContentId: preferences.lastContentId,
@@ -54,19 +56,19 @@ export function StartupDailyOverlay({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Coran & Adhkar"
+      aria-label={t('startup.title')}
       className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-ds-bg px-5 py-14 text-ds-text"
     >
       <button
         type="button"
         onClick={onClose}
         className="absolute end-5 top-5 z-10 rounded-full border border-ds-border bg-ds-surface-2 p-3 text-ds-text hover:bg-ds-border"
-        aria-label="Fermer"
+        aria-label={t('startup.close')}
       >
         <X className="h-5 w-5" />
       </button>
       <main className="relative flex w-full max-w-5xl flex-col items-center text-center">
-        <p className="mb-8 text-xs font-semibold uppercase tracking-[0.35em] text-ds-brand">Coran &amp; Adhkar</p>
+        <p className="mb-8 text-xs font-semibold uppercase tracking-[0.35em] text-ds-brand">{t('startup.title')}</p>
         <article className="animate-in fade-in duration-700">
           <h1 className="mb-6 font-arabic text-2xl font-semibold text-ds-brand md:text-3xl" dir="rtl" lang="ar">
             {content.title}
@@ -91,7 +93,7 @@ export function StartupDailyOverlay({
           onClick={onClose}
           className="mt-10 rounded-full bg-ds-brand px-10 py-4 text-lg font-black text-ds-brand-contrast shadow-ds-md transition hover:bg-ds-brand-hover"
         >
-          دخول
+          {t('startup.enter')}
         </button>
       </main>
     </div>

@@ -27,5 +27,29 @@
   "incompleteRepairCosts": "Certains coûts historiques de pièces manquent ; le bénéfice brut n’est pas estimé.",
   "statusDistribution": "Répartition par statut",
   "incompleteSales_one": "Les coûts historiques manquent pour {{count}} vente ; bénéfice brut indisponible.",
-  "incompleteSales_other": "Les coûts historiques manquent pour {{count}} ventes ; bénéfice brut indisponible."
+  "incompleteSales_other": "Les coûts historiques manquent pour {{count}} ventes ; bénéfice brut indisponible.",
+  "salesVolume": {
+    "today": "Aujourd’hui",
+    "salesVolume": "Volume de ventes",
+    "sales": "ventes",
+    "revenue": "Chiffre d’affaires",
+    "incompleteProfit": "Coûts historiques incomplets ; bénéfice indisponible.",
+    "title": "Volume des ventes (7 derniers jours)",
+    "description": "Évolution journalière du nombre de transactions et des encaissements",
+    "combined": "Vue combinée",
+    "volumeOnly": "Volume seul",
+    "revenueOnly": "CA seul",
+    "chartModeLabel": "Mode d’affichage du graphique",
+    "chartAccessibleLabel": "Graphique du volume des ventes, du chiffre d’affaires et du bénéfice des sept derniers jours.",
+    "totalVolume": "Volume total (7 j)",
+    "totalRevenue": "CA total (7 j)",
+    "dailyAverage": "Moyenne / jour",
+    "salesPerDay": "ventes/j",
+    "peakActivity": "Pic d’activité",
+    "peakDay": "{{day}} ({{volume}} ventes)",
+    "salesCount": "Nombre de ventes",
+    "revenueWithCurrency": "Chiffre d’affaires ({{currency}})",
+    "chartHelp": "Les barres bleues indiquent le volume de transactions enregistrées chaque jour.",
+    "lastUpdated": "Dernière mise à jour : temps réel"
+  }
 }

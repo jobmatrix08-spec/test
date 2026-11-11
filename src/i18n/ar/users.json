@@ -10,6 +10,7 @@
   "confirm": "أكّد",
   "editing": "قاعد يبدّل…",
   "deleting": "قاعد يحذف…",
+  "loadingUsers": "قاعد يحمّل المستخدمين",
   "roles": {
     "label": "الدور",
     "custom": "حساب بقائمة خاصة",
@@ -25,6 +26,7 @@
     "fullName": "الاسم الكامل",
     "nameExample": "مثال: محمد",
     "loginEmail": "الإيميل للدخول",
+    "emailExample": "name@example.com",
     "password": "كلمة السر (6 حروف على الأقل)",
     "passwordPlaceholder": "كلمة السر تتضبط في Firebase Auth",
     "allowedMenus": "القوائم المسموح بها",
@@ -35,6 +37,8 @@
   },
   "editModal": {
     "title": "بدّل المستخدم",
+    "accountStatus": "حالة الحساب",
+    "save": "سجّل",
     "passwordResetHelp": "تبديل كلمة السر يصير بالرابط الآمن اللي يتبعت للإيميل هذا.",
     "statusActive": "نشيط (الدخول مسموح)",
     "statusBanned": "محظور (الدخول موش مسموح)",
@@ -45,6 +49,11 @@
     "title": "بدّل كلمة السر",
     "newPassword": "كلمة السر الجديدة",
     "confirmPassword": "أكّد كلمة السر الجديدة"
+  },
+  "securityCode": {
+    "label": "كود الأمان (4 أرقام)",
+    "placeholder": "مثال: 1234 (خلّيه فارغ كان ما تحبش كود)",
+    "help": "الكود هذا باش يتطلب من المستخدم قبل أي تبديل ولا حذف. خلّيه فارغ كان ما تحبش تعمل كود."
   },
   "delete": {
     "title": "احذف نهائياً",
@@ -78,6 +87,18 @@
     "active": "نشيط",
     "primaryAccount": "الحساب الرئيسي"
   },
+  "permissions": {
+    "flags": {
+      "viewBuyPrice": "شوف سعر الشراء",
+      "editSellPrice": "بدّل سعر البيع",
+      "addEdit": "زيد / بدّل (الاسم، الصنف، الماركة، الموديلات…)",
+      "adjustStock": "بدّل الستوك (−/+, + زيد للستوك)",
+      "delete": "احذف",
+      "viewCosts": "شوف الكلفة والربح",
+      "showScreen": "ورّي شاشة البداية (القرآن والأذكار)",
+      "playAudio": "شغّل الصوت وقت البداية"
+    }
+  },
   "actions": {
     "editProfile": "بدّل الحساب هذا",
     "edit": "بدّل",
@@ -92,11 +113,55 @@
   },
   "permissionMigration": {
     "preview": "عاين ترحيل الصلاحيات",
+    "previewReady": "عدد الحسابات اللي باش تترحّل: {{count}}. ما تبدّل حتى ملف.",
+    "success": "كمل ترحيل الصلاحيات.",
+    "confirmTitle": "أكّد الترحيل",
+    "confirmDescription": "صلاحيات الحسابات اللي تعاينوا باش تتبدّل. نسخة JSON تهبطت.",
     "accountsWithoutPermissions_one": "فما حساب ما عندوش صلاحيات مضبوطة.",
     "accountsWithoutPermissions_other": "فما {{count}} حسابات ما عندهمش صلاحيات مضبوطة.",
     "downloadBackup": "حمّل نسخة JSON",
     "running": "قاعد يرحّل…",
     "confirm": "أكّد الترحيل"
+  },
+  "messages": {
+    "resetLinkSent": "تبعت رابط تبديل كلمة السر لـ{{email}}.",
+    "passwordChanged": "تبدّلت كلمة السر متاع {{email}}.",
+    "userCreatedResetSent": "تعمل الحساب وتبعت رابط تحديد كلمة السر.",
+    "userCreatedResetFailed": "تعمل الحساب، أما رابط تبديل كلمة السر ما تبعثش. عاود ابعثو من السطر متاعو.",
+    "userUpdated": "تبدّل حساب {{email}} بنجاح.",
+    "userBlocked": "تحظر {{email}}.",
+    "userUnblocked": "تحلّ الحظر على {{email}}.",
+    "userDeleted": "تحذف المستخدم {{email}}."
+  },
+  "errors": {
+    "permissionMigration": "ما نجّمش نرحّل الصلاحيات: {{details}}",
+    "copyFailed": "ما نجّمتش ننسخ معلومات المستخدم. {{details}}",
+    "resetLinkFailed": "ما نجّمتش نبعث رابط تبديل كلمة السر. {{details}}",
+    "passwordMinLength": "كلمة السر لازمها 8 حروف على الأقل.",
+    "passwordMismatch": "تأكيد كلمة السر موش كيف كيف مع الجديدة.",
+    "passwordChangeFailed": "ما نجّمتش نبدّل كلمة السر. {{details}}",
+    "nameRequired": "الاسم لازم يكون فيه حرفين على الأقل.",
+    "invalidEmail": "اكتب إيميل صحيح.",
+    "createPasswordMinLength": "كلمة السر لازمها 6 حروف على الأقل.",
+    "menuRequired": "اختار على الأقل صلاحية دخول وحدة.",
+    "emailAlreadyExists": "الإيميل هذا مستعمل من قبل.",
+    "userCheckFailed": "صار مشكل في الاتصال وقت تثبتنا من المستخدم.",
+    "authCreateFailed": "ما نجّمتش نعمل حساب التثبت.",
+    "authCreateFailedWithDetails": "ما نجّمتش نعمل حساب التثبت. التفاصيل: {{details}}",
+    "authEmailInUse": "الإيميل هذا مستعمل في Firebase Authentication.",
+    "authInvalidEmail": "الإيميل هذا موش صحيح في Firebase Authentication.",
+    "userSaveFailed": "ما نجّمتش نسجّل المستخدم في قاعدة البيانات: {{details}}",
+    "permissionDenied": "الصلاحية مرفوضة",
+    "loginEmailImmutable": "ما تنجمش تبدّل إيميل الدخول من الفورم هذا. ابعث للمستخدم رابط تبديل كلمة السر.",
+    "securityCodeInvalid": "كود الأمان لازم يكون 4 أرقام بالضبط ولا يتخلّى فارغ.",
+    "userUpdateFailed": "ما نجّمتش نبدّل المستخدم. {{details}}",
+    "deleteOwnAccount": "ما تنجمش تحذف حساب المدير متاعك.",
+    "userDeleteFailed": "ما نجّمتش نحذف المستخدم هذا. {{details}}"
+  },
+  "apiHealth": {
+    "available": "خادم الـAPI يخدم.",
+    "failed": "ما نجّمش نتثبتو من الخادم.",
+    "failedWithDetails": "ما نجّمش نتثبتو من الخادم: {{details}}"
   },
   "menus": {
     "dashboard": { "name": "لوحة القيادة", "shortName": "الرئيسية", "description": "إحصائيات ورسوم عامة" },
@@ -106,7 +171,7 @@
     "products": { "name": "منتجات / خدمات", "shortName": "المنتجات", "description": "الكاشي يشوف؛ التقني يزيد ويتصرف" },
     "clients": { "name": "تسيير الحرفاء", "shortName": "الحرفاء", "description": "قائمة الحرفاء ومتابعة الكريدي" },
     "sales": { "name": "تاريخ البيوعات", "shortName": "البيوعات", "description": "متابعة البيوعات واللوّج عليهم" },
-    "invoices": { "name": "الفوترة", "shortName": "الفواتير", "description": "تعديل وتسيير الفواتير" },
+    "invoices": { "name": "الفواتير", "shortName": "الفواتير", "description": "تعديل وتسيير الفواتير" },
     "notes": { "name": "ملاحظات", "shortName": "ملاحظات", "description": "زيد ملاحظات وبرمجهم" },
     "settings": { "name": "إعدادات المغازة", "shortName": "إعدادات", "description": "الإعدادات الأساسية" },
     "users": { "name": "تسيير المستخدمين", "shortName": "المستخدمين", "description": "صلاحيات خاصة لتسيير الفريق" },

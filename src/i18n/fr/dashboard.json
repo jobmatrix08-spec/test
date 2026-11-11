@@ -1,1 +1,365 @@
-{}
+{
+  "alerts": {
+    "deleteFailed": "Erreur lors de la suppression.",
+    "exportFailed": "Une erreur est survenue lors de l'exportation vers Excel.",
+    "noExportRecords": "Aucun enregistrement à exporter.",
+    "supplyUpdateFailed": "Erreur lors de la modification de l'approvisionnement."
+  },
+  "cash": {
+    "cashCollected": "Espèces encaissées",
+    "cashExpenses": "Dépenses en espèces",
+    "closeSession": "Clôturer la caisse",
+    "currentSession": "Caisse en cours",
+    "expectedInRegister": "Attendu en caisse",
+    "noSession": "Aucune caisse ouverte",
+    "openingFloat": "Fond de caisse",
+    "openSession": "Ouvrir la caisse",
+    "sessionOpen": "Session ouverte"
+  },
+  "common": {
+    "at": "à",
+    "cancel": "Annuler",
+    "close": "Fermer",
+    "general": "Général",
+    "noBarcode": "Sans code-barres",
+    "save": "Enregistrer",
+    "to": "à",
+    "unavailable": "indisponible"
+  },
+  "confirm": {
+    "deleteSupply": "Voulez-vous vraiment supprimer cet approvisionnement pour « {{product}} » ?"
+  },
+  "expenses": {
+    "addStockToTrack": "Ajoutez du stock aux articles pour suivre vos dépenses.",
+    "adjustSearch": "Ajustez les termes de votre recherche.",
+    "columns": {
+      "date": "Date",
+      "dateTime": "Date et heure",
+      "product": "Produit",
+      "productsAdded": "Nombre de produits ajoutés",
+      "quantityAdded": "Quantité ajoutée",
+      "totalCost": "Coût total",
+      "totalExpenses": "Dépenses totales",
+      "totalQuantityAdded": "Quantité totale ajoutée",
+      "unitPurchasePrice": "Prix d'achat unitaire"
+    },
+    "dailyHistory": "Historique journalier",
+    "deletedProduct": "Produit supprimé",
+    "description": "Suivi automatique du coût d'acquisition des marchandises",
+    "noOperations": "Aucune opération trouvée",
+    "noSupplies": "Aucun approvisionnement",
+    "operationDetails": "Détails des opérations",
+    "recordsTotal": "Total : {{count}} enregistrements",
+    "searchPlaceholder": "Rechercher un produit ou une date...",
+    "searchAriaLabel": "Rechercher un produit ou une date",
+    "title": "Consulter l'historique : dépenses de stock"
+  },
+  "exports": {
+    "columns": {
+      "amountPaid": "Montant payé (DT)",
+      "averageBasket": "Panier moyen (DT)",
+      "barcode": "Code-barres",
+      "cashCollected": "Total encaissé (DT)",
+      "category": "Catégorie",
+      "costsExpenses": "Coûts et dépenses (DT)",
+      "date": "Date",
+      "dateTime": "Date et heure",
+      "estimatedTheoreticalMargin": "Marge théorique estimée (DT)",
+      "generatedDebts": "Dettes générées (DT)",
+      "indicator": "Indicateur",
+      "marginRatio": "Ratio de marge (%)",
+      "netProfit": "Bénéfice net (DT)",
+      "product": "Produit",
+      "productDesignation": "Désignation du produit",
+      "productsAdded": "Nombre de produits ajoutés",
+      "quantityAdded": "Quantité ajoutée",
+      "revenue": "Chiffre d'affaires (DT)",
+      "salesCount": "Nombre de ventes",
+      "stockQuantity": "Quantité en stock",
+      "ticketsCollected": "Tickets encaissés",
+      "totalCost": "Coût total (DT)",
+      "totalExpenses": "Dépenses totales (DT)",
+      "totalPurchaseValue": "Valeur d'achat totale (DT)",
+      "totalQuantityAdded": "Quantité totale ajoutée",
+      "totalSaleValue": "Valeur de vente totale (revenus) (DT)",
+      "totalTransactions": "Nombre total de transactions",
+      "totalUnpaid": "Total des impayés (DT)",
+      "unitPurchasePrice": "Prix d'achat unitaire (DT)",
+      "unitSalePrice": "Prix de vente unitaire (DT)",
+      "value": "Valeur"
+    },
+    "filename": {
+      "cashReport": "rapport-caisse",
+      "dailyExpenses": "depenses-journalieres",
+      "expenseDetails": "details-depenses",
+      "stockReport": "rapport-valorisation-stock"
+    },
+    "sheet": {
+      "debts": "Dettes",
+      "expenses": "Dépenses",
+      "netProfit": "Bénéfice net",
+      "revenue": "Chiffre d'affaires",
+      "transactions": "Transactions"
+    },
+    "sheetStockValuation": "Valorisation du stock",
+    "sheetSummary": "Synthèse",
+    "stockSummary": {
+      "averageMarginRate": "Taux de marge moyen (%)",
+      "calculationDateTime": "Date et heure du calcul",
+      "outOfStock": "Produits en rupture de stock",
+      "potentialSaleValue": "Valeur du stock à cet instant — vente potentielle ({{currency}})",
+      "stockPurchaseValue": "Valeur du stock à cet instant — achat ({{currency}})",
+      "theoreticalMargin": "Marge théorique estimée ({{currency}})",
+      "totalReferences": "Références totales répertoriées",
+      "totalStockQuantity": "Quantité totale en stock (unités)"
+    }
+  },
+  "financial": {
+    "invoicedParts": "pièces facturées",
+    "labor": "main-d'œuvre",
+    "orSomeRepairs": "ou certaines réparations",
+    "partsCost": "coût des pièces",
+    "repairRevenue": "CA réparations :",
+    "salesWithVat": "{{count}} vente(s) avec TVA sur la période",
+    "totalVatHistory": "historique total : {{count}} vente(s) avec TVA"
+  },
+  "financialCards": {
+    "collectedSales": "Ventes encaissées",
+    "purchaseCost": "Coût d'achat",
+    "repairsInProgress": "Réparations en cours",
+    "unpaid": "Impayés"
+  },
+  "history": {
+    "backToDashboard": "Retour au tableau de bord",
+    "columns": {
+      "activityDate": "Date de l'activité",
+      "cashCollectedLiquid": "Montant encaissé (liquide)",
+      "creditTickets": "Nombre de tickets à crédit",
+      "dailyRevenueTotal": "Chiffre d'affaires total du jour",
+      "debtsCreated": "Dettes créées",
+      "estimatedItemCost": "Coût estimé des articles",
+      "grossRevenue": "Chiffre d'affaires brut",
+      "productDesignation": "Désignation du produit",
+      "salesCount": "Nombre de ventes",
+      "stockQuantity": "Quantité en stock",
+      "theoreticalProfitMargin": "Marge bénéficiaire théorique",
+      "totalCreditGranted": "Total des crédits accordés",
+      "totalPurchaseValue": "Valeur d'achat totale",
+      "totalSaleValue": "Valeur de vente totale (revenus estimés)",
+      "unitPurchasePrice": "Prix d'achat unitaire",
+      "unitSalePrice": "Prix de vente unitaire",
+      "unpaidTotal": "Total des impayés"
+    },
+    "emptyDescription": "Ajustez la recherche pour afficher d'autres articles ou données.",
+    "emptyTitle": "Aucune donnée trouvée",
+    "estimatedMargin": "Marge estimée",
+    "estimatedRevenue": "Revenus estimés",
+    "exportExcel": "Exporter vers Excel",
+    "periodFilter": "Filtrer par période",
+    "printReport": "Imprimer le rapport",
+    "purchaseValue": "Valeur d'achat",
+    "recordsTotal": "Total : {{count}} rapports journaliers",
+    "searchDatePlaceholder": "Rechercher une date (ex. : 22/06)...",
+    "searchDateAriaLabel": "Rechercher une date",
+    "searchStockAriaLabel": "Rechercher un produit ou un code-barres",
+    "startDate": "Date de début",
+    "endDate": "Date de fin",
+    "searchStockPlaceholder": "Rechercher un produit ou un code-barres...",
+    "stockItems": "Articles",
+    "stockTotal": "Total : {{count}} articles répertoriés",
+    "title": {
+      "debt": "Consulter l'historique : dettes",
+      "expenses": "Consulter l'historique : dépenses",
+      "profit": "Consulter l'historique : bénéfice net",
+      "revenue": "Consulter l'historique : chiffre d'affaires",
+      "sales": "Consulter l'historique : nombre de ventes",
+      "stock": "Rapport de valorisation et de rentabilité du stock"
+    },
+    "subtitle": {
+      "debt": "Encours clients et impayés du jour",
+      "expenses": "Suivi des opérations et dépenses de stock",
+      "profit": "Rendement financier après déduction du coût d'achat",
+      "revenue": "Suivi de la courbe des ventes brutes",
+      "sales": "Intensité de l'activité du magasin",
+      "stock": "Analyse en temps réel du stock disponible et des revenus potentiels",
+      "stockWithMargin": "Analyse en temps réel de la valeur d'achat, de vente et des marges bénéficiaires de l'inventaire actuel"
+    },
+    "totalStock": "Stock total",
+    "transactionsCount": "{{count}} transactions"
+  },
+  "loading": {
+    "ariaLabel": "Chargement des indicateurs",
+    "message": "Chargement des indicateurs..."
+  },
+  "lowStock": {
+    "available": "{{count}} disponible(s)",
+    "configuredThreshold": "Seuil configuré : {{count}} unités",
+    "minimumThreshold": "Seuil minimal : {{count}} unités",
+    "outOfStock": "Rupture (0)",
+    "productsCount": "{{count}} produits",
+    "satisfactory": "Niveau de stock satisfaisant",
+    "title": "Alerte de stock faible"
+  },
+  "metrics": {
+    "dailyRevenue": "CA du jour",
+    "debts": "Dettes",
+    "expenses": "Dépenses",
+    "history": "Historique",
+    "netProfit": "Bénéfice net",
+    "sales": "Ventes"
+  },
+  "overview": {
+    "chartPointTitle": "{{date}} : {{value}}",
+    "expenses": "Dépenses",
+    "financialPeriodAriaLabel": "Période de la synthèse financière",
+    "financialSummary": "Synthèse financière",
+    "grossProfit": "Bénéfice brut",
+    "netProfitChartAriaLabel": "Graphique du bénéfice net sur les sept derniers jours",
+    "netProfitSevenDays": "Bénéfice net · 7 jours",
+    "netProfitToday": "Bénéfice net, aujourd'hui",
+    "recentDays": "Derniers jours"
+  },
+  "page": {
+    "descriptionOperations": "Suivi opérationnel en temps réel",
+    "descriptionWithSales": "Performance financière et opérationnelle en temps réel",
+    "title": "Tableau de bord",
+    "today": "Aujourd'hui"
+  },
+  "pagination": {
+    "next": "Page suivante",
+    "pageOf": "Page {{current}} sur {{total}}",
+    "previous": "Page précédente"
+  },
+  "period": {
+    "all": "Tout",
+    "custom": "Personnalisée",
+    "ninetyDays": "90 jours",
+    "sevenDays": "7 jours",
+    "thirtyDays": "30 jours",
+    "thisYear": "Cette année",
+    "today": "Aujourd'hui"
+  },
+  "print": {
+    "columns": {
+      "activityDate": "Date de l'activité",
+      "cashCollected": "Total encaissé",
+      "costsExpenses": "Coûts et dépenses",
+      "dailyAverageBasket": "Panier moyen journalier",
+      "designation": "Désignation",
+      "generatedDebts": "Dettes générées",
+      "marginRatio": "Ratio de marge (%)",
+      "netProfit": "Bénéfice net",
+      "receivedIncome": "Revenus perçus",
+      "remainingUnpaid": "Impayés restants",
+      "revenue": "Chiffre d'affaires",
+      "salesCount": "Nombre de ventes",
+      "stockAvailable": "Stock disponible",
+      "theoreticalMargin": "Marge théorique",
+      "ticketsCollected": "Tickets encaissés",
+      "totalPurchase": "Total achat",
+      "totalSales": "Ventes totales",
+      "totalSalesRevenue": "Total vente (revenus)",
+      "transactions": "Total des transactions",
+      "unitPurchasePrice": "P.A. unitaire",
+      "unitSalePrice": "P.V. unitaire"
+    },
+    "footer": "RAZ de caisse — Fin du rapport d'activité",
+    "missingCosts": "Coûts manquants",
+    "phone": "Tél.",
+    "printedAt": "Imprimé le {{date}}",
+    "summary": "Synthèse historique de caisse",
+    "title": {
+      "debt": "RAPPORT DE TRÉSORERIE : DETTES CLIENTS",
+      "expenses": "RAPPORT D'ACTIVITÉ : DÉPENSES",
+      "profit": "RAPPORT D'ACTIVITÉ : BÉNÉFICE NET (PERFORMANCE)",
+      "revenue": "RAPPORT D'ACTIVITÉ : CHIFFRE D'AFFAIRES",
+      "sales": "RAPPORT D'ACTIVITÉ : TRANSACTIONS",
+      "stock": "RAPPORT D'INVENTAIRE : VALORISATION DU STOCK"
+    }
+  },
+  "profit": {
+    "hiddenMissingDetails": "Bénéfice masqué : coûts historiques manquants pour {{sales}} vente(s){{repairs}}. Aucun coût estimé n'est utilisé.",
+    "hiddenMissingHistoricalCosts": "Bénéfice masqué : des coûts historiques sont manquants. Aucun coût estimé n'est utilisé."
+  },
+  "recentSales": {
+    "atLoss": "À perte",
+    "columns": {
+      "amountPaid": "Montant payé",
+      "profit": "Bénéfice",
+      "purchase": "Achat",
+      "remainingToPay": "Reste à payer",
+      "sale": "Vente",
+      "status": "Statut",
+      "total": "Total"
+    },
+    "description": "Transactions récentes enregistrées",
+    "empty": "Aucune vente récente dans le système",
+    "status": {
+      "credit": "À crédit",
+      "paid": "Réglée"
+    },
+    "title": "Dernières ventes",
+    "walkInCustomer": "Client de passage"
+  },
+  "stockAlert": {
+    "dismiss": "Masquer l'alerte de stock",
+    "dismissTitle": "Masquer l'alerte temporairement",
+    "immediateOutOfStock": "Ruptures immédiates : {{count}} !",
+    "manageStock": "Gérer le stock",
+    "minimumThreshold": "Seuil minimum : {{count}} unités",
+    "moreProducts": "Afficher {{count}} autres produits...",
+    "remaining": "{{count}} restant(s)",
+    "replenishmentWarning": "La quantité en stock de ces articles est inférieure ou égale au seuil minimum défini dans vos paramètres ({{count}} unités). Un réapprovisionnement est recommandé.",
+    "showButton": "Afficher les alertes de stock ({{count}})",
+    "showNotification": "Cliquer pour afficher la notification d'alerte de stock",
+    "title": "Alerte de stock faible ({{count}} produits)"
+  },
+  "stockSummary": {
+    "calculatedAt": "Calculé le",
+    "currentStockValue": "Valeur actuelle de mon stock",
+    "potentialSaleValue": "Soit {{value}} {{currency}} en valeur de vente potentielle",
+    "productsInStock": "Produits en stock",
+    "productsOutOfStock": "{{count}} produit(s) en rupture",
+    "purchaseValue": "valeur d'achat",
+    "realTime": "Temps réel · inventaire actuel",
+    "references": "{{count}} références"
+  },
+  "stockValuation": {
+    "averageCommercialMargin": "Marge commerciale moyenne",
+    "description": "Calculé automatiquement en temps réel à chaque modification de prix ou de stock",
+    "estimatedPotentialRevenue": "Revenus potentiels estimés",
+    "estimatedRevenue": "Chiffre d'affaires estimé",
+    "investedInGoods": "Investi dans les marchandises",
+    "stockProfitabilityRate": "Taux de profitabilité du stock",
+    "theoreticalGrossMargin": "Marge brute théorique",
+    "theoreticalProfit": "Bénéfice théorique (marge)",
+    "title": "Valorisation et performance du stock restant",
+    "totalPurchaseValue": "Valeur d'achat totale",
+    "viewInventoryReport": "Consulter le rapport d'inventaire"
+  },
+  "supplyDialog": {
+    "product": "Produit",
+    "quantity": "Quantité d'approvisionnement",
+    "title": "Modifier l'approvisionnement",
+    "unitPurchasePrice": "Prix d'achat unitaire ({{currency}})"
+  },
+  "tasks": {
+    "clientsWithUnpaid": "Clients avec impayés",
+    "completedRepairs": "Réparations terminées",
+    "description": "Éléments nécessitant votre attention",
+    "lowStock": "Stock faible",
+    "title": "À traiter"
+  },
+  "topProducts": {
+    "description": "Par volume d'articles vendus",
+    "empty": "Aucune vente aujourd'hui",
+    "revenue": "CA",
+    "title": "Meilleures ventes aujourd'hui",
+    "units": "{{count}} unités"
+  },
+  "units": {
+    "repairs": "réparations",
+    "sales": "ventes",
+    "stockQuantity": "{{count}} unités"
+  }
+}

@@ -27,5 +27,29 @@
   "incompleteRepairCosts": "فما كلفة قطع قديمة ناقصة؛ الربح الجملي ما يتحسبش.",
   "statusDistribution": "توزيع حسب الحالة",
   "incompleteSales_one": "كلفة بيعة قديمة ناقصة لـ{{count}} بيعة؛ الربح الجملي موش متوفر.",
-  "incompleteSales_other": "الكلفة القديمة ناقصة لـ{{count}} بيوعات؛ الربح الجملي موش متوفر."
+  "incompleteSales_other": "الكلفة القديمة ناقصة لـ{{count}} بيوعات؛ الربح الجملي موش متوفر.",
+  "salesVolume": {
+    "today": "اليوم",
+    "salesVolume": "عدد البيوعات",
+    "sales": "بيوعات",
+    "revenue": "المداخيل",
+    "incompleteProfit": "كلفة البيوعات القديمة ناقصة؛ الربح موش متوفر.",
+    "title": "حركة البيوعات (آخر 7 أيّام)",
+    "description": "تطوّر عدد المعاملات والمبالغ المقبوضة كل نهار",
+    "combined": "الكل مع بعضو",
+    "volumeOnly": "عدد البيوعات",
+    "revenueOnly": "المداخيل وحدها",
+    "chartModeLabel": "طريقة عرض الرسم البياني",
+    "chartAccessibleLabel": "رسم بياني لعدد البيوعات والمداخيل والربح في آخر سبعة أيّام.",
+    "totalVolume": "مجموع البيوعات (7 أيّام)",
+    "totalRevenue": "مجموع المداخيل (7 أيّام)",
+    "dailyAverage": "المعدّل في النهار",
+    "salesPerDay": "بيوعات/نهار",
+    "peakActivity": "أكثر نهار نشاط",
+    "peakDay": "{{day}} ({{volume}} بيعات)",
+    "salesCount": "عدد البيوعات",
+    "revenueWithCurrency": "المداخيل ({{currency}})",
+    "chartHelp": "الأعمدة الزرقاء تبيّن عدد المعاملات المسجّلة كل نهار.",
+    "lastUpdated": "آخر تحديث: في الحين"
+  }
 }

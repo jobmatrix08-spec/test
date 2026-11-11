@@ -6,7 +6,7 @@ import { getInvoiceTotals } from '../lib/financial';
 import { formatProductDetails } from '../config/productAttributes';
 import { auditName } from '../lib/audit';
 import { useBrand } from './BrandProvider';
-import { formatDocumentDate } from '../i18n/format';
+import { formatDocumentDate, formatNumber } from '../i18n/format';
 
 interface Props {
   invoice: Invoice;
@@ -58,7 +58,7 @@ export const PrintableTicket = forwardRef<HTMLDivElement, Props>(({ invoice, own
       : '';
 
   return (
-    <div ref={ref} dir={documentLanguage === 'ar' ? 'rtl' : 'ltr'} className="p-5 w-[80mm] mx-auto bg-white text-black font-mono text-[12px] leading-tight">
+    <div ref={ref} lang={documentLanguage === 'ar' ? 'ar' : 'fr'} dir={documentLanguage === 'ar' ? 'rtl' : 'ltr'} className="p-5 w-[80mm] mx-auto bg-white text-black font-mono text-[12px] leading-tight">
       <div className="text-center font-bold text-[16px] uppercase">{storeName}</div>
       {storeAddress && <div className="text-center">{storeAddress}</div>}
       {storePhone && <div className="text-center">{text('Tél:', 'الهاتف:')} {storePhone}</div>}
@@ -77,12 +77,12 @@ export const PrintableTicket = forwardRef<HTMLDivElement, Props>(({ invoice, own
           <div key={index}>
             <div className="flex justify-between">
               <span dir="auto" className="max-w-[40mm] overflow-hidden text-ellipsis whitespace-nowrap">{item.name}</span>
-              <span>{item.quantity} x {item.price.toFixed(3)}</span>
+              <span>{formatNumber(item.quantity)} x {formatNumber(item.price, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</span>
             </div>
             {formatProductDetails(item.attributes, item.serialNumber) && (
               <div className="text-[10px] leading-tight">{formatProductDetails(item.attributes, item.serialNumber)}</div>
             )}
-            <div className="text-end">{item.total.toFixed(3)} {currency}</div>
+            <div className="text-end">{formatNumber(item.total, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</div>
           </div>
         ))}
       </div>
@@ -91,31 +91,31 @@ export const PrintableTicket = forwardRef<HTMLDivElement, Props>(({ invoice, own
         <>
           <div className="flex justify-between">
             <span>{text('Sous-total', 'المجموع قبل التخفيض')}</span>
-            <span>{totals.subtotal.toFixed(3)} {currency}</span>
+            <span>{formatNumber(totals.subtotal, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
           </div>
           {totals.discount > 0 && (
             <div className="flex justify-between">
               <span>{text('Remise', 'تخفيض')}</span>
-              <span>-{totals.discount.toFixed(3)} {currency}</span>
+              <span>-{formatNumber(totals.discount, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
             </div>
           )}
           <div className="flex justify-between">
             <span>{text('TVA', 'الأداء على القيمة المضافة')}</span>
-            <span>{totals.tva.toFixed(3)} {currency}</span>
+            <span>{formatNumber(totals.tva, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
           </div>
         </>
       )}
       <div className="flex justify-between font-bold">
         <span>{text('TOTAL', 'المجموع')}</span>
-        <span>{totals.total.toFixed(3)} {currency}</span>
+        <span>{formatNumber(totals.total, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
       </div>
       <div className="flex justify-between">
         <span>{text('Payé', 'تخلّص')}</span>
-        <span>{invoice.paid.toFixed(3)} {currency}</span>
+        <span>{formatNumber(invoice.paid, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
       </div>
       <div className="flex justify-between">
         <span>{text('Reste', 'الباقي')}</span>
-        <span>{invoice.debt.toFixed(3)} {currency}</span>
+        <span>{formatNumber(invoice.debt, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
       </div>
       <div className="border-t border-dashed border-black my-1"></div>
       <div className="text-center mt-5 text-[10px]">

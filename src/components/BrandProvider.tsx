@@ -2,7 +2,8 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../firebase';
-import { APP_BRAND_COLORS, APP_LOGO_URL, APP_NAME, APP_TAGLINE } from '../config/brand';
+import { APP_BRAND_COLORS, APP_LOGO_URL, APP_TAGLINE } from '../config/brand';
+import { DEFAULT_STORE_NAME } from '../config/brand-defaults';
 
 const BRAND_CACHE_KEY = 'phone-clinic-brand';
 
@@ -17,7 +18,7 @@ interface BrandContextValue extends Brand {
 }
 
 const defaultBrand: Brand = {
-  storeName: APP_NAME,
+  storeName: DEFAULT_STORE_NAME,
   storeTagline: APP_TAGLINE,
   logo: APP_LOGO_URL,
 };

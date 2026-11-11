@@ -9,6 +9,74 @@
     "irreparable": "Irréparable",
     "annule": "Annulé"
   },
+  "common": {
+    "admin": "Administrateur",
+    "user": "Utilisateur"
+  },
+  "accessibility": {
+    "closeStats": "Fermer l’historique",
+    "closeForm": "Fermer le formulaire",
+    "removePart": "Retirer {{name}}",
+    "closeDetail": "Fermer le détail de la réparation",
+    "closeDelivery": "Fermer la caisse de livraison"
+  },
+  "errors": {
+    "stockSessionMissing": "Session utilisateur absente : impossible d’enregistrer le mouvement de stock.",
+    "stockPartMissing": "La pièce « {{name}} » n’existe plus dans le stock.",
+    "stockUnavailableRead": "Impossible de lire le stock de « {{name}} ».",
+    "stockInvalid": "Le stock de « {{name}} » est invalide.",
+    "stockWrongStore": "La pièce « {{name}} » n’appartient pas à ce magasin.",
+    "stockInsufficient": "Stock insuffisant pour « {{name}} » : {{count}} disponible(s).",
+    "duplicateStockMovement": "Un mouvement de stock existe déjà pour cette version. Rechargez la fiche avant de réessayer.",
+    "adminDeleteOnly": "Seul un administrateur peut supprimer une réparation.",
+    "deleteFailed": "Échec de la suppression : {{message}}",
+    "costSeparationInterrupted": "Séparation interrompue après {{count}} fiche(s) : {{message}}. Vous pouvez relancer l’opération ; elle est idempotente.",
+    "stockExhaustedForPart": "Stock épuisé pour « {{name}} » — impossible d’ajouter cette pièce.",
+    "stockInsufficientForPart": "Stock insuffisant pour « {{name}} » — maximum disponible : {{count}}.",
+    "clientCreateFailed": "Impossible de créer le client : {{message}}",
+    "multipleClients": "Plusieurs clients correspondent — cliquez sur le bon client dans la liste de résultats.",
+    "selectClient": "Sélectionnez un client.",
+    "deliveryCashPermission": "La livraison et l’encaissement sont réservés à l’administrateur ou à la vendeuse.",
+    "checkingCashSession": "Vérification de la caisse en cours…",
+    "noCashSession": "Aucune caisse ouverte. Ouvrez une session avant d’encaisser cette réparation.",
+    "enterDeviceBrand": "Indiquez la marque de l’appareil.",
+    "enterDeviceModel": "Indiquez le modèle de l’appareil.",
+    "repairMissing": "La réparation n’existe plus.",
+    "repairWrongStore": "Cette réparation appartient à un autre magasin.",
+    "duplicateRepairSave": "Cette demande a déjà été enregistrée. Rechargez la liste des réparations.",
+    "costSnapshotFailed": "Réparation enregistrée, mais le coût d’achat des pièces n’a pas pu être figé.",
+    "saveFailed": "Erreur d’enregistrement : {{message}}",
+    "loadStockHistoryFailed": "Impossible de charger l’historique des mouvements : {{message}}",
+    "statusUpdateFailed": "Échec de la mise à jour : {{message}}",
+    "clientRequiredForCredit": "Un client doit être enregistré sur la fiche pour livrer une réparation avec un reste dû.",
+    "repairChangedBeforeDelivery": "La réparation a été modifiée. Rechargez-la avant de la livrer.",
+    "clientMissing": "Client introuvable.",
+    "deliveryFailed": "Échec de l’encaissement : {{message}}",
+    "discountExceedsDue": "La remise ne peut pas dépasser le reste dû.",
+    "paymentExceedsDue": "Le montant encaissé ne peut pas dépasser le montant dû après remise."
+  },
+  "confirmations": {
+    "deleteRepair": "Supprimer la réparation {{number}} ? Les pièces utilisées seront restituées au stock.",
+    "separateLegacyCosts": "Archiver les coûts de {{count}} anciennes fiches dans repair_costs et retirer les prix d’achat des fiches lisibles par l’atelier ? Les montants seront conservés dans la collection protégée."
+  },
+  "notifications": {
+    "repairDeleted": "Réparation {{number}} supprimée, stock restitué.",
+    "costSeparationComplete": "Séparation terminée : {{count}} fiche(s) traitée(s). Les coûts archivés restent réservés à l’administration.",
+    "repairUpdated": "Réparation {{number}} mise à jour.",
+    "costSnapshotWarning": "Attention : le coût d’achat n’a pas pu être figé.",
+    "repairCreated": "Réparation {{number}} créée.",
+    "statusUpdated": "Statut mis à jour : {{status}}",
+    "repairDelivered": "Réparation livrée et encaissement enregistré."
+  },
+  "logs": {
+    "messageSent": "Message envoyé le {{date}} par {{user}} via {{channel}} (ouverture de l’application, envoi non confirmé).",
+    "statusChanged": "Statut → {{status}}",
+    "repairUpdated": "Modification de la fiche",
+    "repairCreated": "Réparation créée",
+    "delivery": "Livré — Encaissé {{paid}} {{currency}}{{discount}}{{credit}}",
+    "deliveryDiscount": ", remise {{amount}} {{currency}}",
+    "deliveryCredit": ", {{amount}} {{currency}} crédités au compte de {{client}}"
+  },
   "page": {
     "title": "Atelier de réparation",
     "description": "Gestion des ordres de réparation et suivi",
@@ -45,8 +113,8 @@
   },
   "costMigration": {
     "title": "Séparer les coûts historiques",
-    "description_one": "{{count}} fiche historique n’a pas encore été vérifiée et nettoyée des prix d’achat intégrés.",
-    "description_other": "{{count}} fiches historiques n’ont pas encore été vérifiées et nettoyées des prix d’achat intégrés.",
+    "description_one": "{{countFormatted}} fiche historique n’a pas encore été vérifiée et nettoyée des prix d’achat intégrés.",
+    "description_other": "{{countFormatted}} fiches historiques n’ont pas encore été vérifiées et nettoyées des prix d’achat intégrés.",
     "running": "Séparation en cours...",
     "action": "Séparer les coûts historiques"
   },
@@ -61,7 +129,10 @@
     "remove": "Retirer",
     "searchClient": "Rechercher un client (nom, téléphone)",
     "brand": "Marque",
+    "brandExample": "Samsung, Apple",
     "model": "Modèle",
+    "modelExample": "Galaxy S21, iPhone 12",
+    "genericPart": "cette pièce",
     "imei": "IMEI / N° série",
     "optional": "Optionnel",
     "unlockCode": "Code déverrouillage",
@@ -90,10 +161,14 @@
     "create": "Créer la réparation",
     "created": "Réparation créée",
     "printing": "Impression du bon de dépôt en cours...",
-    "finish": "Terminer"
+    "finish": "Terminer",
+    "ticketNumber": "N°",
+    "reprint": "Réimprimer"
   },
   "detail": {
     "delete": "Supprimer la réparation",
+    "edit": "Modifier",
+    "warranty": "Garantie",
     "createdAt": "Créé le {{date}}",
     "device": "Appareil",
     "partsUsed": "Pièces utilisées",

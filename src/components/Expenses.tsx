@@ -8,7 +8,7 @@ import { UserProfile } from '../types';
 import { handleFirestoreError, OperationType } from '../App';
 import { addCashSessionTotals, cashSessionOwnerId, requireOpenCashSession, useCashSession } from '../lib/cashSessions';
 import { Badge, Button, Card, EmptyState, Input, PageHeader, Select } from './ui';
-import { formatDateTime } from '../i18n/format';
+import { formatDateTime, formatNumber } from '../i18n/format';
 
 interface Expense {
   id: string;
@@ -172,7 +172,7 @@ export default function Expenses({ userProfile }: { userProfile: UserProfile | n
             <p className="text-xs font-bold uppercase tracking-wider text-ds-text-muted">
               {period === 'all' ? t('allExpensesTotal') : t('monthExpensesTotal')}
             </p>
-            <p className="mt-1 font-mono text-xl font-black text-ds-text">{periodSummary.total.toFixed(3)} DT</p>
+            <p className="mt-1 font-mono text-xl font-black text-ds-text">{formatNumber(periodSummary.total, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} DT</p>
             <p className="text-xs font-semibold text-ds-text-muted">{t(periodSummary.count === 1 ? 'operation_one' : 'operation_other', { count: periodSummary.count })}</p>
           </Card>
           <Button type="button" onClick={() => { setError(''); setMessage(''); setIsFormOpen(true); }} disabled={!session}
@@ -248,7 +248,7 @@ export default function Expenses({ userProfile }: { userProfile: UserProfile | n
                       <td data-label={t('descriptionLabel')} className="px-4 py-3 font-semibold text-ds-text">{expense.label}</td>
                       <td data-label={t('descriptionCategory')} className="px-4 py-3"><Badge variant="neutral" className="min-h-0 px-2 py-0.5">{t(`categories.${CATEGORY_KEYS[expense.category] || 'other'}`)}</Badge></td>
                       <td data-label={t('descriptionMode')} className="px-4 py-3">{t(`paymentModes.${PAYMENT_MODE_KEYS[expense.mode] || 'other'}`)}</td>
-                      <td data-label={t('amountColumn')} className="px-4 py-3 text-end font-mono font-bold text-ds-text">{Number(expense.amount).toFixed(3)}</td>
+                      <td data-label={t('amountColumn')} className="px-4 py-3 text-end font-mono font-bold text-ds-text">{formatNumber(Number(expense.amount), { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</td>
                     </tr>
                   ))}
                 </tbody>

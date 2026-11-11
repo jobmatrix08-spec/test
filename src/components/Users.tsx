@@ -32,6 +32,7 @@ import { slugifyAppName } from '../lib/brand';
 import { useBrand } from './BrandProvider';
 import { Badge, Button, Card, EmptyState, Input, PageHeader, Select } from './ui';
 import { useTranslation } from 'react-i18next';
+import { formatNumber } from '../i18n/format';
 
 const MENU_OPTIONS = [
   'dashboard', 'reparation', 'pieces', 'pos', 'products', 'clients',
@@ -119,7 +120,7 @@ export default function Users({ userProfile }: UsersProps) {
           <p className="text-xs font-black uppercase tracking-wider text-ds-muted">
               {t(`menus.${menuId}.name`)}
             </p>
-            {PERMISSION_FLAGS[menuId].map(({ id, label }) => (
+            {PERMISSION_FLAGS[menuId].map(({ id }) => (
               <label key={id} className="flex min-h-ds-touch-target items-center gap-2 text-sm font-medium text-ds-text">
                 <input
                   type="checkbox"
@@ -130,14 +131,14 @@ export default function Users({ userProfile }: UsersProps) {
                   })}
                   className="h-4 w-4 rounded border-ds-border accent-ds-brand"
                 />
-                {label}
+                {t(`permissions.flags.${id}`)}
               </label>
             ))}
           </div>
         ))}
       <div className="space-y-1 border-t border-ds-border pt-2">
         <p className="text-xs font-black uppercase tracking-wider text-ds-muted">{t('menus.startup.name')}</p>
-        {PERMISSION_FLAGS.startup.map(({ id, label }) => (
+        {PERMISSION_FLAGS.startup.map(({ id }) => (
           <label key={id} className="flex min-h-ds-touch-target items-center gap-2 text-sm font-medium text-ds-text">
             <input
               type="checkbox"
@@ -148,7 +149,7 @@ export default function Users({ userProfile }: UsersProps) {
               })}
               className="h-4 w-4 rounded border-ds-border accent-ds-brand"
             />
-            {label}
+            {t(`permissions.flags.${id}`)}
           </label>
         ))}
       </div>
@@ -163,7 +164,7 @@ export default function Users({ userProfile }: UsersProps) {
     setPermissionMigrationPreview(missing);
     setPermissionMigrationBackupDownloaded(false);
     setPermissionMigrationError(null);
-    setSuccess(`${missing.length} compte(s) à migrer. Aucun document n’a été modifié.`);
+    setSuccess(t('permissionMigration.previewReady', { count: formatNumber(missing.length) }));
   };
 
   const downloadPermissionMigrationBackup = () => {
@@ -207,9 +208,11 @@ export default function Users({ userProfile }: UsersProps) {
       }
       setPermissionMigrationPreview([]);
       setPermissionMigrationBackupDownloaded(false);
-      setSuccess('Migration des permissions terminée.');
+      setSuccess(t('permissionMigration.success'));
     } catch (issue) {
-      setPermissionMigrationError(issue instanceof Error ? issue.message : String(issue));
+      setPermissionMigrationError(issue instanceof Error
+        ? t('errors.permissionMigration', { details: issue.message })
+        : t('errors.permissionMigration', { details: String(issue) }));
     } finally {
       setPermissionMigrationBusy(false);
     }
@@ -295,18 +298,20 @@ export default function Users({ userProfile }: UsersProps) {
     setTimeout(() => setCopiedField(null), 2000);
     } catch (error) {
     console.error('Unable to copy user information.');
-    setErrorOnEdit(error instanceof Error ? error.message : 'Copie impossible.');
+    setErrorOnEdit(error instanceof Error ? t('errors.copyFailed', { details: error.message }) : t('errors.copyFailed'));
     }
   };
 
   const sendPasswordResetLink = async (email: string) => {
     try {
       await sendPasswordResetEmail(auth, email);
-      setSuccess(`Lien de réinitialisation envoyé à ${email}.`);
+      setSuccess(t('messages.resetLinkSent', { email }));
       setErrorOnCreate(null);
       setTimeout(() => setSuccess(null), 5000);
     } catch (issue) {
-      setErrorOnCreate(issue instanceof Error ? `Impossible d’envoyer le lien : ${issue.message}` : 'Impossible d’envoyer le lien.');
+      setErrorOnCreate(issue instanceof Error
+        ? t('errors.resetLinkFailed', { details: issue.message })
+        : t('errors.resetLinkFailed'));
     }
   };
 
@@ -314,11 +319,11 @@ export default function Users({ userProfile }: UsersProps) {
     event.preventDefault();
     if (!passwordUser) return;
     if (newPassword.length < 8) {
-      setErrorOnCreate('Le mot de passe doit contenir au moins 8 caractères.');
+      setErrorOnCreate(t('errors.passwordMinLength'));
       return;
     }
     if (newPassword !== confirmNewPassword) {
-      setErrorOnCreate('La confirmation ne correspond pas au nouveau mot de passe.');
+      setErrorOnCreate(t('errors.passwordMismatch'));
       return;
     }
     setErrorOnCreate(null);
@@ -331,10 +336,12 @@ export default function Users({ userProfile }: UsersProps) {
       setPasswordUser(null);
       setNewPassword('');
       setConfirmNewPassword('');
-      setSuccess(`Mot de passe modifié pour ${passwordUser.email}.`);
+      setSuccess(t('messages.passwordChanged', { email: passwordUser.email }));
       setTimeout(() => setSuccess(null), 4000);
     } catch (issue) {
-      setErrorOnCreate(issue instanceof Error ? issue.message : 'Impossible de modifier le mot de passe.');
+      setErrorOnCreate(issue instanceof Error
+        ? t('errors.passwordChangeFailed', { details: issue.message })
+        : t('errors.passwordChangeFailed'));
     } finally {
       setActionLoading(null);
     }
@@ -347,7 +354,7 @@ export default function Users({ userProfile }: UsersProps) {
 
     // 1. Validation rigoureuse des données d'entrée
     if (!nameInput || nameInput.trim().length < 2) {
-      setErrorOnCreate("Le nom de l'utilisateur est obligatoire (min 2 caractères).");
+      setErrorOnCreate(t('errors.nameRequired'));
       setActionLoading(null);
       return;
     }
@@ -355,19 +362,19 @@ export default function Users({ userProfile }: UsersProps) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const cleanEmail = emailInput.trim().toLowerCase();
     if (!cleanEmail || !emailRegex.test(cleanEmail)) {
-      setErrorOnCreate("Veuillez saisir une adresse email valide.");
+      setErrorOnCreate(t('errors.invalidEmail'));
       setActionLoading(null);
       return;
     }
 
     if (!passwordInput || passwordInput.length < 6) {
-      setErrorOnCreate("Le mot de passe obligatoire doit contenir au moins 6 caractères.");
+      setErrorOnCreate(t('errors.createPasswordMinLength'));
       setActionLoading(null);
       return;
     }
 
     if (selectedMenus.length === 0) {
-      setErrorOnCreate("Veuillez sélectionner au moins un privilège d'accès.");
+      setErrorOnCreate(t('errors.menuRequired'));
       setActionLoading(null);
       return;
     }
@@ -382,7 +389,7 @@ export default function Users({ userProfile }: UsersProps) {
       );
 
       if (emailExists) {
-        setErrorOnCreate("Cette adresse email est déjà en cours d'utilisation.");
+        setErrorOnCreate(t('errors.emailAlreadyExists'));
         setActionLoading(null);
         return;
       }
@@ -391,7 +398,7 @@ export default function Users({ userProfile }: UsersProps) {
         code: fsErr?.code,
         message: fsErr?.message,
       });
-      setErrorOnCreate('Erreur de connexion lors de la vérification de l’utilisateur.');
+      setErrorOnCreate(t('errors.userCheckFailed'));
       setActionLoading(null);
       return;
     }
@@ -410,15 +417,15 @@ export default function Users({ userProfile }: UsersProps) {
       await tempAuth.signOut();
     } catch (authErr: any) {
       console.error('Unable to create the authentication account.');
-      let errorMsg = "La création du compte d'authentification a échoué.";
+      let errorMsg = t('errors.authCreateFailed');
       if (authErr.code === 'auth/email-already-in-use') {
-        errorMsg = "Cette adresse email est déjà utilisée dans Firebase Authentication.";
+        errorMsg = t('errors.authEmailInUse');
       } else if (authErr.code === 'auth/weak-password') {
-        errorMsg = "Le mot de passe choisi doit contenir au moins 6 caractères.";
+        errorMsg = t('errors.createPasswordMinLength');
       } else if (authErr.code === 'auth/invalid-email') {
-        errorMsg = "L'adresse email saisie est invalide pour Firebase Authentication.";
+        errorMsg = t('errors.authInvalidEmail');
       } else if (authErr.message) {
-        errorMsg += ` Détails : ${authErr.message}`;
+        errorMsg = t('errors.authCreateFailedWithDetails', { details: authErr.message });
       }
       setErrorOnCreate(errorMsg);
       setActionLoading(null);
@@ -448,10 +455,10 @@ export default function Users({ userProfile }: UsersProps) {
       });
       try {
         await sendPasswordResetEmail(auth, cleanEmail);
-        setSuccess('Utilisateur créé. Son lien de définition du mot de passe a été envoyé.');
+        setSuccess(t('messages.userCreatedResetSent'));
       } catch (resetError) {
         console.error('The user was created but the password reset email could not be sent.');
-        setSuccess('Utilisateur créé, mais le lien de réinitialisation n’a pas pu être envoyé. Renvoyez-le depuis sa ligne.');
+        setSuccess(t('messages.userCreatedResetFailed'));
       }
 
       setIsModalOpen(false);
@@ -465,7 +472,7 @@ export default function Users({ userProfile }: UsersProps) {
       setTimeout(() => setSuccess(null), 4000);
     } catch (err: any) {
       console.error("Unable to save the user's Firestore profile.");
-      setErrorOnCreate(`Impossible d'enregistrer l'utilisateur en base: ${err.message || 'Permission refusée'}`);
+      setErrorOnCreate(t('errors.userSaveFailed', { details: err.message || t('errors.permissionDenied') }));
     } finally {
       if (tempApp) {
         try {
@@ -551,26 +558,26 @@ export default function Users({ userProfile }: UsersProps) {
     setActionLoading('editing');
 
     if (!editName || editName.trim().length < 2) {
-      setErrorOnEdit("Le nom est obligatoire (min 2 caractères).");
+      setErrorOnEdit(t('errors.nameRequired'));
       setActionLoading(null);
       return;
     }
 
     const cleanEmail = editEmail.trim().toLowerCase();
     if (cleanEmail !== editingUser.email) {
-      setErrorOnEdit('L’adresse de connexion ne peut pas être modifiée depuis ce formulaire. Envoyez un lien de réinitialisation à l’utilisateur.');
+      setErrorOnEdit(t('errors.loginEmailImmutable'));
       setActionLoading(null);
       return;
     }
 
     if (editSelectedMenus.length === 0) {
-      setErrorOnEdit('Veuillez sélectionner au moins un droit d\'accès.');
+      setErrorOnEdit(t('errors.menuRequired'));
       setActionLoading(null);
       return;
     }
 
     if (editSecurityCode && !/^[0-9]{4}$/.test(editSecurityCode)) {
-      setErrorOnEdit('Le code de sécurité doit contenir exactement 4 chiffres (ou être laissé vide).');
+      setErrorOnEdit(t('errors.securityCodeInvalid'));
       setActionLoading(null);
       return;
     }
@@ -585,12 +592,14 @@ export default function Users({ userProfile }: UsersProps) {
         securityCode: editSecurityCode || '',
         ownerId: editRole === 'admin' ? editingUser.uid : ownerId,
       });
-      setSuccess(`Utilisateur ${cleanEmail} mis à jour avec succès.`);
+      setSuccess(t('messages.userUpdated', { email: cleanEmail }));
       setEditingUser(null);
       setTimeout(() => setSuccess(null), 6000);
     } catch (err: any) {
       console.error('Unable to update the user profile.');
-      setErrorOnEdit(err.message || 'Une erreur est survenue lors de la modification.');
+      setErrorOnEdit(err.message
+        ? t('errors.userUpdateFailed', { details: err.message })
+        : t('errors.userUpdateFailed'));
     } finally {
       setActionLoading(null);
     }
@@ -607,10 +616,12 @@ export default function Users({ userProfile }: UsersProps) {
         status: newStatus
       });
 
-      setSuccess(`L'utilisateur ${user.email} est désormais ${newStatus === 'banned' ? 'banni' : 'actif'}.`);
+      setSuccess(t(newStatus === 'banned' ? 'messages.userBlocked' : 'messages.userUnblocked', { email: user.email }));
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setErrorOnCreate(err instanceof Error ? err.message : 'Erreur de mise à jour.');
+      setErrorOnCreate(err instanceof Error
+        ? t('errors.userUpdateFailed', { details: err.message })
+        : t('errors.userUpdateFailed'));
     } finally {
       setActionLoading(null);
     }
@@ -618,7 +629,7 @@ export default function Users({ userProfile }: UsersProps) {
 
   const handleDeleteProfileAndAuth = async (user: UserProfile) => {
     if (user.uid === userProfile?.uid) {
-      setErrorOnCreate('Vous ne pouvez pas supprimer votre propre compte administrateur.');
+      setErrorOnCreate(t('errors.deleteOwnAccount'));
       return;
     }
     const storeOwnerId = userProfile?.ownerId || userProfile?.uid;
@@ -626,7 +637,7 @@ export default function Users({ userProfile }: UsersProps) {
       profile.role === 'admin' && (profile.ownerId || profile.uid) === storeOwnerId
     );
     if (user.role === 'admin' && storeAdmins.length <= 1) {
-      setErrorOnCreate('Impossible de supprimer le dernier administrateur du magasin.');
+      setErrorOnCreate(t('delete.lastAdmin'));
       return;
     }
     if (deleteConfirmation.trim().toLowerCase() !== user.email.toLowerCase()) {
@@ -643,11 +654,13 @@ export default function Users({ userProfile }: UsersProps) {
       setUsers((current) => current.filter((profile) => profile.uid !== user.uid));
       setDeletingUser(null);
       setDeleteConfirmation('');
-      setSuccess(`Utilisateur ${user.email} supprimé.`);
+      setSuccess(t('messages.userDeleted', { email: user.email }));
       setTimeout(() => setSuccess(null), 4000);
     } catch (error) {
       console.error('Unable to delete user profile.');
-      setErrorOnCreate(error instanceof Error ? error.message : 'Impossible de supprimer cet utilisateur.');
+      setErrorOnCreate(error instanceof Error
+        ? t('errors.userDeleteFailed', { details: error.message })
+        : t('errors.userDeleteFailed'));
     } finally {
       setActionLoading(null);
     }
@@ -658,11 +671,13 @@ export default function Users({ userProfile }: UsersProps) {
     setApiHealth(null);
     try {
       await checkApiHealth();
-      setApiHealth({ ok: true, message: 'Serveur API accessible.' });
+      setApiHealth({ ok: true, message: t('apiHealth.available') });
     } catch (error) {
       setApiHealth({
         ok: false,
-        message: error instanceof Error ? error.message : 'Vérification du serveur impossible.',
+        message: error instanceof Error
+          ? t('apiHealth.failedWithDetails', { details: error.message })
+          : t('apiHealth.failed'),
       });
     } finally {
       setApiHealthLoading(false);
@@ -722,7 +737,7 @@ export default function Users({ userProfile }: UsersProps) {
               </div>
             </div>
             <ul className="max-h-36 space-y-1 overflow-y-auto text-sm text-ds-muted">
-              {permissionMigrationPreview.map(profile => <li key={profile.uid} className="rounded-ds-md bg-ds-surface-2 px-3 py-2">{profile.name || profile.email} · {permissionPreset(profile)}</li>)}
+              {permissionMigrationPreview.map(profile => <li key={profile.uid} className="rounded-ds-md bg-ds-surface-2 px-3 py-2">{profile.name || profile.email} · {t(`roles.${permissionPreset(profile)}Short`)}</li>)}
             </ul>
           </>
         )}
@@ -744,7 +759,7 @@ export default function Users({ userProfile }: UsersProps) {
       <Card className="min-w-0 overflow-hidden p-0">
         {loading ? (
           <div className="flex items-center justify-center p-16">
-            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-ds-brand" />
+            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-ds-brand" role="status" aria-label={t('loadingUsers')} />
           </div>
         ) : users.length === 0 ? (
           <EmptyState icon={<UsersIcon className="h-12 w-12" />} title={t('table.empty')} />
@@ -1015,11 +1030,11 @@ export default function Users({ userProfile }: UsersProps) {
       {migrationConfirmOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-ds-text/60 p-4" role="presentation">
           <section className="w-full min-w-0 max-w-md space-y-4 rounded-ds-lg bg-ds-surface p-6 shadow-ds-md" role="alertdialog" aria-modal="true">
-            <h2 className="text-lg font-black text-ds-text">Confirmer la migration</h2>
-            <p className="text-sm text-ds-muted">Les permissions des comptes prévisualisés seront mises à jour. Une sauvegarde JSON a été téléchargée.</p>
+            <h2 className="text-lg font-black text-ds-text">{t('permissionMigration.confirmTitle')}</h2>
+            <p className="text-sm text-ds-muted">{t('permissionMigration.confirmDescription')}</p>
             <div className="flex justify-end gap-2">
-              <Button type="button" variant="secondary" onClick={() => setMigrationConfirmOpen(false)}>Annuler</Button>
-              <Button type="button" onClick={() => void confirmPermissionMigration()}>Confirmer la migration</Button>
+              <Button type="button" variant="secondary" onClick={() => setMigrationConfirmOpen(false)}>{t('cancel')}</Button>
+              <Button type="button" onClick={() => void confirmPermissionMigration()}>{t('permissionMigration.confirm')}</Button>
             </div>
           </section>
         </div>
@@ -1056,7 +1071,7 @@ export default function Users({ userProfile }: UsersProps) {
 
               <Input label={t('createModal.fullName')} type="text" required value={nameInput} onChange={(e) => setNameInput(e.target.value)} placeholder={t('createModal.nameExample')} />
 
-              <Input label={t('createModal.loginEmail')} type="email" required value={emailInput} onChange={(e) => setEmailInput(e.target.value)} placeholder="caissier1@example.com" />
+              <Input label={t('createModal.loginEmail')} type="email" required value={emailInput} onChange={(e) => setEmailInput(e.target.value)} placeholder={t('createModal.emailExample')} />
 
               <Input label={t('createModal.password')} type="password" required value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} placeholder={t('createModal.passwordPlaceholder')} />
 
@@ -1194,22 +1209,22 @@ export default function Users({ userProfile }: UsersProps) {
               <div className="space-y-1.5">
                 <label className="flex items-center gap-1.5 text-sm font-black uppercase tracking-wider text-ds-danger">
                   <Shield className="w-3.5 h-3.5" />
-                  Code de sécurité (4 chiffres)
+                  {t('securityCode.label')}
                 </label>
                 <div className="relative">
                   <Input
-                    aria-label="Code de sécurité (4 chiffres)"
+                    aria-label={t('securityCode.label')}
                     type="text"
                     maxLength={4}
                     inputMode="numeric"
                     value={editSecurityCode}
                     onChange={(e) => setEditSecurityCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 4))}
-                    placeholder="Ex: 1234 (laisser vide = aucun)"
+                    placeholder={t('securityCode.placeholder')}
                     className="font-mono font-black tracking-[0.3em]"
                   />
                 </div>
                 <p className="text-sm font-medium leading-relaxed text-ds-muted">
-                  Ce code sera demandé à cet utilisateur avant toute modification ou suppression. Laisser vide pour ne définir aucun code.
+                  {t('securityCode.help')}
                 </p>
               </div>
 
@@ -1242,7 +1257,7 @@ export default function Users({ userProfile }: UsersProps) {
 
               {/* Status */}
               <Select
-                  label="Statut du compte"
+                  label={t('editModal.accountStatus')}
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value as 'active' | 'banned')}
                 >
@@ -1307,14 +1322,14 @@ export default function Users({ userProfile }: UsersProps) {
                   onClick={() => setEditingUser(null)}
                   className="flex-1"
                 >
-                  Annuler
+                  {t('cancel')}
                 </Button>
                 <Button
                   type="submit"
                   disabled={actionLoading !== null}
                   className="flex-1"
                 >
-                  {actionLoading === 'editing' ? 'Enregistrement...' : 'Enregistrer'}
+                  {actionLoading === 'editing' ? t('editing') : t('editModal.save')}
                 </Button>
               </div>
             </form>

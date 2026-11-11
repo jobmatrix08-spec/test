@@ -1,1 +1,365 @@
-{}
+{
+  "alerts": {
+    "deleteFailed": "حدث خطأ أثناء الحذف.",
+    "exportFailed": "حدث خطأ أثناء التصدير إلى Excel.",
+    "noExportRecords": "لا توجد سجلات لتصديرها.",
+    "supplyUpdateFailed": "حدث خطأ أثناء تعديل التزويد."
+  },
+  "cash": {
+    "cashCollected": "المبالغ النقدية المقبوضة",
+    "cashExpenses": "المصاريف النقدية",
+    "closeSession": "إغلاق الصندوق",
+    "currentSession": "الصندوق الحالي",
+    "expectedInRegister": "المبلغ المتوقع في الصندوق",
+    "noSession": "لا توجد جلسة صندوق مفتوحة",
+    "openingFloat": "الرصيد الافتتاحي للصندوق",
+    "openSession": "فتح الصندوق",
+    "sessionOpen": "جلسة مفتوحة"
+  },
+  "common": {
+    "at": "في",
+    "cancel": "إلغاء",
+    "close": "إغلاق",
+    "general": "عام",
+    "noBarcode": "بدون رمز شريطي",
+    "save": "حفظ",
+    "to": "إلى",
+    "unavailable": "غير متاح"
+  },
+  "confirm": {
+    "deleteSupply": "هل تريد بالتأكيد حذف عملية التزويد هذه للمنتج «{{product}}»؟"
+  },
+  "expenses": {
+    "addStockToTrack": "أضف مخزوناً إلى المنتجات لمتابعة مصاريفك.",
+    "adjustSearch": "عدّل كلمات البحث.",
+    "columns": {
+      "date": "التاريخ",
+      "dateTime": "التاريخ والوقت",
+      "product": "المنتج",
+      "productsAdded": "عدد المنتجات المضافة",
+      "quantityAdded": "الكمية المضافة",
+      "totalCost": "الكلفة الإجمالية",
+      "totalExpenses": "إجمالي المصاريف",
+      "totalQuantityAdded": "إجمالي الكمية المضافة",
+      "unitPurchasePrice": "سعر الشراء للوحدة"
+    },
+    "dailyHistory": "السجل اليومي",
+    "deletedProduct": "منتج محذوف",
+    "description": "متابعة آلية لكلفة اقتناء البضائع",
+    "noOperations": "لم يتم العثور على عمليات",
+    "noSupplies": "لا توجد عمليات تزويد",
+    "operationDetails": "تفاصيل العمليات",
+    "recordsTotal": "الإجمالي: {{count}} سجل",
+    "searchPlaceholder": "ابحث عن منتج أو تاريخ...",
+    "searchAriaLabel": "البحث عن منتج أو تاريخ",
+    "title": "عرض سجل مصاريف المخزون"
+  },
+  "exports": {
+    "columns": {
+      "amountPaid": "المبلغ المدفوع (DT)",
+      "averageBasket": "متوسط قيمة السلة (DT)",
+      "barcode": "الرمز الشريطي",
+      "cashCollected": "إجمالي المقبوضات (DT)",
+      "category": "الفئة",
+      "costsExpenses": "التكاليف والمصاريف (DT)",
+      "date": "التاريخ",
+      "dateTime": "التاريخ والوقت",
+      "estimatedTheoreticalMargin": "الهامش النظري المقدّر (DT)",
+      "generatedDebts": "الديون المتولدة (DT)",
+      "indicator": "المؤشر",
+      "marginRatio": "نسبة الهامش (%)",
+      "netProfit": "صافي الربح (DT)",
+      "product": "المنتج",
+      "productDesignation": "اسم المنتج",
+      "productsAdded": "عدد المنتجات المضافة",
+      "quantityAdded": "الكمية المضافة",
+      "revenue": "رقم المعاملات (DT)",
+      "salesCount": "عدد المبيعات",
+      "stockQuantity": "كمية المخزون",
+      "ticketsCollected": "الفواتير المقبوضة",
+      "totalCost": "الكلفة الإجمالية (DT)",
+      "totalExpenses": "إجمالي المصاريف (DT)",
+      "totalPurchaseValue": "إجمالي قيمة الشراء (DT)",
+      "totalQuantityAdded": "إجمالي الكمية المضافة",
+      "totalSaleValue": "إجمالي قيمة البيع (المداخيل) (DT)",
+      "totalTransactions": "إجمالي عدد المعاملات",
+      "totalUnpaid": "إجمالي المستحقات غير المدفوعة (DT)",
+      "unitPurchasePrice": "سعر الشراء للوحدة (DT)",
+      "unitSalePrice": "سعر البيع للوحدة (DT)",
+      "value": "القيمة"
+    },
+    "filename": {
+      "cashReport": "تقرير-الصندوق",
+      "dailyExpenses": "مصاريف-يومية",
+      "expenseDetails": "تفاصيل-المصاريف",
+      "stockReport": "تقييم-المخزون"
+    },
+    "sheet": {
+      "debts": "الديون",
+      "expenses": "المصاريف",
+      "netProfit": "صافي الربح",
+      "revenue": "رقم المعاملات",
+      "transactions": "المعاملات"
+    },
+    "sheetStockValuation": "تقييم المخزون",
+    "sheetSummary": "الملخص",
+    "stockSummary": {
+      "averageMarginRate": "متوسط نسبة الهامش (%)",
+      "calculationDateTime": "تاريخ ووقت الحساب",
+      "outOfStock": "المنتجات النافدة من المخزون",
+      "potentialSaleValue": "قيمة المخزون الحالية — البيع المحتمل ({{currency}})",
+      "stockPurchaseValue": "قيمة المخزون الحالية — الشراء ({{currency}})",
+      "theoreticalMargin": "الهامش النظري المقدّر ({{currency}})",
+      "totalReferences": "إجمالي المنتجات المدرجة",
+      "totalStockQuantity": "إجمالي كمية المخزون (وحدات)"
+    }
+  },
+  "financial": {
+    "invoicedParts": "قطع الغيار المفوترة",
+    "labor": "اليد العاملة",
+    "orSomeRepairs": "أو بعض الإصلاحات",
+    "partsCost": "كلفة قطع الغيار",
+    "repairRevenue": "مداخيل الإصلاحات:",
+    "salesWithVat": "{{count}} عملية بيع خاضعة للأداء خلال الفترة",
+    "totalVatHistory": "إجمالي السجل: {{count}} عملية بيع خاضعة للأداء"
+  },
+  "financialCards": {
+    "collectedSales": "المبيعات المقبوضة",
+    "purchaseCost": "كلفة الشراء",
+    "repairsInProgress": "الإصلاحات الجارية",
+    "unpaid": "غير المدفوع"
+  },
+  "history": {
+    "backToDashboard": "العودة إلى لوحة التحكم",
+    "columns": {
+      "activityDate": "تاريخ النشاط",
+      "cashCollectedLiquid": "المبلغ المقبوض نقداً",
+      "creditTickets": "عدد فواتير البيع بالدين",
+      "dailyRevenueTotal": "إجمالي رقم معاملات اليوم",
+      "debtsCreated": "الديون المتولدة",
+      "estimatedItemCost": "الكلفة المقدّرة للمنتجات",
+      "grossRevenue": "إجمالي رقم المعاملات",
+      "productDesignation": "اسم المنتج",
+      "salesCount": "عدد المبيعات",
+      "stockQuantity": "كمية المخزون",
+      "theoreticalProfitMargin": "هامش الربح النظري",
+      "totalCreditGranted": "إجمالي الديون الممنوحة",
+      "totalPurchaseValue": "إجمالي قيمة الشراء",
+      "totalSaleValue": "إجمالي قيمة البيع (المداخيل المقدّرة)",
+      "unitPurchasePrice": "سعر الشراء للوحدة",
+      "unitSalePrice": "سعر البيع للوحدة",
+      "unpaidTotal": "إجمالي غير المدفوع"
+    },
+    "emptyDescription": "عدّل البحث لعرض منتجات أو بيانات أخرى.",
+    "emptyTitle": "لم يتم العثور على بيانات",
+    "estimatedMargin": "الهامش المقدّر",
+    "estimatedRevenue": "المداخيل المقدّرة",
+    "exportExcel": "التصدير إلى Excel",
+    "periodFilter": "التصفية حسب الفترة",
+    "printReport": "طباعة التقرير",
+    "purchaseValue": "قيمة الشراء",
+    "recordsTotal": "الإجمالي: {{count}} تقرير يومي",
+    "searchDatePlaceholder": "ابحث عن تاريخ (مثال: 22/06)...",
+    "searchDateAriaLabel": "البحث عن تاريخ",
+    "searchStockAriaLabel": "البحث عن منتج أو رمز شريطي",
+    "startDate": "تاريخ البداية",
+    "endDate": "تاريخ النهاية",
+    "searchStockPlaceholder": "ابحث عن منتج أو رمز شريطي...",
+    "stockItems": "المنتجات",
+    "stockTotal": "الإجمالي: {{count}} منتج مدرج",
+    "title": {
+      "debt": "عرض سجل الديون",
+      "expenses": "عرض سجل المصاريف",
+      "profit": "عرض سجل صافي الربح",
+      "revenue": "عرض سجل رقم المعاملات",
+      "sales": "عرض سجل عدد المبيعات",
+      "stock": "تقرير تقييم المخزون وربحيته"
+    },
+    "subtitle": {
+      "debt": "ديون الحرفاء والمبالغ غير المدفوعة اليوم",
+      "expenses": "متابعة عمليات ومصاريف المخزون",
+      "profit": "الأداء المالي بعد خصم كلفة الشراء",
+      "revenue": "متابعة منحنى المبيعات الإجمالية",
+      "sales": "وتيرة نشاط المتجر",
+      "stock": "تحليل فوري للمخزون المتاح والمداخيل المحتملة",
+      "stockWithMargin": "تحليل فوري لقيمة الشراء والبيع وهوامش ربح المخزون الحالي"
+    },
+    "totalStock": "إجمالي المخزون",
+    "transactionsCount": "{{count}} معاملة"
+  },
+  "loading": {
+    "ariaLabel": "جارٍ تحميل المؤشرات",
+    "message": "جارٍ تحميل المؤشرات..."
+  },
+  "lowStock": {
+    "available": "{{count}} متاح",
+    "configuredThreshold": "الحدّ المضبوط: {{count}} وحدات",
+    "minimumThreshold": "الحد الأدنى: {{count}} وحدات",
+    "outOfStock": "نفد المخزون (0)",
+    "productsCount": "{{count}} منتج",
+    "satisfactory": "مستوى المخزون مناسب",
+    "title": "تنبيه: انخفاض المخزون"
+  },
+  "metrics": {
+    "dailyRevenue": "رقم معاملات اليوم",
+    "debts": "الديون",
+    "expenses": "المصاريف",
+    "history": "السجل",
+    "netProfit": "صافي الربح",
+    "sales": "المبيعات"
+  },
+  "overview": {
+    "chartPointTitle": "{{date}}: {{value}}",
+    "expenses": "المصاريف",
+    "financialPeriodAriaLabel": "فترة الملخص المالي",
+    "financialSummary": "الملخص المالي",
+    "grossProfit": "الربح الإجمالي",
+    "netProfitChartAriaLabel": "رسم بياني لصافي الربح خلال الأيام السبعة الماضية",
+    "netProfitSevenDays": "صافي الربح · 7 أيام",
+    "netProfitToday": "صافي الربح اليوم",
+    "recentDays": "الأيام الأخيرة"
+  },
+  "page": {
+    "descriptionOperations": "متابعة العمليات في الوقت الفعلي",
+    "descriptionWithSales": "الأداء المالي والتشغيلي في الوقت الفعلي",
+    "title": "لوحة التحكم",
+    "today": "اليوم"
+  },
+  "pagination": {
+    "next": "الصفحة التالية",
+    "pageOf": "الصفحة {{current}} من {{total}}",
+    "previous": "الصفحة السابقة"
+  },
+  "period": {
+    "all": "الكل",
+    "custom": "مخصصة",
+    "ninetyDays": "90 يوماً",
+    "sevenDays": "7 أيام",
+    "thirtyDays": "30 يوماً",
+    "thisYear": "هذه السنة",
+    "today": "اليوم"
+  },
+  "print": {
+    "columns": {
+      "activityDate": "تاريخ النشاط",
+      "cashCollected": "إجمالي المقبوضات",
+      "costsExpenses": "التكاليف والمصاريف",
+      "dailyAverageBasket": "متوسط قيمة السلة اليومي",
+      "designation": "التسمية",
+      "generatedDebts": "الديون المتولدة",
+      "marginRatio": "نسبة الهامش (%)",
+      "netProfit": "صافي الربح",
+      "receivedIncome": "المداخيل المقبوضة",
+      "remainingUnpaid": "المبالغ المتبقية",
+      "revenue": "رقم المعاملات",
+      "salesCount": "عدد المبيعات",
+      "stockAvailable": "المخزون المتاح",
+      "theoreticalMargin": "الهامش النظري",
+      "ticketsCollected": "الفواتير المقبوضة",
+      "totalPurchase": "إجمالي الشراء",
+      "totalSales": "إجمالي المبيعات",
+      "totalSalesRevenue": "إجمالي البيع (المداخيل)",
+      "transactions": "إجمالي المعاملات",
+      "unitPurchasePrice": "سعر الشراء للوحدة",
+      "unitSalePrice": "سعر البيع للوحدة"
+    },
+    "footer": "تصفير الصندوق — نهاية تقرير النشاط",
+    "missingCosts": "التكاليف غير متوفرة",
+    "phone": "الهاتف",
+    "printedAt": "طُبع في {{date}}",
+    "summary": "ملخص سجل الصندوق",
+    "title": {
+      "debt": "تقرير الخزينة: ديون الحرفاء",
+      "expenses": "تقرير النشاط: المصاريف",
+      "profit": "تقرير النشاط: صافي الربح (الأداء)",
+      "revenue": "تقرير النشاط: رقم المعاملات",
+      "sales": "تقرير النشاط: المعاملات",
+      "stock": "تقرير المخزون: تقييم المخزون"
+    }
+  },
+  "profit": {
+    "hiddenMissingDetails": "الربح مخفي: التكاليف التاريخية غير متوفرة لـ {{sales}} عملية بيع{{repairs}}. لم يتم اعتماد أي كلفة تقديرية.",
+    "hiddenMissingHistoricalCosts": "الربح مخفي: بعض التكاليف التاريخية غير متوفرة. لم يتم اعتماد أي كلفة تقديرية."
+  },
+  "recentSales": {
+    "atLoss": "بخسارة",
+    "columns": {
+      "amountPaid": "المبلغ المدفوع",
+      "profit": "الربح",
+      "purchase": "الشراء",
+      "remainingToPay": "المبلغ المتبقي",
+      "sale": "البيع",
+      "status": "الحالة",
+      "total": "الإجمالي"
+    },
+    "description": "أحدث المعاملات المسجلة",
+    "empty": "لا توجد مبيعات حديثة في النظام",
+    "status": {
+      "credit": "بالدين",
+      "paid": "خالص"
+    },
+    "title": "أحدث المبيعات",
+    "walkInCustomer": "حريف عابر"
+  },
+  "stockAlert": {
+    "dismiss": "إخفاء تنبيه المخزون",
+    "dismissTitle": "إخفاء التنبيه مؤقتاً",
+    "immediateOutOfStock": "حالات نفاد فورية: {{count}}!",
+    "manageStock": "إدارة المخزون",
+    "minimumThreshold": "الحد الأدنى: {{count}} وحدات",
+    "moreProducts": "عرض {{count}} منتجات أخرى...",
+    "remaining": "متبقي {{count}}",
+    "replenishmentWarning": "كمية هذه المنتجات في المخزون أقل من الحد الأدنى المضبوط في إعداداتك أو تساويه ({{count}} وحدات). يُنصح بإعادة التزويد.",
+    "showButton": "عرض تنبيهات المخزون ({{count}})",
+    "showNotification": "انقر لعرض تنبيه المخزون",
+    "title": "تنبيه انخفاض المخزون ({{count}} منتجات)"
+  },
+  "stockSummary": {
+    "calculatedAt": "تاريخ الحساب",
+    "currentStockValue": "القيمة الحالية لمخزوني",
+    "potentialSaleValue": "قيمة البيع المحتملة: {{value}} {{currency}}",
+    "productsInStock": "المنتجات المتوفرة في المخزون",
+    "productsOutOfStock": "{{count}} منتج نافد من المخزون",
+    "purchaseValue": "قيمة الشراء",
+    "realTime": "في الوقت الفعلي · المخزون الحالي",
+    "references": "{{count}} مرجع"
+  },
+  "stockValuation": {
+    "averageCommercialMargin": "متوسط الهامش التجاري",
+    "description": "يُحتسب تلقائياً في الوقت الفعلي عند كل تعديل للسعر أو المخزون",
+    "estimatedPotentialRevenue": "المداخيل المحتملة المقدّرة",
+    "estimatedRevenue": "رقم المعاملات المقدّر",
+    "investedInGoods": "المبلغ المستثمر في البضائع",
+    "stockProfitabilityRate": "نسبة ربحية المخزون",
+    "theoreticalGrossMargin": "الهامش الإجمالي النظري",
+    "theoreticalProfit": "الربح النظري (الهامش)",
+    "title": "تقييم وأداء المخزون المتبقي",
+    "totalPurchaseValue": "إجمالي قيمة الشراء",
+    "viewInventoryReport": "عرض تقرير المخزون"
+  },
+  "supplyDialog": {
+    "product": "المنتج",
+    "quantity": "كمية التزويد",
+    "title": "تعديل التزويد",
+    "unitPurchasePrice": "سعر الشراء للوحدة ({{currency}})"
+  },
+  "tasks": {
+    "clientsWithUnpaid": "حرفاء لديهم مستحقات غير مدفوعة",
+    "completedRepairs": "الإصلاحات المكتملة",
+    "description": "عناصر تتطلب انتباهك",
+    "lowStock": "مخزون منخفض",
+    "title": "للمعالجة"
+  },
+  "topProducts": {
+    "description": "حسب عدد المنتجات المباعة",
+    "empty": "لا توجد مبيعات اليوم",
+    "revenue": "رقم المعاملات",
+    "title": "أفضل المبيعات اليوم",
+    "units": "{{count}} وحدات"
+  },
+  "units": {
+    "repairs": "إصلاحات",
+    "sales": "مبيعات",
+    "stockQuantity": "{{count}} وحدات"
+  }
+}

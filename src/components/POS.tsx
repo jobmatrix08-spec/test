@@ -20,7 +20,7 @@ import ClientPicker from './pos/ClientPicker';
 import QuickClientModal from './pos/QuickClientModal';
 import { Badge, Button, Card, EmptyState, Input, PageHeader, Select } from './ui';
 import { useTranslation } from 'react-i18next';
-import { formatDateTime, formatDocumentDate } from '../i18n/format';
+import { formatDateTime, formatDocumentDate, formatNumber } from '../i18n/format';
 
 interface POSProps {
   userProfile: UserProfile | null;
@@ -595,13 +595,13 @@ export default function POS({ userProfile }: POSProps) {
     if (!isCredit) {
       if (!selectedClient) {
         if (Math.abs(paidAmount - cartTotal) > 0.001) {
-          setError(t('errors.walkInExact', { total: cartTotal.toFixed(3), currency }));
+          setError(t('errors.walkInExact', { total: formatNumber(cartTotal, { minimumFractionDigits: 3, maximumFractionDigits: 3 }), currency }));
           setIsProcessing(false);
           return;
         }
       } else {
         if (paidAmount > cartTotal + 0.001) {
-          setError(t('errors.paidExceeds', { total: cartTotal.toFixed(3), currency }));
+          setError(t('errors.paidExceeds', { total: formatNumber(cartTotal, { minimumFractionDigits: 3, maximumFractionDigits: 3 }), currency }));
           setIsProcessing(false);
           return;
         }
@@ -1082,7 +1082,7 @@ export default function POS({ userProfile }: POSProps) {
               <div className="mt-auto flex w-full items-center justify-between gap-2 px-2 pb-2">
                 <div className="min-w-0">
                   <span className="block truncate font-mono text-base font-bold leading-none text-ds-brand tabular-nums sm:text-lg">
-                    {product.sellPrice.toFixed(3)} <span className="text-xs font-bold">{currency}</span>
+                    {formatNumber(product.sellPrice, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} <span className="text-xs font-bold">{currency}</span>
                   </span>
                   {product.inventoryType === 'service' ? <Badge variant="neutral">{t('service')}</Badge> : <Badge variant={product.stock <= 0 ? 'danger' : product.stock <= 5 ? 'warning' : 'success'}>
                     {product.stock <= 0 ? t('outOfStock') : product.stock <= 5 ? t('lowStock', { count: product.stock }) : t('inStock', { count: product.stock })}
@@ -1276,10 +1276,10 @@ export default function POS({ userProfile }: POSProps) {
                           </div>
                         </td>
                         <td className="py-3 px-2 text-end font-semibold text-ds-text-muted font-mono text-xs sm:text-[13px]">
-                          {item.price.toFixed(3)} <span className="text-[9px] font-medium text-ds-text-muted">{currency}</span>
+                          {formatNumber(item.price, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} <span className="text-[9px] font-medium text-ds-text-muted">{currency}</span>
                         </td>
                         <td className="py-3 px-2 text-end font-display text-xs font-bold text-ds-text tabular-nums sm:text-sm">
-                          {item.total.toFixed(3)} <span className="text-[10px] font-bold text-ds-text-muted">{currency}</span>
+                          {formatNumber(item.total, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} <span className="text-[10px] font-bold text-ds-text-muted">{currency}</span>
                         </td>
                         <td className="py-3 px-3 text-center">
                           <button
@@ -1318,7 +1318,7 @@ export default function POS({ userProfile }: POSProps) {
               <div className="min-w-0">
                 <span className="block text-[11px] font-black uppercase tracking-wider text-ds-text-muted sm:text-xs">{t('grossTotal')}</span>
                 <span className="mt-1 block truncate font-display text-xs font-bold leading-none text-ds-text tabular-nums sm:text-sm">
-                  {(subtotal + tvaAmount).toFixed(3)} <span className="text-[10px] font-bold text-ds-text-muted">{currency}</span>
+                  {formatNumber(subtotal + tvaAmount, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} <span className="text-[10px] font-bold text-ds-text-muted">{currency}</span>
                 </span>
               </div>
               <div className="ms-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ds-surface-2 text-ds-text-muted">
@@ -1375,14 +1375,14 @@ export default function POS({ userProfile }: POSProps) {
                   onClick={() => { setDiscount(5); setDiscountInput('5.000'); }}
                   className="min-h-11 rounded-full bg-ds-brand px-3 text-xs font-black text-ds-brand-contrast cursor-pointer hover:bg-ds-brand-hover"
                 >
-                  -5DT
+                  −{formatNumber(5, { maximumFractionDigits: 0 })} {currency}
                 </button>
                 <button 
                   type="button"
                   onClick={() => { setDiscount(10); setDiscountInput('10.000'); }}
                   className="min-h-11 rounded-full bg-ds-brand px-3 text-xs font-black text-ds-brand-contrast cursor-pointer hover:bg-ds-brand-hover"
                 >
-                  -10DT
+                  −{formatNumber(10, { maximumFractionDigits: 0 })} {currency}
                 </button>
               </div>
             </div>
@@ -1394,7 +1394,7 @@ export default function POS({ userProfile }: POSProps) {
                   "text-xs sm:text-sm font-black font-mono block leading-none mt-1 truncate",
                   estimatedBenefit < 0 ? "text-ds-danger" : "text-ds-success",
                 )}>
-                  {estimatedBenefit.toFixed(3)} <span className={cn(
+                  {formatNumber(estimatedBenefit, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} <span className={cn(
                     "text-[10px] font-bold",
                     estimatedBenefit < 0 ? "text-ds-danger" : "text-ds-success",
                   )}>{currency}</span>
@@ -1422,7 +1422,7 @@ export default function POS({ userProfile }: POSProps) {
                   </div>
                   <div className="flex justify-center items-center gap-1 mt-1.5">
                     <span className="select-all font-mono text-3xl font-bold leading-none tracking-tighter text-ds-brand tabular-nums sm:text-4xl">
-                      {cartTotal.toFixed(3)}
+                      {formatNumber(cartTotal, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}
                     </span>
                     <span className="ms-1 text-sm font-black uppercase tracking-wider text-ds-text-muted">
                       {currency}
@@ -1452,9 +1452,9 @@ export default function POS({ userProfile }: POSProps) {
                     </div>
                     <div className="font-mono text-xs font-black">
                       {receivedCash > cartTotal
-                        ? `${(receivedCash - cartTotal).toFixed(3)}`
+                        ? formatNumber(receivedCash - cartTotal, { minimumFractionDigits: 3, maximumFractionDigits: 3 })
                         : receivedCash < cartTotal
-                          ? `${(cartTotal - receivedCash).toFixed(3)}`
+                          ? formatNumber(cartTotal - receivedCash, { minimumFractionDigits: 3, maximumFractionDigits: 3 })
                           : `0.000`}
                     </div>
                   </div>
@@ -1585,7 +1585,7 @@ export default function POS({ userProfile }: POSProps) {
             {!selectedClient && Math.abs(paidAmount - cartTotal) > 0.001 && (
               <div className="flex items-center gap-1.5 rounded-lg border border-ds-danger/20 bg-ds-danger-soft p-2 text-[9px] font-semibold text-ds-danger">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0 text-ds-danger" />
-                <span>{t('errors.walkInExact', { total: cartTotal.toFixed(3), currency })}</span>
+                <span>{t('errors.walkInExact', { total: formatNumber(cartTotal, { minimumFractionDigits: 3, maximumFractionDigits: 3 }), currency })}</span>
               </div>
             )}
 
@@ -1625,7 +1625,7 @@ export default function POS({ userProfile }: POSProps) {
 
             <div className="mb-4 flex items-center justify-between rounded-xl border border-ds-border bg-ds-surface-2 p-3">
               <span className="text-xs font-bold uppercase tracking-wider text-ds-text-muted">{t('amountDue')}</span>
-              <span className="font-display text-lg font-bold tabular-nums text-ds-text">{cartTotal.toFixed(3)} {currency}</span>
+              <span className="font-display text-lg font-bold tabular-nums text-ds-text">{formatNumber(cartTotal, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
             </div>
 
             {/* Option 1 : tout créditer */}
@@ -1639,18 +1639,18 @@ export default function POS({ userProfile }: POSProps) {
               className="mb-3 w-full rounded-full border-ds-warning bg-ds-warning text-xs font-black uppercase tracking-wider text-ds-brand-contrast hover:brightness-90"
             >
               <CreditCard className="w-4 h-4 shrink-0" />
-              Créditer tout le montant
+              {t('creditAllAmount')}
             </Button>
 
             <div className="flex items-center gap-3 mb-3">
               <div className="h-px flex-1 bg-ds-border" />
-              <span className="text-[10px] font-black uppercase text-ds-text-muted">ou</span>
+              <span className="text-[10px] font-black uppercase text-ds-text-muted">{t('or')}</span>
               <div className="h-px flex-1 bg-ds-border" />
             </div>
 
             {/* Option 2 : tranche payée + reste en crédit */}
             <label className="mb-1.5 block text-[10px] font-black uppercase tracking-wider text-ds-text-muted">
-              Le client paie une tranche maintenant
+              {t('payInstallmentNow')}
             </label>
             <div className="relative mb-2">
               <Coins className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ds-text-muted" />
@@ -1676,7 +1676,7 @@ export default function POS({ userProfile }: POSProps) {
               const reste = Math.max(0, Math.round((cartTotal - tranche) * 1000) / 1000);
               return tranche > 0 && tranche < cartTotal ? (
                 <p className="mb-3 text-[11px] font-bold text-ds-text-muted">
-                  {t('creditBalance')} <span className="font-black text-ds-warning">{reste.toFixed(3)} {currency}</span>
+                  {t('creditBalance')} <span className="font-black text-ds-warning">{formatNumber(reste, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {currency}</span>
                 </p>
               ) : null;
             })()}
@@ -1697,7 +1697,7 @@ export default function POS({ userProfile }: POSProps) {
                   return;
                 }
                 if (tranche >= cartTotal) {
-                  setCreditModalError(t('errors.creditInstallment', { total: cartTotal.toFixed(3), currency }));
+                  setCreditModalError(t('errors.creditInstallment', { total: formatNumber(cartTotal, { minimumFractionDigits: 3, maximumFractionDigits: 3 }), currency }));
                   return;
                 }
                 setIsCreditModalOpen(false);

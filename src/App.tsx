@@ -112,6 +112,7 @@ function getFirstAccessiblePath(userProfile: UserProfile | null): string {
 function CurrentPageTitle({ userProfile }: { userProfile: UserProfile | null }) {
   const { t } = useTranslation('nav');
   const location = useLocation();
+  const isRtl = i18n.dir() === 'rtl';
   const currentItem = getAccessibleNavigation(userProfile)
     .flatMap(section => section.items)
     .find(item => item.path === `${location.pathname}${location.hash}` || item.path === location.pathname);
@@ -265,7 +266,7 @@ function Sidebar({
       
       <aside className={cn(
         "fixed inset-y-0 start-0 z-50 w-[min(18rem,calc(100vw-1rem))] border-e border-ds-border bg-ds-surface text-ds-text shadow-xl shadow-ds-text/10 transition-transform duration-300 lg:translate-x-0 lg:w-72 lg:shadow-none",
-        isOpen ? "translate-x-0 rtl:translate-x-0" : "-translate-x-full rtl:translate-x-full"
+        isOpen ? "translate-x-0" : isRtl ? "translate-x-full" : "-translate-x-full"
       )}>
         <div className="h-full flex flex-col">
           <div className="flex items-center justify-between border-b border-ds-border px-5 py-5">

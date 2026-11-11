@@ -9,11 +9,12 @@ import { useBrand } from './BrandProvider';
 import { Button, Card, Input } from './ui';
 import { useTranslation } from 'react-i18next';
 import LanguageSelector from '../i18n/LanguageSelector';
+import { DEFAULT_STORE_NAME } from '../config/brand-defaults';
 
 export default function Login({ initialMessage = '' }: { initialMessage?: string }) {
-  const { t, i18n } = useTranslation('auth');
+  const { t } = useTranslation('auth');
   const { storeName } = useBrand();
-  const shopName = storeName.trim() || (i18n.resolvedLanguage?.startsWith('ar') ? 'بوتيك' : 'Boutique');
+  const shopName = storeName.trim() || DEFAULT_STORE_NAME;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isRegistering, setIsRegistering] = useState(false);
@@ -184,7 +185,7 @@ export default function Login({ initialMessage = '' }: { initialMessage?: string
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="contact@example.com"
+            placeholder={t('emailPlaceholder')}
           />
 
           <Input

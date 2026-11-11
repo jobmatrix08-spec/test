@@ -8,6 +8,7 @@ import { handleFirestoreError, OperationType } from '../App';
 import type { SaleCostLine } from '../lib/financial';
 import { computeWorkshopSummary, ReportPeriod } from '../lib/workshopReports';
 import { Badge, Button, Card, EmptyState, PageHeader } from './ui';
+import { formatNumber } from '../i18n/format';
 
 type ExpenseRecord = { id: string; date: unknown; amount: number };
 
@@ -32,7 +33,7 @@ export default function Reports({ userProfile }: { userProfile: UserProfile | nu
   const [loading, setLoading] = useState(true);
 
   const ownerId = userProfile?.uid;
-  const money = (value: number) => value.toFixed(3);
+  const money = (value: number) => formatNumber(value, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 
   useEffect(() => {
     if (userProfile?.role !== 'admin' || userProfile.ownerId && userProfile.ownerId !== userProfile.uid || !ownerId || !auth.currentUser) {

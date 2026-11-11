@@ -39,8 +39,9 @@ function formatDate(value: string | undefined, unavailableLabel: string) {
 }
 
 export default function Statistics({ userProfile }: StatisticsProps) {
-  const { t } = useTranslation('statistics');
+  const { t, i18n } = useTranslation('statistics');
   const { storeName } = useBrand();
+  const isRtl = i18n.dir() === 'rtl';
   const [loadingUsers, setLoadingUsers] = useState(true);
   const [loadingStats, setLoadingStats] = useState(false);
   const [allUsers, setAllUsers] = useState<UserProfile[]>([]);
@@ -270,7 +271,7 @@ export default function Statistics({ userProfile }: StatisticsProps) {
                     className="w-full text-start px-6 py-4 hover:bg-slate-50/60 transition-colors flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6"
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
-                      {isOpen ? <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" /> : <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />}
+                      {isOpen ? <ChevronDown className="w-4 h-4 text-slate-400 shrink-0" /> : <ChevronRight className={cn('w-4 h-4 text-slate-400 shrink-0', isRtl && 'rotate-180')} />}
                       <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center font-black text-xs text-indigo-600 border border-indigo-100 shrink-0">
                         {(s.owner.name || s.owner.email)?.[0]?.toUpperCase()}
                       </div>

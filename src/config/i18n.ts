@@ -1,7 +1,7 @@
 export const ARABIC_GLOSSARY = [
   { french: 'Caisse', aliases: ['الصندوق', 'صندوق', 'الكاسة', 'كاسة'] },
   { french: 'Stock', aliases: ['المخزون', 'مخزون', 'الستوك', 'ستوك'] },
-  { french: 'Facture', aliases: ['الفواتير', 'الفاتورة', 'فواتير', 'فاتورة'] },
+  { french: 'Facture', aliases: ['الفوترة', 'الفواتير', 'الفاتورة', 'فواتير', 'فاتورة'] },
   { french: 'Accueil', aliases: ['لوحة القيادة', 'لوحة التحكم'] },
   { french: 'IMEI', aliases: [] },
   { french: 'POS', aliases: ['نقطة البيع'] },

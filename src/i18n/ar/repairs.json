@@ -9,6 +9,74 @@
     "irreparable": "ما يتصلّحش",
     "annule": "تلغى"
   },
+  "common": {
+    "admin": "المدير",
+    "user": "مستخدم"
+  },
+  "accessibility": {
+    "closeStats": "سكّر التاريخ",
+    "closeForm": "سكّر الاستمارة",
+    "removePart": "نحّي {{name}}",
+    "closeDetail": "سكّر تفاصيل التصليح",
+    "closeDelivery": "سكّر كاسة التسليم"
+  },
+  "errors": {
+    "stockSessionMissing": "جلسة المستخدم موش موجودة: ما نجّمش نسجّل حركة الستوك.",
+    "stockPartMissing": "القطعة «{{name}}» ما عادش موجودة في الستوك.",
+    "stockUnavailableRead": "ما نجّمش نقرا ستوك «{{name}}».",
+    "stockInvalid": "ستوك «{{name}}» موش صحيح.",
+    "stockWrongStore": "القطعة «{{name}}» موش متاع المحل هذا.",
+    "stockInsufficient": "الستوك ما يكفيش لـ«{{name}}»: فما {{count}}.",
+    "duplicateStockMovement": "حركة ستوك موجودة قبل في النسخة هاذي. عاود حمّل البطاقة وحاول من جديد.",
+    "adminDeleteOnly": "كان المدير ينجم يحذف تصليح.",
+    "deleteFailed": "ما نجّمش نحذف: {{message}}",
+    "costSeparationInterrupted": "توقّف فصل الكلفة بعد {{count}} بطاقة: {{message}}. تنجم تعاود العملية، ما تعاودش نفس التغييرات.",
+    "stockExhaustedForPart": "الستوك وفى من «{{name}}» — ما نجّمش نزيد القطعة هاذي.",
+    "stockInsufficientForPart": "الستوك ما يكفيش لـ«{{name}}» — أقصى كمية متوفرة: {{count}}.",
+    "clientCreateFailed": "ما نجّمش نعمل حريف جديد: {{message}}",
+    "multipleClients": "فما أكثر من حريف بنفس المعلومات — اختار الحريف الصحيح من القائمة.",
+    "selectClient": "اختار حريف.",
+    "deliveryCashPermission": "التسليم والخلاص متاحين كان للمدير ولا للبياعة.",
+    "checkingCashSession": "قاعدين نتثبتوا من الكاسة...",
+    "noCashSession": "ما فماش كاسة محلولة. حلّ جلسة قبل ما تقبض ثمن التصليح.",
+    "enterDeviceBrand": "اكتب ماركة الجهاز.",
+    "enterDeviceModel": "اكتب موديل الجهاز.",
+    "repairMissing": "التصليح ما عادش موجود.",
+    "repairWrongStore": "التصليح هذا موش متاع المحل هذا.",
+    "duplicateRepairSave": "التصليح هذا تسجّل قبل. عاود حمّل قائمة التصليحات.",
+    "costSnapshotFailed": "التصليح تسجّل، أما ما نجّمش نثبّت كلفة القطع.",
+    "saveFailed": "ما نجّمش نسجّل: {{message}}",
+    "loadStockHistoryFailed": "ما نجّمش نحمّل تاريخ حركات الستوك: {{message}}",
+    "statusUpdateFailed": "ما نجّمش نبدّل الحالة: {{message}}",
+    "clientRequiredForCredit": "يلزم حريف مسجّل في البطاقة باش تسلّم تصليح وباقي عليه مبلغ.",
+    "repairChangedBeforeDelivery": "التصليح تبدّل. عاود حمّلو قبل ما تسلّمو.",
+    "clientMissing": "الحريف موش موجود.",
+    "deliveryFailed": "ما نجّمش نكمّل الخلاص: {{message}}",
+    "discountExceedsDue": "التخفيض ما ينجمش يفوت الباقي.",
+    "paymentExceedsDue": "المبلغ المقبوض ما ينجمش يفوت المبلغ المطلوب بعد التخفيض."
+  },
+  "confirmations": {
+    "deleteRepair": "تحب تحذف التصليح {{number}}؟ القطع المستعملة باش ترجع للستوك.",
+    "separateLegacyCosts": "تحب تأرشف كلفة {{count}} بطاقة قديمة في repair_costs وتنحّي أسعار الشراء من البطاقات اللي يشوفها الورشة؟ المبالغ باش تبقى محفوظة في المجموعة المحمية."
+  },
+  "notifications": {
+    "repairDeleted": "التصليح {{number}} تحذف والقطع رجعت للستوك.",
+    "costSeparationComplete": "كمل فصل الكلفة: تراجعت {{count}} بطاقة. الكلفة المؤرشفة تبقى كان للمدير.",
+    "repairUpdated": "تبدّلت البطاقة {{number}}.",
+    "costSnapshotWarning": "رد بالك: ما نجّمش نثبّت كلفة الشراء.",
+    "repairCreated": "التصليح {{number}} تسجّل.",
+    "statusUpdated": "تبدّلت الحالة: {{status}}",
+    "repairDelivered": "تسلّم التصليح وتسجّل الخلاص."
+  },
+  "logs": {
+    "messageSent": "تبعتت رسالة نهار {{date}} من {{user}} عبر {{channel}} (تحلّ التطبيق، أما الإرسال موش مؤكّد).",
+    "statusChanged": "الحالة → {{status}}",
+    "repairUpdated": "تبدّلت البطاقة",
+    "repairCreated": "تسجّل التصليح",
+    "delivery": "تسلّم — تقبض {{paid}} {{currency}}{{discount}}{{credit}}",
+    "deliveryDiscount": "، تخفيض {{amount}} {{currency}}",
+    "deliveryCredit": "، {{amount}} {{currency}} زادوا ككريدي على حساب {{client}}"
+  },
   "page": {
     "title": "ورشة التصليح",
     "description": "تسيير طلبات التصليح ومتابعتها",
@@ -45,8 +113,8 @@
   },
   "costMigration": {
     "title": "فصل كلفة القطع القديمة",
-    "description_one": "فما بطاقة قديمة مازالت ما تراجعتش وما تنحاتش منها أسعار الشراء.",
-    "description_other": "فما {{count}} بطاقات قديمة مازالوا ما تراجعوش وما تنحاتش منهم أسعار الشراء.",
+    "description_one": "فما {{countFormatted}} بطاقة قديمة مازالت ما تراجعتش وما تنحاتش منها أسعار الشراء.",
+    "description_other": "فما {{countFormatted}} بطاقات قديمة مازالوا ما تراجعوش وما تنحاتش منهم أسعار الشراء.",
     "running": "قاعد يفصل في الكلفة...",
     "action": "افصل الكلفة القديمة"
   },
@@ -61,7 +129,10 @@
     "remove": "نحّي",
     "searchClient": "لوّج على حريف (الاسم، التليفون)",
     "brand": "الماركة",
+    "brandExample": "Samsung, Apple",
     "model": "الموديل",
+    "modelExample": "Galaxy S21, iPhone 12",
+    "genericPart": "القطعة هاذي",
     "imei": "IMEI / الرقم التسلسلي",
     "optional": "اختياري",
     "unlockCode": "كود فتح الجهاز",
@@ -90,10 +161,14 @@
     "create": "سجّل التصليح",
     "created": "التصليح تسجّل",
     "printing": "قاعد يطبع وصل الإيداع...",
-    "finish": "كمّل"
+    "finish": "كمّل",
+    "ticketNumber": "رقم",
+    "reprint": "عاود اطبع"
   },
   "detail": {
     "delete": "احذف التصليح",
+    "edit": "بدّل",
+    "warranty": "الضمان",
     "createdAt": "تسجّل نهار {{date}}",
     "device": "الجهاز",
     "partsUsed": "القطع المستعملة",

@@ -12,6 +12,7 @@ import { createClient } from '../lib/clients';
 import MessageComposer from './MessageComposer';
 import { useBrand } from './BrandProvider';
 import { Badge, Button, Card, EmptyState, Input, PageHeader, Select } from './ui';
+import { formatNumber } from '../i18n/format';
 
 interface ClientsProps {
   userProfile: UserProfile | null;
@@ -328,7 +329,7 @@ export default function Clients({ userProfile }: ClientsProps) {
                     <td data-label={t('currentDebt')} className="px-6 py-4">
                       <Badge variant={client.debt > 0 ? 'warning' : 'neutral'} className="font-mono text-sm">
                         <Wallet className="me-1.5 h-4 w-4 shrink-0" />
-                        {client.debt.toFixed(3)} {storeSettings?.currency || 'DT'}
+                        {formatNumber(client.debt, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}
                       </Badge>
                     </td>
                     <td data-label={t('actions')} className="px-6 py-4 text-end">
@@ -336,7 +337,7 @@ export default function Clients({ userProfile }: ClientsProps) {
                         <MessageComposer
                           phone={client.phone}
                           clientName={client.name}
-                          montantRestant={`${(Number(client.debt) || 0).toFixed(3)} ${storeSettings?.currency || 'DT'}`}
+                          montantRestant={`${formatNumber(Number(client.debt) || 0, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ${storeSettings?.currency || 'DT'}`}
                           nomMagasin={storeSettings?.storeName || brand.storeName}
                           indicatif={storeSettings?.whatsappCountryCode || '216'}
                           templates={storeSettings?.messageTemplates}
@@ -389,7 +390,7 @@ export default function Clients({ userProfile }: ClientsProps) {
                   type="text"
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                  placeholder="CLI-001"
+                  placeholder={t('codePlaceholder')}
                 />
               </div>
               <Input
@@ -461,7 +462,7 @@ export default function Clients({ userProfile }: ClientsProps) {
                 <div className="flex justify-between items-center border-t border-ds-border pt-2">
                   <span className="text-xs font-bold uppercase tracking-wider text-ds-warning">{t('totalDebt')}</span>
                   <span className="font-mono text-xl font-black text-ds-warning">
-                    {settlingClient.debt.toFixed(3)} {storeSettings?.currency || 'DT'}
+                    {formatNumber(settlingClient.debt, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}
                   </span>
                 </div>
               </div>
@@ -526,11 +527,11 @@ export default function Clients({ userProfile }: ClientsProps) {
                 <Card className="space-y-2 border-ds-warning/30 bg-ds-warning-soft p-4">
                   <div className="flex justify-between items-center text-xs font-bold uppercase tracking-wider text-ds-warning">
                     <span>{t('amountPaid')}</span>
-                    <span className="font-mono">{settleAmount.toFixed(3)} {storeSettings?.currency || 'DT'}</span>
+                    <span className="font-mono">{formatNumber(settleAmount, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}</span>
                   </div>
                   <div className="flex justify-between items-center border-t border-ds-warning/20 pt-2 text-sm font-black text-ds-warning">
                     <span>{t('remaining')}</span>
-                    <span className="font-mono">{(settlingClient.debt - settleAmount).toFixed(3)} {storeSettings?.currency || 'DT'}</span>
+                    <span className="font-mono">{formatNumber(settlingClient.debt - settleAmount, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}</span>
                   </div>
                 </Card>
               )}

@@ -29,6 +29,7 @@
   "add": "زيد",
   "client": "الحريف",
   "code": "الكود",
+  "codePlaceholder": "CLI-001",
   "totalDebt": "الكريدي الكلّي",
   "amountPlaceholder": "اكتب المبلغ...",
   "paymentMode": "طريقة الخلاص",

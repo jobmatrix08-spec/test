@@ -29,6 +29,7 @@
   "add": "Ajouter",
   "client": "Client",
   "code": "Code",
+  "codePlaceholder": "CLI-001",
   "totalDebt": "Dette totale",
   "amountPlaceholder": "Saisissez le montant...",
   "paymentMode": "Mode de règlement",

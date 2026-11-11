@@ -19,6 +19,7 @@ import frDashboard from './fr/dashboard.json';
 import frNotes from './fr/notes.json';
 import frCashSession from './fr/cashSession.json';
 import frStatistics from './fr/statistics.json';
+import frParts from './fr/parts.json';
 import arCommon from './ar/common.json';
 import arNav from './ar/nav.json';
 import arAuth from './ar/auth.json';
@@ -36,10 +37,11 @@ import arDashboard from './ar/dashboard.json';
 import arNotes from './ar/notes.json';
 import arCashSession from './ar/cashSession.json';
 import arStatistics from './ar/statistics.json';
+import arParts from './ar/parts.json';
 
 const namespaces = [
   'common', 'nav', 'auth', 'pos', 'products', 'sales', 'invoices', 'clients',
-  'repairs', 'expenses', 'reports', 'settings', 'users', 'dashboard', 'notes', 'cashSession', 'statistics',
+  'repairs', 'expenses', 'reports', 'settings', 'users', 'dashboard', 'notes', 'cashSession', 'statistics', 'parts',
 ];
 
 void i18n
@@ -51,6 +53,7 @@ void i18n
         sales: frSales, invoices: frInvoices, clients: frClients, repairs: frRepairs,
         expenses: frExpenses, reports: frReports, settings: frSettings, users: frUsers,
         dashboard: frDashboard, notes: frNotes, cashSession: frCashSession, statistics: frStatistics,
+        parts: frParts,
       },
       ar: {
         common: applyArabicGlossary(arCommon), nav: applyArabicGlossary(arNav),
@@ -62,6 +65,7 @@ void i18n
         users: applyArabicGlossary(arUsers), dashboard: applyArabicGlossary(arDashboard),
         notes: applyArabicGlossary(arNotes), cashSession: applyArabicGlossary(arCashSession),
         statistics: applyArabicGlossary(arStatistics),
+        parts: applyArabicGlossary(arParts),
       },
     },
     lng: getInitialLanguage(),

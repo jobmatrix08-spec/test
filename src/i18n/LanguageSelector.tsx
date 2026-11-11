@@ -32,10 +32,10 @@ export default function LanguageSelector({ onLanguageChange, className = '', com
           aria-label={t('language.label')}
           value={language}
           onChange={event => void handleChange(event.target.value as AppLanguage)}
-          className={`min-h-11 rounded-ds-md border border-ds-border bg-ds-surface text-base text-ds-text sm:text-sm ${compact ? 'w-[3.75rem] px-2' : 'px-3'}`}
+          className={`min-h-11 rounded-ds-md border border-ds-border bg-ds-surface text-base text-ds-text sm:text-sm ${compact ? 'min-w-[7rem] px-2' : 'px-3'}`}
         >
-          <option value="fr">{compact ? 'FR' : t('language.french')}</option>
-          <option value="ar">{compact ? 'AR' : t('language.arabic')}</option>
+          <option value="fr">{t('language.french')}</option>
+          <option value="ar">{t('language.arabic')}</option>
         </select>
       </label>
       {saveError && <span role="alert" className="max-w-40 text-[10px] text-ds-danger">{t('language.saveError')}</span>}

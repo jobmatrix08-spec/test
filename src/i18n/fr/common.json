@@ -73,5 +73,33 @@
   "error": "Une erreur est survenue.",
   "unexpectedTitle": "Oups !",
   "refreshPage": "Actualiser la page",
-  "updateAvailable": "Nouvelle version disponible."
+  "updateAvailable": "Nouvelle version disponible.",
+  "messageComposer": {
+    "defaultTemplates": {
+      "appareil_recu": "Bonjour {client}, nous avons reçu votre appareil {appareil} (réparation n° {numero}) chez {nom_magasin}.",
+      "en_attente_piece": "Bonjour {client}, la réparation de votre appareil {appareil} (n° {numero}) est en attente de pièce chez {nom_magasin}.",
+      "repare_pret": "Bonjour {client}, votre appareil {appareil} (réparation n° {numero}) est réparé et prêt chez {nom_magasin}. Reste à payer : {montant_restant}.",
+      "rappel_paiement": "Bonjour {client}, il reste {montant_restant} à régler chez {nom_magasin}. Merci."
+    },
+    "fallbackClient": "Client",
+    "fallbackStore": "Boutique",
+    "invalidPhone": "Numéro de téléphone invalide ou absent.",
+    "emptyMessage": "Le message ne peut pas être vide.",
+    "logError": "L’application de messagerie a été ouverte, mais le journal de la réparation n’a pas pu être enregistré.",
+    "prepareWhatsApp": "Préparer un message WhatsApp",
+    "prepareSms": "Préparer un SMS",
+    "phoneMissing": "Numéro de téléphone absent",
+    "title": "Préparer un message {{channel}}",
+    "recipientHelp": "À : +{{phone}}. Vérifiez et modifiez le texte avant l’envoi dans l’application.",
+    "template": "Modèle",
+    "templates": {
+      "appareil_recu": "Appareil reçu",
+      "en_attente_piece": "En attente de pièce",
+      "repare_pret": "Réparé / prêt",
+      "rappel_paiement": "Rappel de paiement"
+    },
+    "message": "Message (modifiable)",
+    "sendHelp": "L’application s’ouvre avec le message prérempli. L’envoi final doit être confirmé dans WhatsApp ou l’application SMS.",
+    "open": "Ouvrir {{channel}}"
+  }
 }

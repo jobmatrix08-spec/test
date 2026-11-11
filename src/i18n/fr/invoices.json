@@ -1,6 +1,6 @@
 {
   "ui": {
-    "title": "Facturation",
+    "title": "Facture",
     "description": "Factures de vente et achats du magasin",
     "newInvoice": "Nouvelle facture",
     "manualInvoice": "Création manuelle de facture",
@@ -188,5 +188,26 @@
       "stock": "stock",
       "price": "prix"
     }
+  },
+  "pdf": {
+    "title": "Facture",
+    "invoiceNumber": "Numéro de facture",
+    "date": "Date",
+    "client": "Client",
+    "clientCode": "Code client",
+    "phone": "Téléphone",
+    "address": "Adresse",
+    "product": "Produit",
+    "quantity": "Quantité",
+    "price": "Prix",
+    "lineTotal": "Total",
+    "subtotal": "Sous-total",
+    "discount": "Remise",
+    "vat": "TVA",
+    "generalTotal": "Total général",
+    "paid": "Payé",
+    "remaining": "Reste à payer",
+    "thanks": "Merci de votre confiance !",
+    "pdfError": "Erreur de génération du PDF."
   }
 }

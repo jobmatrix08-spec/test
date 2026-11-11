@@ -124,7 +124,9 @@
     "chooseCategory": "-- اختار صنف --",
     "storeIdMissing": "ما نجّمش نسجّل النماذج من غير معرّف {{shopName}}.",
     "attributesSaveFailed": "ما نجّمش نسجّل نماذج الخصائص.",
-    "restockFailed": "ما نجّمش نزوّد الستوك. عاود جرّب."
+    "restockFailed": "ما نجّمش نزوّد الستوك. عاود جرّب.",
+    "barcodeLabelTitle": "لصيقة الباركود",
+    "articleFallback": "منتج"
   },
   "attributes": {
     "type": "نوع الخصائص",

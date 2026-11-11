@@ -14,7 +14,7 @@ import { slugifyAppName } from '../lib/brand';
 import { useBrand } from './BrandProvider';
 import { Badge, Button, Card, EmptyState, Input, PageHeader } from './ui';
 import { useTranslation } from 'react-i18next';
-import { formatDateTime, formatDocumentDate } from '../i18n/format';
+import { formatDateTime, formatDocumentDate, formatNumber } from '../i18n/format';
 
 interface SalesProps {
   userProfile: UserProfile | null;
@@ -419,7 +419,7 @@ export default function Sales({ userProfile }: SalesProps) {
                 <TrendingUp className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-2xl font-black font-mono tracking-tight">{totalRevenue.toFixed(3)}<span className="ms-1 text-sm font-bold opacity-80">DT</span></p>
+            <p className="text-2xl font-black font-mono tracking-tight">{formatNumber(totalRevenue, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}<span className="ms-1 text-sm font-bold opacity-80">DT</span></p>
         </Card>
 
         {/* Ventes payées */}
@@ -447,7 +447,7 @@ export default function Sales({ userProfile }: SalesProps) {
               <AlertCircle className="w-4 h-4 text-ds-warning" />
             </div>
           </div>
-          <p className="text-2xl font-black text-ds-text font-mono">{totalDebt.toFixed(3)}<span className="ms-1 text-sm font-bold text-ds-muted">DT</span></p>
+          <p className="text-2xl font-black text-ds-text font-mono">{formatNumber(totalDebt, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}<span className="ms-1 text-sm font-bold text-ds-muted">DT</span></p>
           <p className="mt-1 text-xs font-medium text-ds-warning">{t('salesPending', { count: sales.filter(s => s.debt > 0).length })}</p>
         </Card>
       </div>
@@ -593,12 +593,12 @@ export default function Sales({ userProfile }: SalesProps) {
                       </div>
                     </td>
                     <td data-label={t('total')} className="px-6 py-4">
-                      <span className="text-sm font-black text-ds-text font-mono">{sale.total.toFixed(3)}</span>
+                      <span className="text-sm font-black text-ds-text font-mono">{formatNumber(sale.total, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</span>
                       <span className="ms-1 text-[10px] font-bold text-ds-muted">DT</span>
                     </td>
                     <td data-label={t('status')} className="px-6 py-4">
                       {sale.debt > 0 ? (
-                      <Badge variant="warning">-{sale.debt.toFixed(3)} DT</Badge>
+                      <Badge variant="warning">-{formatNumber(sale.debt, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} DT</Badge>
                       ) : (
                       <Badge variant="success">{t('paidLabel')}</Badge>
                       )}
@@ -725,8 +725,8 @@ export default function Sales({ userProfile }: SalesProps) {
                           <td className="px-5 py-3 text-center">
                             <Badge variant="info" className="min-h-0 px-2 py-1">{item.quantity}</Badge>
                           </td>
-                          <td className="px-5 py-3 text-end text-xs font-mono text-ds-muted">{item.price.toFixed(3)}</td>
-                          <td className="px-5 py-3 text-end text-sm font-black text-ds-brand font-mono">{item.total.toFixed(3)} DT</td>
+                          <td className="px-5 py-3 text-end text-xs font-mono text-ds-muted">{formatNumber(item.price, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</td>
+                          <td className="px-5 py-3 text-end text-sm font-black text-ds-brand font-mono">{formatNumber(item.total, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} DT</td>
                         </tr>
                       ))}
                     </tbody>
@@ -738,16 +738,16 @@ export default function Sales({ userProfile }: SalesProps) {
               <Card className="space-y-3 bg-ds-surface-2 p-5">
                 <div className="flex justify-between items-center text-sm text-ds-muted">
                   <span className="font-bold uppercase tracking-wider text-xs">{t('saleTotal')}</span>
-                  <span className="font-mono">{selectedSale.total.toFixed(3)} DT</span>
+                  <span className="font-mono">{formatNumber(selectedSale.total, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} DT</span>
                 </div>
                 <div className="flex justify-between items-center border-t border-ds-border pt-3">
                   <span className="font-black uppercase tracking-wider text-xs">{t('amountPaid')}</span>
-                  <span className="text-xl font-black font-mono text-ds-success">{selectedSale.paid.toFixed(3)} DT</span>
+                  <span className="text-xl font-black font-mono text-ds-success">{formatNumber(selectedSale.paid, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} DT</span>
                 </div>
                 {selectedSale.debt > 0 && (
                   <div className="flex justify-between items-center border-t border-ds-border pt-3">
                     <span className="text-xs font-black uppercase tracking-wider text-ds-warning">{t('remaining')}</span>
-                    <span className="text-xl font-black font-mono text-ds-warning">{selectedSale.debt.toFixed(3)} DT</span>
+                    <span className="text-xl font-black font-mono text-ds-warning">{formatNumber(selectedSale.debt, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} DT</span>
                   </div>
                 )}
               </Card>
@@ -882,7 +882,7 @@ export default function Sales({ userProfile }: SalesProps) {
               <div className="space-y-1">
                 <h3 className="text-sm font-black uppercase tracking-wider text-ds-text">{t('deleteSaleQuestion')}</h3>
                 <p className="text-sm leading-relaxed text-ds-muted">
-                  {t('deleteSaleConfirm', { id: saleToDelete.id.slice(0, 8), amount: saleToDelete.total.toFixed(3) })}
+                  {t('deleteSaleConfirm', { id: saleToDelete.id.slice(0, 8), amount: formatNumber(saleToDelete.total, { minimumFractionDigits: 3, maximumFractionDigits: 3 }) })}
                 </p>
                 <p className="mt-1 rounded-ds-sm border border-ds-danger/20 bg-ds-danger-soft p-2 text-xs font-semibold leading-normal text-ds-danger">
                   {t('deleteSaleWarning')}

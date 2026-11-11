@@ -13,7 +13,8 @@ import { useBrand } from './BrandProvider';
 import { Badge, Button, Card, EmptyState, Input, PageHeader, Select } from './ui';
 import AttributeFields from './AttributeFields';
 import { useTranslation } from 'react-i18next';
-import { getDateLocale } from '../i18n/format';
+import { formatNumber, getDateLocale } from '../i18n/format';
+import { DEFAULT_STORE_NAME } from '../config/brand-defaults';
 
 interface ProductsProps {
   userProfile: UserProfile | null;
@@ -385,7 +386,7 @@ export default function Products({ userProfile }: ProductsProps) {
     // sinon chaque vente de ce produit génère un bénéfice négatif.
     if (isAdmin && !formData.isService && (formData.sellPrice || 0) < (formData.buyPrice || 0)) {
       setErrorMsg(
-        t('ui.priceBelowCost', { sellPrice: (formData.sellPrice || 0).toFixed(3), buyPrice: (formData.buyPrice || 0).toFixed(3) })
+        t('ui.priceBelowCost', { sellPrice: formatNumber(formData.sellPrice || 0, { minimumFractionDigits: 3, maximumFractionDigits: 3 }), buyPrice: formatNumber(formData.buyPrice || 0, { minimumFractionDigits: 3, maximumFractionDigits: 3 }) })
       );
       return;
     }
@@ -882,9 +883,12 @@ export default function Products({ userProfile }: ProductsProps) {
     }
     setFormData(current => ({ ...current, barcode: ean13 }));
     printWindow.document.open();
-    printWindow.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Étiquette code-barres</title><style>@page{margin:8mm}body{font-family:Arial,sans-serif;text-align:center;margin:0;padding:12px}.label{width:70mm;margin:auto}.name{font-size:14px;font-weight:700;margin-bottom:5px;overflow-wrap:anywhere}svg{width:100%;height:44mm}.code{font-family:monospace;font-size:13px;letter-spacing:2px;margin-top:2px}@media screen{body{padding:24px}}</style></head><body><main class="label"><div class="name"></div></main></body></html>');
+    printWindow.document.write('<!doctype html><html><head><meta charset="utf-8"><title></title><style>@page{margin:8mm}body{font-family:Arial,sans-serif;text-align:center;margin:0;padding:12px}.label{width:70mm;margin:auto}.name{font-size:14px;font-weight:700;margin-bottom:5px;overflow-wrap:anywhere}svg{width:100%;height:44mm}.code{font-family:monospace;font-size:13px;letter-spacing:2px;margin-top:2px}@media screen{body{padding:24px}}</style></head><body><main class="label"><div class="name"></div></main></body></html>');
+    printWindow.document.documentElement.lang = i18n.resolvedLanguage || 'fr';
+    printWindow.document.documentElement.dir = i18n.dir();
+    printWindow.document.title = t('ui.barcodeLabelTitle');
     const nameElement = printWindow.document.querySelector('.name');
-    if (nameElement) nameElement.textContent = formData.name || 'Article';
+    if (nameElement) nameElement.textContent = formData.name || t('ui.articleFallback');
     const label = printWindow.document.querySelector('.label');
     if (label) {
       label.insertAdjacentHTML('beforeend', ean13Svg(ean13));
@@ -1074,7 +1078,7 @@ export default function Products({ userProfile }: ProductsProps) {
             <Button onClick={() => void confirmProductCostMigration()} disabled={!migrationBackupDownloaded || migrationBusy} className="border-ds-warning bg-ds-warning text-ds-brand-contrast hover:brightness-90">{migrationBusy ? t('ui.migration') : t('ui.confirmMigration')}</Button>
           </div>
         </div>
-        <ul className="max-h-40 space-y-1 overflow-y-auto text-xs text-ds-text">{migrationPreview.slice(0, 100).map(item => <li key={item.id} className="rounded-lg bg-ds-surface/80 px-3 py-2">{item.name} · {item.buyPrice.toFixed(3)} {storeSettings?.currency || 'DT'}</li>)}</ul>
+        <ul className="max-h-40 space-y-1 overflow-y-auto text-xs text-ds-text">{migrationPreview.slice(0, 100).map(item => <li key={item.id} className="rounded-lg bg-ds-surface/80 px-3 py-2">{item.name} · {formatNumber(item.buyPrice, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}</li>)}</ul>
       </section>}
 
       <Card className="min-w-0 overflow-hidden rounded-ds-lg p-0 shadow-ds-sm">
@@ -1202,8 +1206,8 @@ export default function Products({ userProfile }: ProductsProps) {
                         {product.category}
                       </Badge>
                     </td>
-                    {canViewBuyPrice && <td data-label={t('ui.purchasePrice')} className="px-6 py-4 text-ds-text-muted font-mono" dir="ltr">{product.inventoryType === 'service' ? '—' : `${(productCosts[product.id] ?? product.buyPrice ?? 0).toFixed(3)} ${storeSettings?.currency || 'DT'}`}</td>}
-                    <td data-label={t('ui.sellPrice')} className="px-6 py-4 text-base font-bold font-mono text-ds-text" dir="ltr">{product.sellPrice.toFixed(3)} {storeSettings?.currency || 'DT'}</td>
+                    {canViewBuyPrice && <td data-label={t('ui.purchasePrice')} className="px-6 py-4 text-ds-text-muted font-mono" dir="ltr">{product.inventoryType === 'service' ? '—' : `${formatNumber(productCosts[product.id] ?? product.buyPrice ?? 0, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ${storeSettings?.currency || 'DT'}`}</td>}
+                    <td data-label={t('ui.sellPrice')} className="px-6 py-4 text-base font-bold font-mono text-ds-text" dir="ltr">{formatNumber(product.sellPrice, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}</td>
                     <td data-label={t('ui.stock')} className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         {(() => {
@@ -1439,7 +1443,7 @@ export default function Products({ userProfile }: ProductsProps) {
                     onProductTypesChange={(productTypes: ProductAttributeType[]) => {
                       if (!ownerId) {
                         setErrorMsg(t('ui.storeIdMissing', {
-                          shopName: brand.storeName || (i18n.resolvedLanguage?.startsWith('ar') ? 'بوتيك' : 'Boutique'),
+                          shopName: brand.storeName || DEFAULT_STORE_NAME,
                         }));
                         return;
                       }
@@ -1881,12 +1885,12 @@ export default function Products({ userProfile }: ProductsProps) {
                     </div>
                     <div className="flex justify-between text-xs font-medium text-ds-text-muted">
                       <span>{t('ui.unitPrice')}</span>
-                      <span className="font-bold text-ds-text" dir="ltr">{parseFloat(replenishPrice).toFixed(3)} {storeSettings?.currency || 'DT'}</span>
+                      <span className="font-bold text-ds-text" dir="ltr">{formatNumber(parseFloat(replenishPrice), { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}</span>
                     </div>
                     <div className="my-1.5 flex justify-between border-t border-ds-border pt-1.5 text-xs font-bold text-ds-text">
                       <span>{t('ui.estimatedExpense')}</span>
                       <span className="font-black text-ds-success" dir="ltr">
-                        {(parseInt(replenishQty) * parseFloat(replenishPrice)).toFixed(3)} {storeSettings?.currency || 'DT'}
+                        {formatNumber(parseInt(replenishQty) * parseFloat(replenishPrice), { minimumFractionDigits: 3, maximumFractionDigits: 3 })} {storeSettings?.currency || 'DT'}
                       </span>
                     </div>
                   </div>
