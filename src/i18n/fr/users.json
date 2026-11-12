@@ -45,6 +45,11 @@
     "allowedMenus": "Modifier les menus autorisés",
     "allowedMenusHelp": "Cochez les sections visibles dans la barre latérale pour cet utilisateur :"
   },
+  "permissionsPanel": {
+    "title": "Accès et permissions",
+    "menuHelp": "Choisissez les sections visibles dans la barre latérale et les droits associés.",
+    "adminHelp": "Les administrateurs disposent de tous les menus et permissions. Ces accès ne peuvent pas être restreints ici."
+  },
   "changePassword": {
     "title": "Changer le mot de passe",
     "newPassword": "Nouveau mot de passe",
@@ -102,6 +107,8 @@
   "actions": {
     "editProfile": "Modifier ce profil",
     "edit": "Modifier",
+    "delete": "Supprimer",
+    "permissions": "Permissions",
     "changePassword": "Changer le mot de passe",
     "sendResetLink": "Envoyer un lien de réinitialisation",
     "unblockUser": "Débloquer cet utilisateur",

@@ -3,6 +3,24 @@ import { PermissionFlag, PermissionMenuId, UserProfile } from '../types';
 export type PermissionPreset = 'admin' | 'technician' | 'cashier';
 export type PermissionMap = Record<PermissionMenuId, Partial<Record<PermissionFlag, boolean>>>;
 
+export const ADMIN_ALLOWED_MENUS = [
+  'dashboard',
+  'pos',
+  'products',
+  'clients',
+  'sales',
+  'invoices',
+  'notes',
+  'reparation',
+  'pieces',
+  'settings',
+  'startup',
+] as const;
+
+export function allowedMenusForRole(role: UserProfile['role'], selectedMenus: string[]): string[] {
+  return role === 'admin' ? [...ADMIN_ALLOWED_MENUS] : selectedMenus;
+}
+
 export const PERMISSION_FLAGS: Record<PermissionMenuId, Array<{ id: PermissionFlag; label: string }>> = {
   pieces: [
     { id: 'viewBuyPrice', label: "Voir le prix d'achat" },

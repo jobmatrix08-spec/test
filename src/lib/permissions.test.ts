@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { UserProfile } from '../types';
-import { can, hasMenuAccess, permissionsForPreset } from './permissions';
+import { ADMIN_ALLOWED_MENUS, allowedMenusForRole, can, hasMenuAccess, permissionsForPreset } from './permissions';
 
 const technician: UserProfile = {
   uid: 'tech-1',
@@ -83,6 +83,24 @@ test('permission defaults distinguish technicians and cashiers and deny unspecif
   assert.equal(can(updatedTech, 'pieces', 'viewBuyPrice'), true);
   assert.equal(can(updatedTech, 'pieces', 'adjustStock'), false);
   assert.equal(can(updatedTech, 'products', 'addEdit'), false);
+});
+
+test('admin profiles are created with every supported admin menu', () => {
+  assert.deepEqual(allowedMenusForRole('admin', ['pos']), [
+    'dashboard',
+    'pos',
+    'products',
+    'clients',
+    'sales',
+    'invoices',
+    'notes',
+    'reparation',
+    'pieces',
+    'settings',
+    'startup',
+  ]);
+  assert.deepEqual(ADMIN_ALLOWED_MENUS, allowedMenusForRole('admin', []));
+  assert.deepEqual(allowedMenusForRole('user', ['pos']), ['pos']);
 });
 
 test('admin permissions are unconditional and preset maps are independent copies', () => {

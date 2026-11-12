@@ -14,6 +14,7 @@ import { slugifyAppName } from '../lib/brand';
 import { useBrand } from './BrandProvider';
 import { cn } from '../lib/utils';
 import { PrintableTicket } from './PrintableTicket';
+import BrandLogo from './BrandLogo';
 import { addCashSessionTotals, requireOpenCashSession, useCashSession } from '../lib/cashSessions';
 import { calculatePurchaseTotals, getPurchaseCancellationStock, getPurchasePaymentBalance, getPurchaseReceiptStock } from '../lib/purchaseAccounting';
 import { Badge, Button, Card, EmptyState, Input, PageHeader, Select } from './ui';
@@ -1032,6 +1033,7 @@ export default function Invoices({ userProfile }: InvoicesProps) {
           storeName: storeSettings?.storeName || brand.storeName,
           address: storeSettings?.address,
           phone: storeSettings?.phone,
+          logo: storeSettings?.logo || '',
           documentLanguage: storeSettings?.documentLanguage || 'fr',
           date: formatDocumentDate(invoice.date?.toDate ? invoice.date.toDate() : new Date(), storeSettings?.documentLanguage || 'fr')
         })
@@ -1661,6 +1663,9 @@ export default function Invoices({ userProfile }: InvoicesProps) {
                 </div>
                 <div className="space-y-1 text-end">
                   <label className="block text-xs font-semibold uppercase tracking-wider text-ds-muted">{invoiceT('ui.store')}</label>
+                  <div className="flex justify-end">
+                    <BrandLogo variant="icon" logoUrl={storeSettings?.logo ?? brand.logo} className="h-12 w-12 rounded-ds-md border border-ds-border bg-ds-surface p-1 shadow-none" />
+                  </div>
                   <div className="text-xs font-bold text-ds-brand sm:text-sm">{storeSettings?.storeName || brand.storeName}</div>
                   <div className="text-xs text-ds-muted">{storeSettings?.address || invoiceT('ui.addressDefault')}</div>
                   {storeSettings?.phone && <div className="text-xs text-ds-muted">{storeSettings.phone}</div>}

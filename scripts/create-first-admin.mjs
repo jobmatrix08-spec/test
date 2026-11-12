@@ -85,7 +85,19 @@ try {
     role: 'admin',
     status: 'active',
     ownerId: user.uid,
-    allowedMenus: ['dashboard', 'reparation', 'products', 'pieces', 'clients', 'settings', 'startup', 'statistics', 'pos', 'sales', 'invoices', 'notes', 'users'],
+    allowedMenus: [
+      'dashboard',
+      'pos',
+      'products',
+      'clients',
+      'sales',
+      'invoices',
+      'notes',
+      'reparation',
+      'pieces',
+      'settings',
+      'startup',
+    ],
     createdAt: new Date().toISOString(),
   });
 } catch (error) {

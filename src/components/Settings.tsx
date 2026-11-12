@@ -17,6 +17,8 @@ import { isDirectAudioUrl } from '../lib/startup';
 import { Badge, Button, Card, Input, PageHeader, Select } from './ui';
 import { useTheme, type ThemePreference } from './ThemeProvider';
 import { useBrand } from './BrandProvider';
+import BrandLogo from './BrandLogo';
+import { resizeLogoToDataUrl } from '../lib/brandImage';
 import { slugifyAppName } from '../lib/brand';
 import { StartupPreferencesPanel } from './StartupPreferences';
 import ActivityLog from './ActivityLog';
@@ -362,6 +364,8 @@ function SettingsContent({
     deleteCode: '',
     minStockAlert: 5
   });
+  const [logoError, setLogoError] = useState('');
+  const [logoProcessing, setLogoProcessing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isPurging, setIsPurging] = useState(false);
   const [purgeDate, setPurgeDate] = useState('');
@@ -1010,6 +1014,7 @@ function SettingsContent({
 
   const handleStoreSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (logoProcessing) return;
     if (!canAccessStoreSettings || !ownerId) {
       setFirestoreError(t('store.errors.denied'));
       return;
@@ -1025,6 +1030,33 @@ function SettingsContent({
     } catch (error) {
       console.error('Unable to save store settings:', error);
       setFirestoreError(t('store.errors.save'));
+    }
+  };
+
+  const handleLogoFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.currentTarget.files?.[0];
+    event.currentTarget.value = '';
+    if (!file) return;
+
+    setLogoError('');
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      setLogoError(t('store.logoTypeError'));
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      setLogoError(t('store.logoSizeError'));
+      return;
+    }
+
+    setLogoProcessing(true);
+    try {
+      const logo = await resizeLogoToDataUrl(file);
+      setStoreFormData(current => ({ ...current, logo }));
+    } catch (error) {
+      console.error('Unable to process the selected store logo.', error);
+      setLogoError(t('store.logoUploadError'));
+    } finally {
+      setLogoProcessing(false);
     }
   };
 
@@ -1158,13 +1190,33 @@ function SettingsContent({
                       placeholder={t('store.taglinePlaceholder')}
                     />
 
-                  <Input
-                      label={t('store.logoUrl')}
-                      type="url"
-                      value={storeFormData.logo}
-                      onChange={(e) => setStoreFormData({ ...storeFormData, logo: e.target.value })}
-                      placeholder={t('store.logoUrlPlaceholder')}
+                  <div className="grid min-w-0 gap-2">
+                    <Input
+                      label={t('store.logoUpload')}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={handleLogoFileChange}
+                      disabled={logoProcessing}
+                      helpText={logoProcessing ? t('store.logoProcessing') : t('store.logoUploadHelp')}
+                      error={logoError || undefined}
                     />
+                    {storeFormData.logo && (
+                      <div className="flex items-center gap-3">
+                        <BrandLogo variant="icon" logoUrl={storeFormData.logo} className="h-16 w-16 rounded-ds-md border border-ds-border bg-ds-surface p-1 shadow-none" />
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          disabled={logoProcessing}
+                          onClick={() => {
+                            setLogoError('');
+                            setStoreFormData(current => ({ ...current, logo: '' }));
+                          }}
+                        >
+                          {t('store.logoRemove')}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
 
                   <Input
                       label={t('store.currency')}
@@ -1318,6 +1370,7 @@ function SettingsContent({
                   <Button
                     type="submit"
                     className="w-full"
+                    disabled={logoProcessing}
                   >
                     <Save className="w-4 h-4" />
                     {t('store.save')}

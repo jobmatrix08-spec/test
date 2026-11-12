@@ -408,11 +408,10 @@ service cloud.firestore {
         (isStoreAdmin(request.auth.uid) &&
          resource.data.get('ownerId', resource.id) == request.auth.uid)
       );
-      allow list: if isAdmin() ||
+     allow list: if isAdmin() ||
         isSuperAdmin() ||
         (isStoreAdmin(request.auth.uid) &&
-         resource.data.get('ownerId', resource.id) == request.auth.uid);
-
+         resource.data.ownerId == request.auth.uid);
       // Modification par soi-même sans changer rôle/statut/ownerId
       allow update: if isAuthenticated() && request.auth.uid == userId &&
         request.resource.data.role == resource.data.get('role', 'user') &&

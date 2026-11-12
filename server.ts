@@ -203,7 +203,14 @@ async function startServer() {
   const PORT = Number(process.env.PORT) || 3000;
 
   app.use(cors(ALLOWED_ORIGIN ? { origin: ALLOWED_ORIGIN } : { origin: false }));
-  app.use(express.json({ limit: "100kb" }));
+  const defaultJsonParser = express.json({ limit: "100kb" });
+  const invoicePdfJsonParser = express.json({ limit: "600kb" });
+  app.use((req, res, next) => {
+    const parser = req.method === "POST" && req.path === "/api/invoices/pdf"
+      ? invoicePdfJsonParser
+      : defaultJsonParser;
+    parser(req, res, next);
+  });
 
   app.get("/healthz", (_req, res) => {
     res.sendStatus(200);
@@ -593,6 +600,9 @@ async function startServer() {
         : DEFAULT_STORE_NAME;
       const address = typeof invoice.address === "string" ? invoice.address.trim() : "";
       const phone = typeof invoice.phone === "string" ? invoice.phone.trim() : "";
+      const logoMatch = typeof invoice.logo === "string"
+        ? /^data:image\/(?:png|jpeg);base64,([A-Za-z0-9+/]+={0,2})$/.exec(invoice.logo)
+        : null;
       const documentLanguage = invoice.documentLanguage === "ar" || invoice.documentLanguage === "both"
         ? invoice.documentLanguage
         : "fr";
@@ -624,6 +634,18 @@ async function startServer() {
       const writeValue = (value: unknown) => writeLine(String(value ?? ""));
 
       // Header
+      if (logoMatch && logoMatch[1].length <= 480 * 1024) {
+        try {
+          const logoY = doc.y;
+          doc.image(Buffer.from(logoMatch[1], "base64"), (doc.page.width - 72) / 2, logoY, {
+            fit: [72, 72],
+          });
+          doc.y = logoY + 72;
+          doc.moveDown(0.5);
+        } catch (logoError) {
+          console.error("Unable to render store logo in invoice PDF.", logoError);
+        }
+      }
       doc.fontSize(14);
       writeLine(storeName, "center");
       if (address) {

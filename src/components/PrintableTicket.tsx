@@ -6,6 +6,7 @@ import { getInvoiceTotals } from '../lib/financial';
 import { formatProductDetails } from '../config/productAttributes';
 import { auditName } from '../lib/audit';
 import { useBrand } from './BrandProvider';
+import BrandLogo from './BrandLogo';
 import { formatDocumentDate, formatNumber } from '../i18n/format';
 
 interface Props {
@@ -59,6 +60,7 @@ export const PrintableTicket = forwardRef<HTMLDivElement, Props>(({ invoice, own
 
   return (
     <div ref={ref} lang={documentLanguage === 'ar' ? 'ar' : 'fr'} dir={documentLanguage === 'ar' ? 'rtl' : 'ltr'} className="p-5 w-[80mm] mx-auto bg-white text-black font-mono text-[12px] leading-tight">
+      <BrandLogo variant="icon" logoUrl={storeSettings?.logo ?? brand.logo} className="mx-auto mb-2 h-16 w-16 rounded-none bg-transparent p-0 text-black shadow-none" />
       <div className="text-center font-bold text-[16px] uppercase">{storeName}</div>
       {storeAddress && <div className="text-center">{storeAddress}</div>}
       {storePhone && <div className="text-center">{text('Tél:', 'الهاتف:')} {storePhone}</div>}

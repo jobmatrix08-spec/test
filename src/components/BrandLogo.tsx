@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { cn } from '../lib/utils';
 import { useBrand } from './BrandProvider';
 
@@ -8,11 +9,12 @@ type BrandLogoProps = {
 };
 
 function BrandMark({ logoUrl, monochrome = false }: { logoUrl: string; monochrome?: boolean }) {
-  if (logoUrl) {
-    return <img src={logoUrl} alt="" className="h-full w-full object-contain" />;
-  }
+  const [imageFailed, setImageFailed] = useState(false);
+  useEffect(() => setImageFailed(false), [logoUrl]);
 
-  return (
+  return logoUrl && !imageFailed ? (
+    <img src={logoUrl} alt="" onError={() => setImageFailed(true)} className="h-full w-full object-contain" />
+  ) : (
     <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" className="h-full w-full">
       <rect x="11.5" y="5.5" width="25" height="37" rx="6.5" stroke="currentColor" strokeWidth="2.8" />
       <path d="M19 11h10" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" />
