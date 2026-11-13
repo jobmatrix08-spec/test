@@ -23,7 +23,7 @@ import {
   Activity
 } from 'lucide-react';
 import { Card } from './ui';
-import { formatNumber, getDateLocale } from '../i18n/format';
+import { formatMoney, formatNumber, getDateLocale } from '../i18n/format';
 import { useTranslation } from 'react-i18next';
 
 interface SalesVolumeChartProps {
@@ -115,7 +115,7 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
     const totalVolume = days.reduce((sum, d) => sum + d.volume, 0);
     const totalRevenue = days.reduce((sum, d) => sum + d.revenue, 0);
     const avgDailyVolume = (totalVolume / 7).toFixed(1);
-    const avgDailyRevenue = (totalRevenue / 7).toFixed(2);
+    const avgDailyRevenue = formatMoney(totalRevenue / 7);
     
     // Day with highest volume
     const peakDay = days.reduce((max, d) => (d.volume > max.volume ? d : max), days[0]);
@@ -271,7 +271,7 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
               {t('salesVolume.totalRevenue')}
             </span>
             <span className="block font-display text-base font-bold tabular-nums text-ds-text">
-              {formatNumber(chartData.totalRevenue, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="font-sans text-xs font-bold text-ds-muted">{currency}</span>
+              <bdi dir="ltr">{formatMoney(chartData.totalRevenue)} <span className="font-sans text-xs font-bold text-ds-muted">{currency}</span></bdi>
             </span>
           </div>
         </div>
@@ -342,7 +342,7 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: 'var(--ds-text-muted)', fontSize: 10, fontWeight: 700 }}
-                tickFormatter={(val) => formatNumber(Number(val), { maximumFractionDigits: 2 })}
+                tickFormatter={(val) => formatNumber(Number(val), { maximumFractionDigits: 3 })}
                 width={45}
               />
             )}
@@ -354,7 +354,7 @@ export default function SalesVolumeChart({ sales, saleCostSnapshots, currency = 
                 tickLine={false}
                 axisLine={false}
                 tick={{ fill: 'var(--ds-text-muted)', fontSize: 10, fontWeight: 700 }}
-                tickFormatter={(val) => formatNumber(Number(val), { maximumFractionDigits: 2 })}
+                tickFormatter={(val) => formatNumber(Number(val), { maximumFractionDigits: 3 })}
                 width={45}
               />
             )}

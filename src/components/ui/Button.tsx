@@ -24,29 +24,34 @@ const sizeClasses: Record<ButtonSize, string> = {
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = 'primary', size = 'md', loading = false, disabled, className, children, type = 'button', ...props }, ref) => (
-    <button
-      {...props}
-      ref={ref}
-      type={type}
-      disabled={disabled || loading}
-      aria-busy={loading || undefined}
-      className={cn(
-        'inline-flex min-h-ds-touch-target items-center justify-center gap-2 rounded-ds-md font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand disabled:cursor-not-allowed disabled:opacity-75',
-        variantClasses[variant],
-        sizeClasses[size],
-        className,
-      )}
-    >
-      {loading && (
-        <span
-          aria-hidden="true"
-          className="h-4 w-4 animate-spin rounded-full border-2 border-current border-e-transparent"
-        />
-      )}
-      {children}
-    </button>
-  ),
+  ({ variant, size = 'md', loading = false, disabled, className, children, type = 'button', ...props }, ref) => {
+    const resolvedVariant = variant ?? (type === 'submit' ? 'primary' : 'secondary');
+
+    return (
+      <button
+        {...props}
+        ref={ref}
+        type={type}
+        disabled={disabled || loading}
+        aria-busy={loading || undefined}
+        data-ds-variant={resolvedVariant}
+        className={cn(
+          'inline-flex min-h-ds-touch-target items-center justify-center gap-2 rounded-ds-md font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand disabled:cursor-not-allowed disabled:opacity-75',
+          variantClasses[resolvedVariant],
+          sizeClasses[size],
+          className,
+        )}
+      >
+        {loading && (
+          <span
+            aria-hidden="true"
+            className="h-4 w-4 animate-spin rounded-full border-2 border-current border-e-transparent"
+          />
+        )}
+        {children}
+      </button>
+    );
+  },
 );
 
 Button.displayName = 'Button';

@@ -329,9 +329,9 @@ function Sidebar({
                 </Badge>
               </div>
               {cashSession && <p className="text-[12px] font-medium text-ds-muted">{t('sessionSince', { time: cashSession.openedAt?.toDate?.() ? formatDateTime(cashSession.openedAt.toDate(), { hour: '2-digit', minute: '2-digit' }) : '—', name: userProfile?.name || userProfile?.email || t('unknownUser') })}</p>}
-              <Link to="/cash-session" onClick={() => setIsOpen(false)} className="flex min-h-11 items-center justify-center rounded-ds-md bg-ds-brand px-3 text-sm font-bold text-ds-brand-contrast transition-colors hover:bg-ds-brand-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand">
+              {location.pathname !== '/cash-session' && <Link to="/cash-session" onClick={() => setIsOpen(false)} className="flex min-h-11 items-center justify-center rounded-ds-md border border-ds-border bg-ds-surface px-3 text-sm font-bold text-ds-text transition-colors hover:bg-ds-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand">
                 {cashSession ? t('closeCash') : t('openCash')}
-              </Link>
+              </Link>}
             </div>
           </div>}
 
@@ -914,7 +914,7 @@ export default function App() {
           />
           
           <main className="flex min-h-screen min-w-0 flex-1 flex-col lg:ps-72">
-            <header className="sticky top-0 z-30 flex min-h-16 min-w-0 items-center justify-between gap-2 border-b border-ds-border bg-ds-surface px-3 py-2 text-ds-text sm:px-4 lg:px-8">
+            <header className="sticky top-0 z-30 flex min-h-16 min-w-0 flex-wrap items-center justify-between gap-2 border-b border-ds-border bg-ds-surface px-3 py-2 text-ds-text sm:px-4 lg:px-8">
               <button 
                 onClick={() => setSidebarOpen(true)}
                 aria-label={navT('openMenu')}
@@ -968,7 +968,7 @@ export default function App() {
               {/* Interactive Date & Notes Notification Badge widget */}
               <LanguageSelector compact className="shrink-0" onLanguageChange={handleLanguageChange} />
               <div className="relative ms-auto flex shrink-0 items-center gap-2 lg:ms-4 lg:gap-3.5" onClick={(e) => e.stopPropagation()}>
-                <div className="hidden min-h-10 items-center gap-2 rounded-full border border-ds-border bg-ds-surface px-3.5 font-mono text-[11px] font-medium text-ds-muted lg:flex">
+                <div className="hidden min-h-10 items-center gap-2 rounded-full border border-ds-border bg-ds-surface px-3.5 text-[11px] font-medium text-ds-muted lg:flex">
                   <Calendar className="h-4 w-4 text-ds-brand" />
                   <span>{getFormattedDate()}</span>
                 </div>
@@ -1065,7 +1065,7 @@ export default function App() {
                   to="/pos"
                   aria-label={commonT('openCashbox')}
                   title={commonT('openCashbox')}
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-ds-md bg-ds-brand text-ds-brand-contrast shadow-ds-sm transition-colors hover:bg-ds-brand-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-ds-md border border-ds-border bg-ds-surface text-ds-text transition-colors hover:bg-ds-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand"
                 >
                   <CircleDollarSign className="h-5 w-5" />
                 </Link>
@@ -1073,8 +1073,8 @@ export default function App() {
 
               <ThemeSelector className="hidden lg:flex" />
 
-              <div className="hidden items-center gap-2.5 lg:flex">
-                <span className="max-w-56 truncate text-[12px] font-medium text-ds-muted">{user.email}</span>
+              <div className="hidden min-w-0 items-center gap-2.5 lg:flex">
+                <span className="max-w-56 whitespace-normal break-words text-xs font-medium text-ds-muted">{user.email}</span>
                 <div className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-ds-brand-soft text-sm font-bold text-ds-brand">
                   {(user.displayName || user.email || 'U').slice(0, 1).toUpperCase()}
                 </div>

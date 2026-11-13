@@ -696,6 +696,7 @@ export default function Users({ userProfile }: UsersProps) {
             {apiHealthLoading ? t('checking') : t('testServer')}
           </Button>
           <Button
+            variant="primary"
             onClick={() => {
               setErrorOnCreate(null);
               setRoleInput('cashier-repair');

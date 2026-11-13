@@ -45,10 +45,10 @@ import { computeExpectedCash } from '../lib/cashSessionMath';
 import type { CashSession } from '../types';
 import { slugifyAppName } from '../lib/brand';
 import { useBrand } from './BrandProvider';
-import { formatNumber, getDateLocale } from '../i18n/format';
+import { formatMoney, formatNumber, getDateLocale } from '../i18n/format';
 import { useTranslation } from 'react-i18next';
 
-const formatAmount = (value: number) => formatNumber(value, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+const formatAmount = (value: number) => formatMoney(value);
 const formatPercent = (value: number) => formatNumber(value, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 const formatCount = (value: number) => formatNumber(value, { maximumFractionDigits: 0 });
 
@@ -1130,12 +1130,12 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
   };
 
   const financialCards = [
-    { label: t('financialCards.collectedSales'), value: periodSalesCollected, unit: currency, icon: Wallet, count: false },
+    { label: t('financialCards.collectedSales'), value: periodSalesCollected, unit: currency, icon: Wallet, count: false, accent: undefined },
     ...(canShowMargin ? [
-      { label: t('financialCards.purchaseCost'), value: periodSalesCost, unit: currency, icon: Package, count: false },
+      { label: t('financialCards.purchaseCost'), value: periodSalesCost, unit: currency, icon: Package, count: false, accent: undefined },
     ] : []),
-    { label: t('financialCards.unpaid'), value: financialSummary.debt, unit: currency, icon: AlertCircle, count: false },
-    { label: t('financialCards.repairsInProgress'), value: activeRepairCount, unit: t('units.repairs'), icon: Wrench, count: true },
+    { label: t('financialCards.unpaid'), value: financialSummary.debt, unit: currency, icon: AlertCircle, count: false, accent: financialSummary.debt > 0 ? 'var(--ds-danger)' : undefined },
+    { label: t('financialCards.repairsInProgress'), value: activeRepairCount, unit: t('units.repairs'), icon: Wrench, count: true, accent: undefined },
   ];
   const historicalTvaSalesCount = sales.filter(sale => Number(sale.tva) > 0).length;
 
@@ -1261,13 +1261,12 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
           </div>
         </div>
         <div className={cn('grid grid-cols-1 gap-3 sm:grid-cols-2', canShowMargin ? 'xl:grid-cols-4' : 'lg:grid-cols-3')}>
-          {financialCards.map(({ label, value, unit, icon: Icon, count }, index) => {
-            const accent = ['var(--ds-brand)', 'var(--ds-accent)', 'var(--ds-danger)', 'var(--ds-info)'][index % 4];
+          {financialCards.map(({ label, value, unit, icon: Icon, count, accent }) => {
             return (
             <article
               key={label}
               className="stat-card flex min-h-32 min-w-0 items-center justify-between p-4 sm:p-5"
-              style={{ '--stat-accent': accent } as React.CSSProperties}
+              style={accent ? { '--stat-accent': accent } as React.CSSProperties : undefined}
             >
               <div className="min-w-0">
                 <p className="stat-label">{label}</p>
@@ -1276,7 +1275,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
                   {value !== null && <span className="ms-1 text-xs font-semibold text-ds-muted">{unit}</span>}
                 </p>
               </div>
-              <span className="stat-icon shrink-0" style={{ '--stat-accent': accent } as React.CSSProperties}>
+              <span className="stat-icon shrink-0" style={accent ? { '--stat-accent': accent } as React.CSSProperties : undefined}>
                 <Icon className="h-5 w-5" aria-hidden="true" />
               </span>
             </article>
@@ -1487,25 +1486,25 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
       {/* Main Stats Grid with responsive 2-column layout and optimized sizing */}
       {canViewSales && <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 sm:gap-5 xl:gap-6">
         
-        {/* CARD 1: Chiffre d'Affaires - BLEU */}
+        {/* Chiffre d'affaires */}
         <div 
           onClick={() => openHistoryModal('revenue')}
-          className="stat-card before:hidden flex min-h-[140px] cursor-pointer flex-col justify-between border-0 bg-ds-brand p-3.5 text-ds-brand-contrast shadow-ds-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand sm:min-h-[170px] sm:p-6"
+          className="stat-card before:hidden flex min-h-[140px] cursor-pointer flex-col justify-between rounded-ds-lg border border-ds-border bg-ds-surface p-3.5 text-ds-text shadow-ds-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand sm:min-h-[170px] sm:p-6"
         >
           <div className="flex items-center justify-between relative z-10 gap-1">
-            <span className="truncate text-xs font-black uppercase tracking-widest text-ds-brand-contrast/90 sm:text-sm">{t('metrics.dailyRevenue')}</span>
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-ds-surface/15 sm:h-9 sm:w-9">
-              <TrendingUp className="h-4 w-4 text-ds-brand-contrast sm:h-5 sm:w-5" />
+            <span className="truncate text-xs font-black uppercase tracking-widest text-ds-muted sm:text-sm">{t('metrics.dailyRevenue')}</span>
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-ds-surface-2 sm:h-9 sm:w-9">
+              <TrendingUp className="h-4 w-4 text-ds-muted sm:h-5 sm:w-5" />
             </div>
           </div>
           <div className="mt-3 sm:mt-4 relative z-10">
             <div className="flex items-baseline gap-1">
-              <span className="truncate font-mono text-xl font-black leading-none tracking-tight text-ds-brand-contrast tabular-nums sm:text-[28px] lg:text-[30px]">
+              <span className="truncate font-mono text-xl font-black leading-none tracking-tight text-ds-text tabular-nums sm:text-[28px] lg:text-[30px]">
                 {formatAmount(dashboardData.dailyRevenue)}
               </span>
-              <span className="shrink-0 text-xs font-black text-ds-brand-contrast sm:text-sm">{currency}</span>
+              <span className="shrink-0 text-xs font-black text-ds-muted sm:text-sm">{currency}</span>
             </div>
-            <p className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-ds-brand-contrast/90 sm:mt-2.5 sm:text-xs">
+            <p className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-ds-muted sm:mt-2.5 sm:text-xs">
               <Clock className="w-3 h-3 shrink-0" />
               <span className="truncate">{t('metrics.history')}</span>
             </p>
@@ -1517,9 +1516,15 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
           className="stat-card before:hidden flex min-h-[140px] cursor-pointer flex-col justify-between rounded-ds-lg border border-ds-border bg-ds-surface p-3.5 text-ds-text shadow-ds-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ds-brand sm:min-h-[170px] sm:p-6"
         >
           <div className="flex items-center justify-between relative z-10 gap-1">
-            <span className="truncate text-xs font-black uppercase tracking-widest text-ds-success sm:text-sm">{t('metrics.netProfit')}</span>
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-ds-success-soft sm:h-9 sm:w-9">
-              <Coins className="h-4 w-4 text-ds-success sm:h-5 sm:w-5" />
+            <span className="truncate text-xs font-black uppercase tracking-widest text-ds-muted sm:text-sm">{t('metrics.netProfit')}</span>
+            <div className={cn(
+              "flex h-7 w-7 shrink-0 items-center justify-center rounded-xl sm:h-9 sm:w-9",
+              dashboardData.dailyProfit === null ? "bg-ds-surface-2" : dashboardData.dailyProfit < 0 ? "bg-ds-danger-soft" : "bg-ds-success-soft",
+            )}>
+              <Coins className={cn(
+                "h-4 w-4 sm:h-5 sm:w-5",
+                dashboardData.dailyProfit === null ? "text-ds-muted" : dashboardData.dailyProfit < 0 ? "text-ds-danger" : "text-ds-success",
+              )} />
             </div>
           </div>
           <div className="mt-3 sm:mt-4 relative z-10">
@@ -1529,7 +1534,7 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
               </span>
               <span className="shrink-0 text-[10px] font-black text-ds-muted sm:text-xs">{currency}</span>
             </div>
-            <p className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-ds-success sm:mt-2.5 sm:text-xs">
+            <p className="mt-1.5 flex items-center gap-1 text-[10px] font-bold text-ds-muted sm:mt-2.5 sm:text-xs">
               <Clock className="w-3 h-3 shrink-0" />
               <span className="truncate">{t('metrics.history')}</span>
             </p>
@@ -1543,8 +1548,8 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
         >
           <div className="flex items-center justify-between relative z-10 gap-1">
             <span className="truncate text-xs font-black uppercase tracking-widest text-ds-muted sm:text-sm">{t('metrics.expenses')}</span>
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-ds-brand-soft sm:h-9 sm:w-9">
-              <PackagePlus className="h-4 w-4 text-ds-brand sm:h-5 sm:w-5" />
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-ds-surface-2 sm:h-9 sm:w-9">
+              <PackagePlus className="h-4 w-4 text-ds-muted sm:h-5 sm:w-5" />
             </div>
           </div>
           <div className="mt-3 sm:mt-4 relative z-10">
@@ -1568,8 +1573,14 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
         >
           <div className="flex items-center justify-between relative z-10 gap-1">
             <span className="truncate text-xs font-black uppercase tracking-widest text-ds-muted sm:text-sm">{t('metrics.debts')}</span>
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-ds-danger-soft sm:h-9 sm:w-9">
-              <AlertCircle className="h-4 w-4 text-ds-danger sm:h-5 sm:w-5" />
+            <div className={cn(
+              "flex h-7 w-7 shrink-0 items-center justify-center rounded-xl sm:h-9 sm:w-9",
+              dashboardData.dailyDebt > 0 ? "bg-ds-danger-soft" : "bg-ds-surface-2",
+            )}>
+              <AlertCircle className={cn(
+                "h-4 w-4 sm:h-5 sm:w-5",
+                dashboardData.dailyDebt > 0 ? "text-ds-danger" : "text-ds-muted",
+              )} />
             </div>
           </div>
           <div className="mt-3 sm:mt-4 relative z-10">
@@ -1593,8 +1604,8 @@ export default function Dashboard({ userProfile, cashSession }: DashboardProps) 
         >
           <div className="flex items-center justify-between relative z-10 gap-1">
             <span className="truncate text-xs font-black uppercase tracking-widest text-ds-muted sm:text-sm">{t('metrics.sales')}</span>
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-ds-brand-soft sm:h-9 sm:w-9">
-              <ShoppingCart className="h-4 w-4 text-ds-brand sm:h-5 sm:w-5" />
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-ds-surface-2 sm:h-9 sm:w-9">
+              <ShoppingCart className="h-4 w-4 text-ds-muted sm:h-5 sm:w-5" />
             </div>
           </div>
           <div className="mt-3 sm:mt-4 relative z-10">

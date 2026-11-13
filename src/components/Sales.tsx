@@ -410,27 +410,27 @@ export default function Sales({ userProfile }: SalesProps) {
       />
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 items-stretch gap-4 sm:grid-cols-3">
         {/* Chiffre encaissé */}
-        <Card className="border-ds-brand bg-ds-brand p-5 text-ds-brand-contrast shadow-ds-md">
+        <Card className="flex min-h-36 flex-col p-5">
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold uppercase tracking-wider opacity-80">{t('collected')}</p>
-              <div className="flex h-9 w-9 items-center justify-center rounded-ds-md bg-white/15">
-                <TrendingUp className="w-4 h-4" />
+              <p className="text-xs font-semibold uppercase tracking-wider text-ds-muted">{t('collected')}</p>
+              <div className="flex h-9 w-9 items-center justify-center rounded-ds-md bg-ds-surface-2">
+                <TrendingUp className="w-4 h-4 text-ds-muted" />
               </div>
             </div>
-            <p className="text-2xl font-black font-mono tracking-tight">{formatNumber(totalRevenue, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}<span className="ms-1 text-sm font-bold opacity-80">DT</span></p>
+            <p className="mt-auto text-xl font-bold text-ds-text"><bdi dir="ltr">{formatNumber(totalRevenue, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} <span className="text-sm font-semibold text-ds-muted">DT</span></bdi></p>
         </Card>
 
         {/* Ventes payées */}
-        <Card className="p-5">
+        <Card className="flex min-h-36 flex-col p-5">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-ds-muted">{t('paid')}</p>
             <div className="flex h-9 w-9 items-center justify-center rounded-ds-md bg-ds-success-soft">
               <CheckCircle2 className="w-4 h-4 text-ds-success" />
             </div>
           </div>
-          <p className="text-2xl font-black text-ds-text font-mono">{paidCount}<span className="ms-1 text-sm font-bold text-ds-muted">/ {sales.length}</span></p>
+          <p className="mt-auto text-xl font-bold text-ds-text"><bdi dir="ltr">{paidCount}<span className="ms-1 text-sm font-semibold text-ds-muted">/ {sales.length}</span></bdi></p>
           <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-ds-surface-2">
             <div
               className="h-full rounded-full bg-ds-success transition-all duration-700"
@@ -440,15 +440,18 @@ export default function Sales({ userProfile }: SalesProps) {
         </Card>
 
         {/* Dettes */}
-        <Card className="p-5">
+        <Card className="flex min-h-36 flex-col p-5">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold uppercase tracking-wider text-ds-muted">{t('debts')}</p>
-            <div className="flex h-9 w-9 items-center justify-center rounded-ds-md bg-ds-warning-soft">
-              <AlertCircle className="w-4 h-4 text-ds-warning" />
+            <div className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-ds-md",
+              totalDebt > 0 ? "bg-ds-warning-soft" : "bg-ds-surface-2",
+            )}>
+              <AlertCircle className={totalDebt > 0 ? "w-4 h-4 text-ds-warning" : "w-4 h-4 text-ds-muted"} />
             </div>
           </div>
-          <p className="text-2xl font-black text-ds-text font-mono">{formatNumber(totalDebt, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}<span className="ms-1 text-sm font-bold text-ds-muted">DT</span></p>
-          <p className="mt-1 text-xs font-medium text-ds-warning">{t('salesPending', { count: sales.filter(s => s.debt > 0).length })}</p>
+          <p className="mt-auto text-xl font-bold text-ds-text"><bdi dir="ltr">{formatNumber(totalDebt, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} <span className="text-sm font-semibold text-ds-muted">DT</span></bdi></p>
+          <p className={cn("mt-1 text-xs font-medium", totalDebt > 0 ? "text-ds-warning" : "text-ds-muted")}>{t('salesPending', { count: sales.filter(s => s.debt > 0).length })}</p>
         </Card>
       </div>
 

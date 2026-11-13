@@ -11,7 +11,7 @@ import { can } from '../lib/permissions';
 import { slugifyAppName } from '../lib/brand';
 import { useBrand } from './BrandProvider';
 import { useTranslation } from 'react-i18next';
-import { formatDateTime, formatNumber, getDateLocale } from '../i18n/format';
+import { formatDateTime, formatMoney, formatNumber } from '../i18n/format';
 
 interface SparePart {
   id: string;
@@ -92,11 +92,7 @@ function ean13Svg(value: string): string {
 }
 
 function money(value: number): string {
-  return `${new Intl.NumberFormat(getDateLocale(), {
-    numberingSystem: 'latn',
-    minimumFractionDigits: 3,
-    maximumFractionDigits: 3,
-  }).format(Math.round(value * 1000) / 1000)} DT`;
+  return `${formatMoney(value)} DT`;
 }
 
 function inferBrand(name: string): string {

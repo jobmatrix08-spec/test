@@ -102,6 +102,28 @@
 }
 
 @theme {
+  --color-slate-50: var(--ds-surface-2);
+  --color-slate-100: var(--ds-surface-2);
+  --color-slate-200: var(--ds-border);
+  --color-slate-300: var(--ds-border);
+  --color-slate-400: var(--ds-text-muted);
+  --color-slate-500: var(--ds-text-muted);
+  --color-slate-600: var(--ds-text-muted);
+  --color-slate-700: var(--ds-text);
+  --color-slate-800: var(--ds-text);
+  --color-slate-900: var(--ds-text);
+  --color-slate-950: var(--ds-text);
+  --color-gray-50: var(--ds-surface-2);
+  --color-gray-100: var(--ds-surface-2);
+  --color-gray-200: var(--ds-border);
+  --color-gray-300: var(--ds-border);
+  --color-gray-400: var(--ds-text-muted);
+  --color-gray-500: var(--ds-text-muted);
+  --color-gray-600: var(--ds-text-muted);
+  --color-gray-700: var(--ds-text);
+  --color-gray-800: var(--ds-text);
+  --color-gray-900: var(--ds-text);
+  --color-gray-950: var(--ds-text);
   --color-ds-brand: var(--ds-brand);
   --color-ds-brand-hover: var(--ds-brand-hover);
   --color-ds-brand-soft: var(--ds-brand-soft);
@@ -128,9 +150,9 @@
   --shadow-ds-sm: var(--ds-shadow-sm);
   --shadow-ds-md: var(--ds-shadow-md);
   --spacing-ds-touch-target: var(--ds-touch-target);
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter", "Noto Sans Arabic", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-sans);
   --color-ink: var(--ds-text);
   --color-paper: var(--ds-bg);
   --color-card-border: var(--ds-border);
@@ -179,17 +201,30 @@
     color: var(--ds-text);
   }
 
-  html[lang="ar"] body {
-    font-family: "Noto Sans Arabic", var(--font-sans);
-  }
-
-  html[lang="ar"] {
-    --font-sans: "Noto Sans Arabic", ui-sans-serif, system-ui, sans-serif;
-    --font-display: "Noto Sans Arabic", ui-sans-serif, system-ui, sans-serif;
-  }
-
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display);
+    font-family: var(--font-sans);
+  }
+
+  h1:not(.sr-only) {
+    font-size: 1.5rem !important;
+    line-height: 1.25 !important;
+  }
+
+  main h2 {
+    font-size: 1.125rem !important;
+    line-height: 1.4 !important;
+  }
+
+  main h3 {
+    font-size: 1rem !important;
+    line-height: 1.5 !important;
+  }
+
+  main [class~="text-[9px]"],
+  main [class~="text-[10px]"],
+  main [class~="text-[11px]"] {
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
   }
 
   button, [role="button"] {
@@ -206,6 +241,17 @@
   select, option {
     background-color: var(--ds-surface);
     color: var(--ds-text);
+  }
+
+  button:disabled,
+  [role="button"][aria-disabled="true"] {
+    color: var(--ds-text-muted);
+    opacity: 1;
+  }
+
+  button:disabled {
+    border-color: var(--ds-border);
+    background-color: var(--ds-surface-2);
   }
 }
 
@@ -277,6 +323,9 @@
   }
 
   .stat-card {
+    display: flex;
+    min-height: 9rem;
+    flex-direction: column;
     position: relative;
     overflow: hidden;
     border: 1px solid var(--color-card-border);
@@ -292,7 +341,7 @@
     inset-inline: 0;
     top: 0;
     height: 4px;
-    background: var(--stat-accent, var(--ds-brand));
+    background: var(--stat-accent, transparent);
     content: "";
   }
 
@@ -302,10 +351,10 @@
   }
 
   .stat-card-hero {
-    border-color: transparent;
-    color: var(--ds-brand-contrast);
-    background: linear-gradient(125deg, var(--ds-brand-hover) 0%, var(--ds-accent) 100%);
-    box-shadow: var(--ds-shadow-md);
+    border-color: var(--ds-border);
+    color: var(--ds-text);
+    background: var(--ds-surface);
+    box-shadow: var(--shadow-card);
   }
 
   .stat-card-hero::before {
@@ -319,8 +368,8 @@
     align-items: center;
     justify-content: center;
     border-radius: 0.875rem;
-    background: color-mix(in srgb, var(--stat-accent, var(--ds-brand)) 18%, var(--ds-surface));
-    color: var(--stat-accent, var(--ds-brand));
+    background: color-mix(in srgb, var(--stat-accent, var(--ds-text-muted)) 12%, var(--ds-surface));
+    color: var(--stat-accent, var(--ds-text-muted));
   }
 
   .stat-label {
@@ -393,15 +442,31 @@
 }
 
 .font-arabic {
-  font-family: "Noto Sans Arabic", sans-serif;
+  font-family: var(--font-sans);
 }
 
-html[lang^="ar"] body,
 html[lang^="ar"] button,
 html[lang^="ar"] input,
 html[lang^="ar"] select,
 html[lang^="ar"] textarea {
-  font-family: "Noto Sans Arabic", sans-serif;
+  font-family: var(--font-sans);
+}
+
+.font-mono:not(.font-code) {
+  font-family: var(--font-sans);
+}
+
+.font-code,
+code,
+kbd,
+samp {
+  font-family: var(--font-mono);
+}
+
+.font-mono,
+.tabular-nums {
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 
 html {
@@ -522,6 +587,16 @@ tbody tr {
   border-end-end-radius: 999px;
   background: var(--ds-brand);
   content: "";
+}
+
+[data-ui="page-actions"] > button[data-ds-variant="secondary"]:first-child {
+  border-color: var(--ds-brand);
+  background: var(--ds-brand);
+  color: var(--ds-brand-contrast);
+}
+
+[data-ui="page-actions"] > button[data-ds-variant="secondary"]:first-child:hover {
+  background: var(--ds-brand-hover);
 }
 
 @media print {

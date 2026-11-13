@@ -28,8 +28,18 @@ export function formatDocumentDate(date: Date, language: DocumentLanguage = 'fr'
 }
 
 export function formatNumber(value: number, options: Intl.NumberFormatOptions = {}): string {
+  const maximumFractionDigits = options.maximumFractionDigits ?? 3;
+  const normalizedValue = Number.isFinite(value) &&
+    (Object.is(value, -0) || Math.abs(value) < 0.5 * (10 ** -maximumFractionDigits))
+    ? 0
+    : value;
+
   return new Intl.NumberFormat(getDateLocale(), {
     numberingSystem: 'latn',
     ...options,
-  }).format(value);
+  }).format(normalizedValue);
+}
+
+export function formatMoney(value: number): string {
+  return formatNumber(value, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
 }

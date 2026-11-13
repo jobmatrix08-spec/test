@@ -4,7 +4,7 @@ import { db } from '../firebase';
 import { Repair, StoreSettings } from '../types';
 import { useBrand } from './BrandProvider';
 import { useTranslation } from 'react-i18next';
-import { formatDocumentDate, formatNumber } from '../i18n/format';
+import { formatDocumentDate, formatMoney } from '../i18n/format';
 
 interface RepairTicketProps {
   repair: Repair;
@@ -53,7 +53,7 @@ export function RepairTicket({ repair, ownerId }: RepairTicketProps) {
   };
 
   return (
-    <div dir={documentLanguage === 'ar' ? 'rtl' : 'ltr'} lang={documentLanguage === 'ar' ? 'ar' : 'fr'} className={`w-[80mm] mx-auto bg-white text-black font-mono text-[12px] leading-tight p-4 print:p-0 ${documentLanguage === 'ar' ? 'font-arabic' : ''}`}>
+    <div dir={documentLanguage === 'ar' ? 'rtl' : 'ltr'} lang={documentLanguage === 'ar' ? 'ar' : 'fr'} className={`w-[80mm] mx-auto bg-white text-black text-xs leading-tight p-4 print:p-0 ${documentLanguage === 'ar' ? 'font-arabic' : ''}`}>
       <div className="text-center font-bold text-[16px] uppercase">{storeName}</div>
       <div className="text-center text-[11px]">{storeAddress}</div>
       {storePhone && <div className="text-center text-[11px]">{label('ticket.phone')}: {storePhone}</div>}
@@ -62,7 +62,7 @@ export function RepairTicket({ repair, ownerId }: RepairTicketProps) {
       <div className="border-t border-dashed border-black my-2" />
 
       <div>{label('ticket.date')}: {formattedDate(repair.date)}</div>
-      <div>{label('ticket.reference')}: {repair.number}</div>
+      <div>{label('ticket.reference')}: <bdi dir="ltr" className="font-code">{repair.number}</bdi></div>
       <div>{label('ticket.client')}: {repair.clientName || '—'}</div>
       {repair.clientPhone && <div>{label('ticket.phone')}: {repair.clientPhone}</div>}
       <div>{label('ticket.device')}: {repair.deviceBrand || ''} {repair.deviceModel || ''}</div>
@@ -88,7 +88,7 @@ export function RepairTicket({ repair, ownerId }: RepairTicketProps) {
           {repair.parts.map((part, index) => (
             <div key={`${part.productId}-${index}`} className="flex justify-between gap-2">
               <span>{part.name} x {part.quantity}</span>
-              <span>{formatNumber(part.total, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}</span>
+              <bdi dir="ltr">{formatMoney(part.total)} {currency}</bdi>
             </div>
           ))}
         </>
@@ -97,20 +97,20 @@ export function RepairTicket({ repair, ownerId }: RepairTicketProps) {
       <div className="border-t border-dashed border-black my-2" />
       <div className="flex justify-between font-bold">
         <span>{label('ticket.total')}</span>
-        <span>{formatNumber(Number(repair.total || 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}</span>
+        <bdi dir="ltr">{formatMoney(Number(repair.total || 0))} {currency}</bdi>
       </div>
       <div className="flex justify-between">
         <span>{label('ticket.paid')}</span>
-        <span>{formatNumber(Number(repair.paid || 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}</span>
+        <bdi dir="ltr">{formatMoney(Number(repair.paid || 0))} {currency}</bdi>
       </div>
       <div className="flex justify-between">
         <span>{label('ticket.remaining')}</span>
-        <span>{formatNumber(Number(repair.debt || 0), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}</span>
+        <bdi dir="ltr">{formatMoney(Number(repair.debt || 0))} {currency}</bdi>
       </div>
       {repair.discount && repair.discount > 0 && (
         <div className="flex justify-between">
           <span>{label('ticket.discount')}</span>
-          <span>{formatNumber(Number(repair.discount), { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {currency}</span>
+          <bdi dir="ltr">-{formatMoney(Number(repair.discount))} {currency}</bdi>
         </div>
       )}
 

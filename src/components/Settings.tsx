@@ -23,7 +23,7 @@ import { slugifyAppName } from '../lib/brand';
 import { StartupPreferencesPanel } from './StartupPreferences';
 import ActivityLog from './ActivityLog';
 import { useTranslation } from 'react-i18next';
-import { formatDateTime, formatNumber, getDateLocale } from '../i18n/format';
+import { formatDateTime, formatMoney, formatNumber, getDateLocale } from '../i18n/format';
 import i18n from '../i18n';
 
 interface SettingsProps {
@@ -656,9 +656,9 @@ function SettingsContent({
         { 'Indicateur': 'Nombre de ventes', 'Valeur': salesInRange.length },
         { 'Indicateur': 'Nombre de factures', 'Valeur': invoicesInRange.length },
         { 'Indicateur': 'Nombre d\'opérations (produits, suppressions...)', 'Valeur': auditLogsInRange.length },
-        { 'Indicateur': "Chiffre d'affaires total (DT)", 'Valeur': totalCA.toFixed(2) },
-        { 'Indicateur': 'Total encaissé (DT)', 'Valeur': totalPaye.toFixed(2) },
-        { 'Indicateur': 'Total dettes générées (DT)', 'Valeur': totalDette.toFixed(2) },
+        { 'Indicateur': "Chiffre d'affaires total (DT)", 'Valeur': formatMoney(totalCA) },
+        { 'Indicateur': 'Total encaissé (DT)', 'Valeur': formatMoney(totalPaye) },
+        { 'Indicateur': 'Total dettes générées (DT)', 'Valeur': formatMoney(totalDette) },
         ...(storeFormData.tvaEnabled
           ? [{ 'Indicateur': 'Total TVA collectée (DT)', 'Valeur': totalTva.toFixed(3) }]
           : []),
@@ -717,13 +717,13 @@ function SettingsContent({
         const dt = toJsDate(s.date);
         if (!dt) return;
         const client = s.clientName || 'Client de passage';
-        lines.push({ dt, text: `[${fmtDateTime(dt)}] VENTE      | Réf ${s.id} | Client: ${client} | Total: ${(s.total || 0).toFixed(2)} DT | Payé: ${(s.paid || 0).toFixed(2)} DT | Dette: ${(s.debt || 0).toFixed(2)} DT` });
+        lines.push({ dt, text: `[${fmtDateTime(dt)}] VENTE      | Réf ${s.id} | Client: ${client} | Total: ${formatMoney(s.total || 0)} DT | Payé: ${formatMoney(s.paid || 0)} DT | Dette: ${formatMoney(s.debt || 0)} DT` });
       });
 
       invoicesInRange.forEach(inv => {
         const dt = toJsDate(inv.date);
         if (!dt) return;
-        lines.push({ dt, text: `[${fmtDateTime(dt)}] FACTURE    | N° ${inv.number || inv.id} | Client: ${inv.clientName || 'N/A'} | Total: ${(inv.total || 0).toFixed(2)} DT` });
+        lines.push({ dt, text: `[${fmtDateTime(dt)}] FACTURE    | N° ${inv.number || inv.id} | Client: ${inv.clientName || 'N/A'} | Total: ${formatMoney(inv.total || 0)} DT` });
       });
 
       auditLogsInRange.forEach(l => {
@@ -733,7 +733,7 @@ function SettingsContent({
         const user = l.userName && l.userName !== 'unknown' ? l.userName : (l.userEmail || 'N/A');
         let details = '';
         if (l.action === 'DELETE_SALE') {
-          details = `Ticket ${l.ticketId || ''} | Facture ${l.invoiceNumber || 'N/A'} | Total: ${(l.total || 0).toFixed(2)} DT`;
+          details = `Ticket ${l.ticketId || ''} | Facture ${l.invoiceNumber || 'N/A'} | Total: ${formatMoney(l.total || 0)} DT`;
         } else if (l.productName) {
           details = `Produit: ${l.productName}`;
         }

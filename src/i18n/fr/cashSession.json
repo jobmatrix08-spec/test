@@ -16,7 +16,7 @@
     "expected": "Espèces attendues"
   },
   "counted": "Espèces comptées (DT)",
-  "difference": "Écart indicatif : {{amount}} DT",
+  "differenceLabel": "Écart indicatif :",
   "closing": "Clôture…",
   "close": "Clôturer la session",
   "noneOpen": "Aucune session ouverte",
@@ -48,6 +48,6 @@
   "openError": "Impossible d’ouvrir la session.",
   "invalidCounted": "Saisissez un montant compté valide, égal ou supérieur à zéro.",
   "confirmClose": "Confirmer la clôture ? Une session clôturée ne pourra plus être modifiée.",
-  "closeSuccess": "Session clôturée. Écart : {{amount}} DT.",
+  "closeSuccess": "Session clôturée.",
   "closeError": "Impossible de clôturer la session."
 }

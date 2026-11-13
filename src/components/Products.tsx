@@ -1061,6 +1061,7 @@ export default function Products({ userProfile }: ProductsProps) {
             <Shield className="h-4 w-4" /> {t('ui.migratePrices')}
           </button>}
           {canAddEdit && <Button
+            variant="primary"
             onClick={() => openModal()}
             className="group px-5 py-3 text-xs font-black uppercase tracking-wider shadow-ds-sm"
           >

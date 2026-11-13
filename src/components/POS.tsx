@@ -852,6 +852,7 @@ export default function POS({ userProfile }: POSProps) {
         title={t('title')}
         actions={
           <Button
+            data-ui="secondary"
             className="lg:hidden"
             variant="secondary"
             onClick={() => setIsCartExpanded(value => !value)}
@@ -1056,7 +1057,7 @@ export default function POS({ userProfile }: POSProps) {
                 </span>
                 {topSellerIds.has(product.id) ? (
                   <span className="flex shrink-0 items-center gap-1 rounded-full bg-ds-brand-soft px-2 py-1 text-[10px] font-black uppercase tracking-wide text-ds-brand">
-                    <Flame className="w-2.5 h-2.5" /> Top
+                    <Flame className="w-2.5 h-2.5" /> {t('topSeller')}
                   </span>
                 ) : (salesQtyMap[product.id] || 0) > 0 ? (
                   <span className="shrink-0 text-[10px] font-bold text-ds-text-muted">
@@ -1373,16 +1374,16 @@ export default function POS({ userProfile }: POSProps) {
                 <button 
                   type="button"
                   onClick={() => { setDiscount(5); setDiscountInput('5.000'); }}
-                  className="min-h-11 rounded-full bg-ds-brand px-3 text-xs font-black text-ds-brand-contrast cursor-pointer hover:bg-ds-brand-hover"
+                  className="min-h-11 rounded-full border border-ds-border bg-ds-surface px-3 text-xs font-bold text-ds-text cursor-pointer hover:bg-ds-surface-2"
                 >
-                  −{formatNumber(5, { maximumFractionDigits: 0 })} {currency}
+                  <bdi dir="ltr">-{formatNumber(5, { maximumFractionDigits: 0 })} {currency}</bdi>
                 </button>
                 <button 
                   type="button"
                   onClick={() => { setDiscount(10); setDiscountInput('10.000'); }}
-                  className="min-h-11 rounded-full bg-ds-brand px-3 text-xs font-black text-ds-brand-contrast cursor-pointer hover:bg-ds-brand-hover"
+                  className="min-h-11 rounded-full border border-ds-border bg-ds-surface px-3 text-xs font-bold text-ds-text cursor-pointer hover:bg-ds-surface-2"
                 >
-                  −{formatNumber(10, { maximumFractionDigits: 0 })} {currency}
+                  <bdi dir="ltr">-{formatNumber(10, { maximumFractionDigits: 0 })} {currency}</bdi>
                 </button>
               </div>
             </div>
@@ -1417,7 +1418,9 @@ export default function POS({ userProfile }: POSProps) {
                   <div className="flex items-center justify-between border-b border-ds-border pb-1 text-xs font-black uppercase tracking-wide text-ds-text-muted">
                     <span>{t('netTotal')}</span>
                     <span className="rounded-full border border-ds-brand/20 bg-ds-brand-soft px-2 py-1 text-[10px] text-ds-brand">
-                      {storeSettings?.tvaEnabled === true ? `TVA (${storeSettings.tva || 0}%)` : 'Hors taxe'}
+                      {storeSettings?.tvaEnabled === true
+                        ? t('taxRate', { name: t('taxName'), rate: storeSettings.tva || 0 })
+                        : t('taxExcluded')}
                     </span>
                   </div>
                   <div className="flex justify-center items-center gap-1 mt-1.5">
@@ -1612,7 +1615,7 @@ export default function POS({ userProfile }: POSProps) {
                   Vente à crédit
                 </h3>
                 <p className="mt-0.5 text-xs font-semibold text-ds-text-muted">
-                  Client : <span className="text-ds-text">{selectedClient.name}</span>
+                  {t('clientLabel')} <span className="text-ds-text">{selectedClient.name}</span>
                 </p>
               </div>
               <button
